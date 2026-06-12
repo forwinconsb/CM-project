@@ -484,6 +484,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <span style="font-size:11px;color:var(--txt2)">to</span>
       <input type="date" id="fr-to" onchange="renderFunderReview()" style="padding:5px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--txt)">
     </span>
+    <button class="btn-sec" onclick="exportFunderReviewPDF()">⬇ PDF</button>
   </div>
   <div id="fr-content"><div class="empty">Select a funder and date range above.</div></div>
 </div>
@@ -2977,6 +2978,81 @@ function renderFunderReview(){
     html+=`</tbody></table></div></div>`;
   }
   cont.innerHTML=html;
+}
+function exportFunderReviewPDF(){
+  const funderName=document.getElementById('fr-funder')?.value||'';
+  const{from,to}=getFRDates();
+  const rangeLabel=from===to?fD(from):`${fD(from)} to ${fD(to)}`;
+  const platRows=S.platEntries.filter(e=>e.date>=from&&e.date<=to);
+  const dayRows=S.dayEntries.filter(e=>e.date>=from&&e.date<=to);
+  if(!platRows.length&&!dayRows.length){showToast('No data for this period',true);return;}
+  const allFTxns=S.dayEntries.flatMap(d=>(d.funderTxns||[]).map(t=>({...t,date:d.date})));
+  const periodFTxns=allFTxns.filter(t=>t.date>=from&&t.date<=to&&(!funderName||t.funder===funderName));
+  const prevFTxns=allFTxns.filter(t=>t.date<from&&(!funderName||t.funder===funderName));
+  const sF=(arr,type)=>arr.filter(t=>t.type===type&&!t.isAutoFromExpense).reduce((s,t)=>s+t.amount,0);
+  const allExpRows=S.dayEntries.flatMap(d=>(d.expenses||[]).filter(e=>e.paySource==='funder'&&(!funderName||e.funderName===funderName)).map(e=>({...e,date:d.date})));
+  const prevExpInj=allExpRows.filter(e=>e.date<from).reduce((s,e)=>s+e.amt,0);
+  const periodExpInj=allExpRows.filter(e=>e.date>=from&&e.date<=to).reduce((s,e)=>s+e.amt,0);
+  const bfInj=sF(prevFTxns,'injection')+prevExpInj,bfRet=sF(prevFTxns,'return');
+  const moInj=sF(periodFTxns,'injection')+periodExpInj,moRet=sF(periodFTxns,'return'),moPro=sF(periodFTxns,'profit');
+  const outstanding=(bfInj+moInj)-(bfRet+moRet);
+  const byPlat={};S.platforms.forEach(p=>{byPlat[p.name]={dep:0,with:0,wl:0,pgkClose:0,days:0,reconOk:0};});
+  platRows.forEach(e=>{if(byPlat[e.platform]){const b=byPlat[e.platform];b.dep+=e.dep;b.with+=e.with;b.wl+=e.winLose;b.pgkClose=e.pgkClose;b.days++;if(Math.abs(e.pgkDiff||0)<0.01)b.reconOk++;}});
+  const totDep=platRows.reduce((s,e)=>s+e.dep,0),totWL=platRows.reduce((s,e)=>s+e.winLose,0);
+  const allExch=dayRows.flatMap(d=>(d.exchanges||[]).map(x=>({...x,date:d.date})));
+  const myrIn=allExch.filter(x=>x.dir==='out').reduce((s,x)=>s+x.myr,0);
+  const totalExp=dayRows.reduce((s,d)=>s+d.totalExp,0);
+  const lastDay=dayRows[dayRows.length-1];
+  const myrBanks=lastDay?.myrBanks||[];
+  const myrBal=myrBanks.reduce((s,b)=>s+(b.close||0),0);
+  const net=myrIn-totalExp-allExch.filter(x=>x.dir==='in').reduce((s,x)=>s+(x.paid||0),0);
+  const secs=[
+    {type:'report_title',text:'Funder Review'+(funderName?' — '+funderName:''),sub:rangeLabel},
+    {type:'metric_row',metrics:[
+      {label:'TOTAL DEPOSIT (PGK)',value:fmt(totDep)+' PGK'},
+      {label:'NET WIN/LOSE (PGK)',value:(totWL>=0?'+':'')+fmt(totWL)+' PGK'},
+      {label:'MYR RECEIVED',value:'RM '+fmt(myrIn)},
+      {label:'TOTAL EXPENSES',value:'-RM '+fmt(totalExp)},
+      {label:'NET (MYR)',value:(net>=0?'RM ':'-RM ')+fmt(Math.abs(net))},
+      {label:'MYR BALANCE',value:'RM '+fmt(myrBal)},
+    ]},
+    {type:'table',title:'Platform Performance (PGK)',
+      cols:['Platform','Days','Deposit','Withdraw','Win/Lose','Last Close','Recon'],
+      widths:[0.2,0.1,0.15,0.15,0.15,0.13,0.12],aligns:['L','R','R','R','R','R','L'],
+      rows:S.platforms.filter(p=>byPlat[p.name].days).map(p=>{const r=byPlat[p.name];return[p.name,String(r.days),fmt(r.dep),fmt(r.with),fmt(r.wl),fmt(r.pgkClose),r.reconOk===r.days?'All OK':r.reconOk+'/'+r.days];})},
+    {type:'table',title:'PGK Daily Detail',
+      cols:['Date','Platform','Deposit','Withdraw','Win/Lose','PGK Close','Diff'],
+      widths:[0.14,0.18,0.13,0.13,0.14,0.15,0.13],aligns:['L','L','R','R','R','R','R'],
+      rows:platRows.map(e=>[fD(e.date),e.platform,fmt(e.dep),fmt(e.with),fmt(e.winLose),fmt(e.pgkClose),Math.abs(e.pgkDiff||0)<0.01?'OK':fmt(e.pgkDiff||0)])},
+  ];
+  // Capital position
+  const capRows=[];
+  if(funderName){
+    capRows.push(['Brought forward ('+fD(from)+')','RM '+fmt(bfInj-bfRet)]);
+    if(moInj)capRows.push(['Period injection','RM '+fmt(moInj)]);
+    if(moRet)capRows.push(['Period return','-RM '+fmt(moRet)]);
+    if(moPro)capRows.push(['Period profit dist.','-RM '+fmt(moPro)]);
+    capRows.push(['Outstanding capital','RM '+fmt(outstanding)]);
+  }else{
+    const fNames=[...new Set([...allFTxns.map(t=>t.funder),...S.funders.map(f=>f.name)])].filter(Boolean);
+    fNames.forEach(fn=>{
+      const fnExps=S.dayEntries.flatMap(d=>(d.expenses||[]).filter(e=>e.paySource==='funder'&&e.funderName===fn).map(e=>({...e,date:d.date})));
+      const fi=allFTxns.filter(t=>t.funder===fn&&t.date<from&&t.type==='injection'&&!t.isAutoFromExpense).reduce((s,t)=>s+t.amount,0)+fnExps.filter(e=>e.date<from).reduce((s,e)=>s+e.amt,0);
+      const fr_=allFTxns.filter(t=>t.funder===fn&&t.date<from&&t.type==='return').reduce((s,t)=>s+t.amount,0);
+      const mi2=allFTxns.filter(t=>t.funder===fn&&t.date>=from&&t.date<=to&&t.type==='injection'&&!t.isAutoFromExpense).reduce((s,t)=>s+t.amount,0)+fnExps.filter(e=>e.date>=from&&e.date<=to).reduce((s,e)=>s+e.amt,0);
+      const mr2=allFTxns.filter(t=>t.funder===fn&&t.date>=from&&t.date<=to&&t.type==='return').reduce((s,t)=>s+t.amount,0);
+      const os=(fi+mi2)-(fr_+mr2);
+      if(!fi&&!mi2&&!mr2)return;
+      capRows.push([fn,'RM '+fmt(os)]);
+    });
+  }
+  if(capRows.length)secs.push({type:'table',title:'Funder Capital Position',cols:['Funder / Item','Amount (MYR)'],widths:[0.6,0.4],aligns:['L','R'],rows:capRows});
+  if(allExch.length)secs.push({type:'table',title:'Exchange Transactions',
+    cols:['Date','Direction','Exchanger','PGK','Rate','MYR','Bank'],
+    widths:[0.14,0.13,0.18,0.13,0.1,0.16,0.16],aligns:['L','L','L','R','R','R','L'],
+    rows:allExch.map(x=>[fD(x.date),x.dir==='out'?'PGK>MYR':'MYR>PGK',x.exchanger||'-',fmt(x.pgk),x.rate,fmt(x.myr||0),x.myrBank||'-'])});
+  _dlPDF(secs,'funder_review_'+(funderName?funderName.replace(/\s+/g,'_')+'_':'')+from.slice(0,7)+'.pdf');
+  showToast('Funder Review PDF downloaded ✓');
 }
 
 
