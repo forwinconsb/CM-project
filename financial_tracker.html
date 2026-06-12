@@ -588,6 +588,14 @@ details.collapse-card[open]>summary:before{content:'▾'}
 <div id="pg-exchange-tab" class="pg">
   <div class="info-box">💱 <b>Exchange Transactions</b> — Full listing. Click any row to <b>edit or delete</b> that transaction.</div>
   <div class="card">
+    <div class="ct">💰 Outstanding Dues — exchangers who still owe us (MYR)</div>
+    <div id="exch-dues"><div class="empty">No outstanding dues</div></div>
+    <details class="collapse-card" style="margin-top:12px">
+      <summary style="font-size:11px;font-weight:600;color:var(--txt2)">Received payments history</summary>
+      <div id="exch-settlements" style="margin-top:8px"></div>
+    </details>
+  </div>
+  <div class="card">
     <div class="ct">Exchange transactions — full listing</div>
     <div class="filter-row">
       <select id="exch-tab-month" onchange="renderExchTab()"></select>
@@ -1054,6 +1062,7 @@ let S={
     {id:'t4',name:'Capital & Expansion',color:'#534AB7',plSection:'capital',cats:['Computer Purchase','Platform Setup Fee']},
   ],
   platEntries:[],dayEntries:[],
+  exchSettlements:[],
   stmtBalances:{}
 };
 
@@ -2112,6 +2121,10 @@ function buildLedger(date,d){
   (d.exchanges||[]).forEach(x=>{
     if(x.dir==='out'&&x.paid>0)txns.push({bank:x.myrBank||'',type:'exchange',desc:'Exchange in — '+(x.exchanger||'')+' (PGK→MYR)',in:x.paid,out:0,attachment:null});
     if(x.dir==='in'&&x.paid>0)txns.push({bank:x.myrBank||'',type:'exchange',desc:'Exchange out — '+(x.exchanger||'')+' (MYR→PGK)',in:0,out:x.paid,attachment:null});
+  });
+  // Exchanger due payments received — counted on the date received, in the bank they arrived
+  (S.exchSettlements||[]).filter(s=>s.date===date).forEach(s=>{
+    txns.push({bank:s.myrBank||'',type:'exchange',desc:'Due received — '+(s.exchanger||'')+(s.note?' ('+s.note+')':''),in:s.amount||0,out:0,attachment:null});
   });
   (d.funderTxns||[]).forEach(t=>{
     if(t.isAutoFromExpense)return;
@@ -3190,6 +3203,85 @@ function exportPGKPDF(){
 }
 
 // ── EXCHANGE TAB ──
+// ── EXCHANGER DUES & SETTLEMENTS ──
+function exchDuesData(){
+  // 'out' exchanges in date order; settlements applied FIFO (oldest debt first) per exchanger
+  const txns=S.dayEntries.flatMap(d=>(d.exchanges||[]).map(x=>({...x,date:d.date})))
+    .filter(x=>x.dir==='out').sort((a,b)=>a.date.localeCompare(b.date));
+  const pool={};
+  (S.exchSettlements||[]).forEach(s=>{pool[s.exchanger]=(pool[s.exchanger]||0)+(s.amount||0);});
+  const owedByKey={},byEx={};
+  txns.forEach(x=>{
+    const raw=Math.max(0,(x.myr||0)-(x.paid||0));
+    let applied=0;
+    if(raw>0&&(pool[x.exchanger]||0)>0){applied=Math.min(raw,pool[x.exchanger]);pool[x.exchanger]-=applied;}
+    const net=raw-applied;
+    owedByKey[`${x.date}|${x.exchanger}|${x.pgk}|${x.myr}|${x.paid}`]=net;
+    if(raw>0){
+      byEx[x.exchanger]=byEx[x.exchanger]||{owed:0,txns:0,oldest:x.date};
+      byEx[x.exchanger].owed+=net;
+      if(net>0.009){byEx[x.exchanger].txns++;if(x.date<byEx[x.exchanger].oldest)byEx[x.exchanger].oldest=x.date;}
+    }
+  });
+  return{owedByKey,byEx};
+}
+function renderExchDues(){
+  const el=document.getElementById('exch-dues');if(!el)return;
+  const{byEx}=exchDuesData();
+  const rows=Object.entries(byEx).filter(([,v])=>v.owed>0.009).sort((a,b)=>b[1].owed-a[1].owed);
+  if(!rows.length){el.innerHTML=`<div class="recon-ok">✓ No outstanding dues — all exchangers settled</div>`;}
+  else{
+    el.innerHTML=rows.map(([ex,v])=>`<div class="plat-row">
+      <span style="display:flex;align-items:center;gap:9px"><b>${ex}</b>
+        <span style="color:var(--am);font-weight:700">owes RM ${fmt(v.owed)}</span>
+        <span style="font-size:11px;color:var(--txt2)">(${v.txns} txn${v.txns>1?'s':''}, oldest ${fD(v.oldest)})</span></span>
+      <button class="btn-plat" style="padding:6px 14px;font-size:11px" onclick="openReceiveDue('${ex.replace(/'/g,"\\'")}')">💵 Receive payment</button>
+    </div>`).join('');
+  }
+  const sEl=document.getElementById('exch-settlements');
+  if(sEl){
+    const setts=[...(S.exchSettlements||[])].sort((a,b)=>b.date.localeCompare(a.date));
+    sEl.innerHTML=setts.length?`<div class="tw"><table>
+      <thead><tr><th>Date received</th><th>Exchanger</th><th>Amount (RM)</th><th>Into MYR bank</th><th>Note</th><th></th></tr></thead>
+      <tbody>${setts.map(s=>`<tr><td>${fD(s.date)}</td><td>${s.exchanger}</td><td style="font-weight:700;color:var(--gr)">${fmt(s.amount)}</td><td>${s.myrBank||'-'}</td><td style="color:var(--txt2)">${s.note||'-'}</td><td><button class="del" onclick="deleteSettlement('${s.id}')">🗑</button></td></tr>`).join('')}</tbody>
+    </table></div>`:`<div class="empty">No payments received yet</div>`;
+  }
+}
+function openReceiveDue(exchanger){
+  const{byEx}=exchDuesData();
+  const owed=byEx[exchanger]?.owed||0;
+  const bankOpts=S.myrBanks.map(b=>`<option value="${b.name}">${b.name}</option>`).join('');
+  const body=`
+    <div class="modal-section">Receive payment from ${exchanger} — currently owes RM ${fmt(owed)}</div>
+    <div class="g2" style="gap:8px;margin-bottom:10px">
+      <div class="f"><label>Date received</label><input type="date" id="due-date" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="f"><label>Amount received (RM)</label><input type="number" id="due-amt" value="${fmt(owed).replace(/,/g,'')}" step="0.01"></div>
+      <div class="f"><label>Into MYR bank</label><select id="due-bank">${bankOpts}</select></div>
+      <div class="f"><label>Note (optional)</label><input type="text" id="due-note" placeholder="e.g. partial payment"></div>
+    </div>
+    <button class="btn-pri" onclick="saveDueReceipt('${exchanger.replace(/'/g,"\\'")}')">💾 Save payment received</button>`;
+  openModal('Receive Due Payment',body);
+}
+function saveDueReceipt(exchanger){
+  const date=document.getElementById('due-date')?.value;
+  const amt=parseFloat(document.getElementById('due-amt')?.value)||0;
+  const bank=document.getElementById('due-bank')?.value||'';
+  if(!date){showToast('Select date',true);return;}
+  if(amt<=0){showToast('Enter amount',true);return;}
+  const{byEx}=exchDuesData();
+  const owed=byEx[exchanger]?.owed||0;
+  if(amt>owed+0.009&&!confirm(`Amount RM ${fmt(amt)} is MORE than owed RM ${fmt(owed)}. Save anyway?`))return;
+  if(!S.exchSettlements)S.exchSettlements=[];
+  S.exchSettlements.push({id:genRef('SET'),date,exchanger,amount:amt,myrBank:bank,note:document.getElementById('due-note')?.value||''});
+  persist();closeModal();renderExchTab();renderRecon();
+  showToast('Payment received: RM '+fmt(amt)+' from '+exchanger+' ✓');
+}
+function deleteSettlement(id){
+  const s=(S.exchSettlements||[]).find(x=>x.id===id);if(!s)return;
+  if(!confirm(`Delete received payment of RM ${fmt(s.amount)} from ${s.exchanger} on ${fD(s.date)}?\nThe due will become outstanding again.`))return;
+  S.exchSettlements=S.exchSettlements.filter(x=>x.id!==id);
+  persist();renderExchTab();renderRecon();showToast('Payment record deleted ✓');
+}
 function renderExchTab(){
   const month=document.getElementById('exch-tab-month')?.value||'';
   const dir=document.getElementById('exch-tab-dir')?.value||'';
@@ -3197,10 +3289,14 @@ function renderExchTab(){
   const platF=document.getElementById('exch-tab-platform')?.value||'';
   const allExch=S.dayEntries.filter(e=>!month||mk(e.date)===month).flatMap(d=>(d.exchanges||[]).map(x=>({...x,date:d.date})));
   const filtered=allExch.filter(x=>(!dir||x.dir===dir)&&(!exName||x.exchanger===exName)&&(!platF||x.platform===platF));
+  renderExchDues();
   const tbody=document.getElementById('exch-tab-body');if(!tbody)return;
   if(!filtered.length){tbody.innerHTML=`<tr><td colspan="11" class="empty">No exchange transactions${month?' for '+ml(month):''}</td></tr>`;setHTML('exch-tab-metrics','');return;}
+  const{owedByKey}=exchDuesData();
   tbody.innerHTML=filtered.map((x,xi)=>{
-    const owed=Math.max(0,(x.myr||0)-(x.paid||0));
+    const rawOwed=Math.max(0,(x.myr||0)-(x.paid||0));
+    const k=`${x.date}|${x.exchanger}|${x.pgk}|${x.myr}|${x.paid}`;
+    const owed=x.dir==='out'&&owedByKey[k]!==undefined?owedByKey[k]:rawOwed;
     return`<tr style="cursor:pointer" onclick="viewEditExch(${JSON.stringify(x).replace(/"/g,'&quot;')})">
       <td>${fD(x.date)}</td>
       <td><span class="tag ${x.dir==='out'?'tag-out':'tag-in'}">${x.dir==='out'?'PGK→MYR':'MYR→PGK'}</span></td>
