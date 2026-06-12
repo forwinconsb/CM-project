@@ -368,6 +368,11 @@ details.collapse-card[open]>summary:before{content:'▾'}
     </div>
     <div id="pgk-recon-content"><div class="empty">No data yet</div></div>
   </div>
+  <div class="card">
+    <div class="ct">🧊 Frozen Funds — PGK stuck in frozen banks</div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">Created when a bank with balance is deactivated. Write off = loss in P&L. Recovery (full or partial) credits back. Written-off funds can still be marked recovered later.</div>
+    <div id="frozen-content"><div class="empty">No frozen funds — all banks healthy</div></div>
+  </div>
 </div>
 
 <!-- CASH FLOW -->
@@ -1078,6 +1083,7 @@ let S={
   ],
   platEntries:[],dayEntries:[],
   exchSettlements:[],
+  pgkFrozen:[],
   stmtBalances:{}
 };
 
@@ -1308,7 +1314,7 @@ function renderPage(p){
   }
   if(p==='fnd-tab'){initFndTab();return;}
   if(p==='exp-tab'){initExpTab();return;}
-  if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);setSel('rc-pgk-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);rcDetailOpen=false;renderRecon();renderPGKRecon();}
+  if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);setSel('rc-pgk-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);rcDetailOpen=false;renderRecon();renderPGKRecon();renderFrozen();}
   if(p==='cashflow'){toggleCFCustom();setSel('cf-plat',[{v:'',l:'All platforms'},...S.platforms.map(q=>({v:q.name,l:q.name}))]);renderCF();}
   if(p==='weekly'){setSel('wk-month',mopts());renderWeekly();}
   if(p==='pl'){togglePLCustom();renderPL();}
@@ -2518,6 +2524,23 @@ function renderPL(){
     if(sec.id==='direct')plHtml+=`<div class="pr" style="font-weight:700"><span>${tr("lbl_gross_profit")}</span><span style="color:${gross>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(gross)}</span></div>`;
   });
   plHtml+=`<div style="border-top:2px solid #999;margin-top:12px;padding-top:12px"><div class="pr" style="font-weight:700;font-size:14px;color:${net>=0?'var(--gr)':'var(--rd)'}"><span>${tr("lbl_net_profit")}</span><span>${net>=0?'':'('}RM ${fmt(Math.abs(net))}${net>=0?'':')'}</span></div></div>`;
+  // PGK Losses & Charges (memo section, estimated MYR)
+  const pgkCost=pgkCostStats(from,to);
+  if(pgkCost.charges||pgkCost.losses||pgkCost.recoveries){
+    const cv=v=>pgkCost.rate!=null?'≈ -RM '+fmt(v*pgkCost.rate):fmt(v)+' PGK';
+    const cvPos=v=>pgkCost.rate!=null?'≈ +RM '+fmt(v*pgkCost.rate):fmt(v)+' PGK';
+    plHtml+=`<div class="sl" style="margin-top:16px;display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:2px;background:#0C447C;display:inline-block"></span>PGK Losses &amp; Charges <span style="font-weight:400;text-transform:none;letter-spacing:0">(estimated MYR @ rate ${pgkCost.rate!=null?pgkCost.rate.toFixed(4):'n/a'})</span></div>`;
+    if(pgkCost.charges)plHtml+=`<div class="pr pi"><span>PGK bank charges (${fmt(pgkCost.charges)} PGK)</span><span style="color:var(--rd)">${cv(pgkCost.charges)}</span></div>`;
+    if(pgkCost.losses)plHtml+=`<div class="pr pi"><span>Frozen-fund write-offs (${fmt(pgkCost.losses)} PGK)</span><span style="color:var(--rd)">${cv(pgkCost.losses)}</span></div>`;
+    if(pgkCost.recoveries)plHtml+=`<div class="pr pi"><span>Frozen-fund recoveries (${fmt(pgkCost.recoveries)} PGK)</span><span style="color:var(--gr)">${cvPos(pgkCost.recoveries)}</span></div>`;
+    const netPgkMyr=pgkCost.rate!=null?pgkCost.netPGK*pgkCost.rate:null;
+    plHtml+=`<div class="pr ptot"><span>Net PGK costs (${fmt(pgkCost.netPGK)} PGK)</span><span style="color:${pgkCost.netPGK>0?'var(--rd)':'var(--gr)'}">${netPgkMyr!=null?(pgkCost.netPGK>0?'≈ -RM ':'≈ +RM ')+fmt(Math.abs(netPgkMyr)):'rate n/a'}</span></div>`;
+    if(netPgkMyr!=null){
+      const adjNet2=net-netPgkMyr;
+      plHtml+=`<div class="pr" style="font-weight:700;font-size:13px;color:${adjNet2>=0?'var(--gr)':'var(--rd)'}"><span>Adjusted net (incl. PGK costs, estimate)</span><span>${adjNet2>=0?'':'('}RM ${fmt(Math.abs(adjNet2))}${adjNet2>=0?'':')'}</span></div>`;
+    }
+    plHtml+=`<div style="font-size:10px;color:var(--txt2);margin-top:4px">MYR figures in this section are estimates converted at your average PGK→MYR exchange rate for the period. The net profit above remains pure MYR.</div>`;
+  }
   setHTML('pl-content',plHtml);
   const exchMap={};allExch.forEach(x=>{const k=x.exchanger||'Unknown';if(!exchMap[k])exchMap[k]={pgkSent:0,myrDue:0,myrRcvd:0,myrSent:0};if(x.dir==='out'){exchMap[k].pgkSent+=x.pgk;exchMap[k].myrDue+=x.myr||0;exchMap[k].myrRcvd+=x.paid||0;}else exchMap[k].myrSent+=x.paid||0;});
   setHTML('pl-exch',!Object.keys(exchMap).length?`<div class="empty">${tr("lbl_no_exch")}</div>`:Object.entries(exchMap).map(([name,e])=>{const owed=e.myrDue-e.myrRcvd;return`<div class="sbox"><div style="font-weight:700;font-size:13px;margin-bottom:9px">${name}</div><div class="g4"><div><div class="ml">${tr("lbl_pkgsent")}</div><div style="font-size:15px;font-weight:600">${fmt(e.pgkSent)}</div></div><div><div class="ml">${tr("lbl_myr_due")}</div><div style="font-size:15px;font-weight:600">RM ${fmt(e.myrDue)}</div></div><div><div class="ml">${tr('lbl_myr_rcvd')}</div><div style="font-size:15px;font-weight:600;color:var(--gr)">RM ${fmt(e.myrRcvd)}</div></div><div><div class="ml">${tr("lbl_balance_owed")}</div><div style="font-size:15px;font-weight:600;color:${owed>0.01?'var(--am)':'var(--gr)'}">RM ${fmt(owed)}</div></div></div></div>`;}).join(''));
@@ -2722,11 +2745,113 @@ function activePlatBanks(platformName){
   const act=new Set(activePgkBanks().map(b=>b.name));
   return((p&&p.banks)||[]).filter(bn=>act.has(bn));
 }
+function lastBankBalance(bankName){
+  // Sum of each platform's most recent per-bank closing for this bank
+  const byPlat={};
+  S.platEntries.forEach(e=>{(e.perBank||[]).forEach(pb=>{
+    if(pb.bank===bankName&&(!byPlat[e.platform]||e.date>byPlat[e.platform].date))byPlat[e.platform]={date:e.date,close:pb.close||0};
+  });});
+  return Object.values(byPlat).reduce((s,x)=>s+x.close,0);
+}
 function setPgkBankStatus(i,inactive){
   const b=(S.pgkBanks||[])[i];if(!b)return;
+  if(inactive){
+    const amt=lastBankBalance(b.name);
+    if(amt>0.009){
+      const choice=prompt(b.name+' still holds approx '+fmt(amt)+' PGK (from last per-bank closings).\n\nWhat happened to this money? Type:\n  F = Frozen by bank (track for write-off / recovery)\n  W = Write off now as loss\n  D = Just deactivate (money was already moved out)','F');
+      if(choice===null)return;
+      const c=choice.trim().toUpperCase();
+      const today=new Date().toISOString().slice(0,10);
+      if(!S.pgkFrozen)S.pgkFrozen=[];
+      if(c==='F'){
+        S.pgkFrozen.push({id:genRef('FRZ'),bank:b.name,amount:amt,dateFrozen:today,status:'frozen',recoveredAmount:0,note:''});
+        showToast('Frozen funds recorded — manage in Reconciliation tab → 🧊 Frozen Funds');
+      }else if(c==='W'){
+        S.pgkFrozen.push({id:genRef('FRZ'),bank:b.name,amount:amt,dateFrozen:today,status:'writtenOff',dateResolved:today,recoveredAmount:0,note:'written off at deactivation'});
+        showToast('Written off as loss — shown in P&L (PGK Losses) ✓');
+      }else if(c!=='D'){
+        showToast('Cancelled — type F, W or D',true);return;
+      }
+    }
+  }
   b.inactive=!!inactive;
   persist();renderSettings();
   showToast(b.name+(inactive?' set to Inactive — hidden from entry forms, history kept':' reactivated ✓'));
+}
+
+// ── FROZEN FUNDS ──
+function renderFrozen(){
+  const el=document.getElementById('frozen-content');if(!el)return;
+  const rows=[...(S.pgkFrozen||[])].sort((a,b)=>b.dateFrozen.localeCompare(a.dateFrozen));
+  if(!rows.length){el.innerHTML=`<div class="empty">No frozen funds — all banks healthy</div>`;return;}
+  const stillFrozen=rows.filter(f=>f.status==='frozen').reduce((s,f)=>s+f.amount,0);
+  const totalLoss=rows.filter(f=>f.dateResolved).reduce((s,f)=>s+f.amount-(f.recoveredAmount||0),0);
+  el.innerHTML=`<div class="metrics" style="margin-bottom:10px">
+    <div class="mc"><div class="ml">STILL FROZEN (AT RISK)</div><div class="mv warn">${fmt(stillFrozen)} PGK</div></div>
+    <div class="mc"><div class="ml">NET LOSS TO DATE</div><div class="mv ${totalLoss>0?'neg':'pos'}">${fmt(totalLoss)} PGK</div></div>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th>Date frozen</th><th>Bank</th><th>Amount (PGK)</th><th>Status</th><th>Recovered</th><th>Net loss</th><th>Action</th></tr></thead>
+    <tbody>`+rows.map(f=>{
+      const rec=f.recoveredAmount||0;
+      const loss=f.dateResolved?f.amount-rec:0;
+      const st=f.status==='frozen'?`<span class="tag tag-exch">🧊 Frozen</span>`
+        :f.status==='recovered'?`<span class="tag tag-in">💰 Recovered${rec<f.amount-0.009?' (partial)':''}</span>`
+        :`<span class="tag tag-out">💸 Written off</span>`;
+      const act=f.status==='frozen'
+        ?`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="writeOffFrozen('${f.id}')">💸 Write off</button> <button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="recoverFrozen('${f.id}')">💰 Recovered</button>`
+        :f.status==='writtenOff'&&rec<f.amount-0.009
+          ?`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="recoverFrozen('${f.id}')">💰 Recovered after all</button>`
+          :'-';
+      return`<tr>
+        <td>${fD(f.dateFrozen)}</td><td style="font-weight:500">${f.bank}</td>
+        <td style="font-weight:700">${fmt(f.amount)}</td><td>${st}</td>
+        <td style="color:var(--gr)">${rec?fmt(rec):'-'}</td>
+        <td style="color:${loss>0?'var(--rd)':'var(--txt2)'};font-weight:700">${f.dateResolved?fmt(loss):'-'}</td>
+        <td style="white-space:nowrap">${act}</td>
+      </tr>`;
+    }).join('')+`</tbody></table></div>`;
+}
+function writeOffFrozen(id){
+  const f=(S.pgkFrozen||[]).find(x=>x.id===id);if(!f)return;
+  if(!confirm('Write off '+fmt(f.amount)+' PGK from '+f.bank+' as a loss?\nIt will appear in P&L under PGK Losses & Charges.'))return;
+  f.status='writtenOff';
+  f.dateResolved=new Date().toISOString().slice(0,10);
+  persist();renderFrozen();
+  showToast('Written off — shown in P&L ✓');
+}
+function recoverFrozen(id){
+  const f=(S.pgkFrozen||[]).find(x=>x.id===id);if(!f)return;
+  const already=f.recoveredAmount||0;
+  const max=f.amount-already;
+  const inp=prompt('How much PGK was recovered from '+f.bank+'?\n(outstanding: '+fmt(max)+' PGK — enter less for partial recovery)',max);
+  if(inp===null)return;
+  const amt=parseFloat(inp)||0;
+  if(amt<=0){showToast('Enter a valid amount',true);return;}
+  if(amt>max+0.009){showToast('More than the outstanding amount',true);return;}
+  const today=new Date().toISOString().slice(0,10);
+  f.recoveredAmount=already+amt;
+  f.dateRecovered=today;
+  if(f.status==='frozen'){
+    f.dateResolved=today;
+    f.status=f.recoveredAmount>=f.amount-0.009?'recovered':'writtenOff';
+  }else if(f.recoveredAmount>=f.amount-0.009){
+    f.status='recovered';
+  }
+  persist();renderFrozen();
+  const remain=f.amount-f.recoveredAmount;
+  showToast('Recovery recorded ✓'+(remain>0.009?' — remaining '+fmt(remain)+' PGK stays as loss':' — fully recovered'));
+}
+function pgkCostStats(from,to){
+  const charges=S.platEntries.filter(e=>e.date>=from&&e.date<=to).reduce((s,e)=>s+(e.bankCharges||0),0);
+  const losses=(S.pgkFrozen||[]).filter(f=>f.dateResolved&&f.dateResolved>=from&&f.dateResolved<=to).reduce((s,f)=>s+f.amount,0);
+  const recoveries=(S.pgkFrozen||[]).filter(f=>f.dateRecovered&&f.dateRecovered>=from&&f.dateRecovered<=to).reduce((s,f)=>s+(f.recoveredAmount||0),0);
+  // estimated MYR rate from actual PGK→MYR exchanges in period, else all-time, else null
+  const exIn=arr=>({p:arr.reduce((s,x)=>s+(x.pgk||0),0),m:arr.reduce((s,x)=>s+(x.myr||0),0)});
+  let{p,m}=exIn(S.dayEntries.filter(d=>d.date>=from&&d.date<=to).flatMap(d=>(d.exchanges||[]).filter(x=>x.dir==='out')));
+  if(p<=0)({p,m}=exIn(S.dayEntries.flatMap(d=>(d.exchanges||[]).filter(x=>x.dir==='out'))));
+  const rate=p>0?m/p:null;
+  return{charges,losses,recoveries,netPGK:charges+losses-recoveries,rate};
 }
 
 // ── SETUP: RENAME & SAFE DELETE ──
