@@ -607,7 +607,7 @@ tr:hover td{background:var(--bg3)}
     <div id="s-platforms"></div>
     <div class="g2" style="margin-top:10px">
       <div class="f"><label>Platform name</label><input type="text" id="s-pname" placeholder="e.g. LUCKY888"></div>
-      <div class="f"><label>PGK bank label</label><input type="text" id="s-pbank" placeholder="e.g. PNG Bank 888"></div>
+      <div class="f"><label>Primary PGK bank (from PGK bank accounts)</label><select id="s-pbank"></select></div>
     </div>
     <button class="btn-add" onclick="addPlatform()" style="margin-top:9px">+ Add platform</button>
   </div>
@@ -2472,16 +2472,103 @@ function renderStorageMeter(){
   }catch(e){el.innerHTML='';}
 }
 function renderSettings(){
-  setHTML('s-platforms',S.platforms.map((p,i)=>`<div class="setting-row"><span><b>${p.name}</b> — ${p.bank}</span><button class="del" onclick="S.platforms.splice(${i},1);persist();renderSettings();initForms()">🗑</button></div>`).join('')||`<div class="empty">No platforms yet</div>`);
-  setHTML('s-myrbanks',S.myrBanks.map((b,i)=>`<div class="setting-row"><span style="display:flex;align-items:center;gap:7px"><span class="bdot" style="background:${b.color}"></span><b>${b.name}</b></span><button class="del" onclick="S.myrBanks.splice(${i},1);persist();renderSettings();initForms()">🗑</button></div>`).join('')||`<div class="empty">No banks yet</div>`);
-  setHTML('s-pgkbanks',(S.pgkBanks||[]).map((b,i)=>`<div class="setting-row"><span><b>${b.name}</b></span><button class="del" onclick="S.pgkBanks.splice(${i},1);persist();renderSettings()">🗑</button></div>`).join('')||`<div class="empty">No PGK banks yet</div>`);
-  setHTML('s-exchangers',S.exchangers.map((e,i)=>`<div class="setting-row"><span>${e}</span><button class="del" onclick="S.exchangers.splice(${i},1);persist();renderSettings()">🗑</button></div>`).join('')||`<div class="empty">No exchangers yet</div>`);
-  setHTML('s-funders',S.funders.map((f,i)=>`<div class="setting-row"><span><b>${f.name}</b> — Commitment: RM ${fmt(f.commitment)}</span><button class="del" onclick="S.funders.splice(${i},1);persist();renderSettings();renderFunders_entry()">🗑</button></div>`).join('')||`<div class="empty">No funders yet</div>`);
+  const pgkOpts=(sel)=>[`<option value="" ${!sel?'selected':''}>— none —</option>`,...(S.pgkBanks||[]).map(b=>`<option value="${b.name}" ${b.name===sel?'selected':''}>${b.name}</option>`)].join('');
+  setHTML('s-platforms',S.platforms.map((p,i)=>`<div class="setting-row"><span style="display:flex;align-items:center;gap:8px"><b>${p.name}</b> — <select style="padding:4px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r)" onchange="S.platforms[${i}].bank=this.value;persist();showToast('Primary bank updated ✓')">${pgkOpts((S.pgkBanks||[]).some(b=>b.name===p.bank)?p.bank:'')}</select>${(S.pgkBanks||[]).some(b=>b.name===p.bank)?'':p.bank?`<span style="font-size:10px;color:var(--am)">(old label: ${p.bank})</span>`:''}</span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('platform',${i})">✏️</button><button class="del" onclick="deleteEntity('platform',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No platforms yet</div>`);
+  setHTML('s-myrbanks',S.myrBanks.map((b,i)=>`<div class="setting-row"><span style="display:flex;align-items:center;gap:7px"><span class="bdot" style="background:${b.color}"></span><b>${b.name}</b></span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('myrBank',${i})">✏️</button><button class="del" onclick="deleteEntity('myrBank',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No banks yet</div>`);
+  setHTML('s-pgkbanks',(S.pgkBanks||[]).map((b,i)=>`<div class="setting-row"><span><b>${b.name}</b></span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('pgkBank',${i})">✏️</button><button class="del" onclick="deleteEntity('pgkBank',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No PGK banks yet</div>`);
+  setHTML('s-exchangers',S.exchangers.map((e,i)=>`<div class="setting-row"><span>${e}</span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('exchanger',${i})">✏️</button><button class="del" onclick="deleteEntity('exchanger',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No exchangers yet</div>`);
+  setHTML('s-funders',S.funders.map((f,i)=>`<div class="setting-row"><span><b>${f.name}</b> — Commitment: RM ${fmt(f.commitment)}</span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('funder',${i})">✏️</button><button class="del" onclick="deleteEntity('funder',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No funders yet</div>`);
+  setSel('s-pbank',[{v:'',l:'— none —'},...(S.pgkBanks||[]).map(b=>({v:b.name,l:b.name}))]);
   renderStorageMeter();
 }
-function addPlatform(){const nm=document.getElementById('s-pname')?.value.trim(),b=document.getElementById('s-pbank')?.value.trim();if(!nm){showToast('Enter name',true);return;}S.platforms.push({name:nm,bank:b||nm+' PGK'});persist();renderSettings();initForms();document.getElementById('s-pname').value='';document.getElementById('s-pbank').value='';}
+function addPlatform(){const nm=document.getElementById('s-pname')?.value.trim(),b=document.getElementById('s-pbank')?.value||'';if(!nm){showToast('Enter name',true);return;}if(S.platforms.some(p=>p.name===nm)){showToast('Platform already exists',true);return;}S.platforms.push({name:nm,bank:b});persist();renderSettings();initForms();document.getElementById('s-pname').value='';}
 function addBank(){const nm=document.getElementById('s-bname')?.value.trim();if(!nm){showToast('Enter bank name',true);return;}const cols=['#3266AD','#0F6E56','#854F0B','#534AB7','#2A7E6E','#A32D2D'];S.myrBanks.push({name:nm,color:cols[S.myrBanks.length%cols.length]});persist();renderSettings();initForms();document.getElementById('s-bname').value='';}
 function addPGKBank(){const nm=document.getElementById('s-pgkbname')?.value.trim();if(!nm){showToast('Enter PGK bank name',true);return;}if(!S.pgkBanks)S.pgkBanks=[];if(S.pgkBanks.some(b=>b.name===nm)){showToast('Bank already exists',true);return;}S.pgkBanks.push({name:nm});persist();renderSettings();document.getElementById('s-pgkbname').value='';showToast('PGK bank added ✓');}
+
+// ── SETUP: RENAME & SAFE DELETE ──
+function usageCount(type,name){
+  let c=0;
+  if(type==='platform'){
+    c+=S.platEntries.filter(e=>e.platform===name).length;
+    S.dayEntries.forEach(d=>(d.exchanges||[]).forEach(x=>{if(x.platform===name)c++;}));
+  }else if(type==='myrBank'){
+    S.dayEntries.forEach(d=>{
+      (d.myrBanks||[]).forEach(b=>{if(b.name===name)c++;});
+      (d.exchanges||[]).forEach(x=>{if(x.myrBank===name)c++;});
+      (d.funderTxns||[]).forEach(t=>{if(t.bank===name)c++;});
+      (d.expenses||[]).forEach(e=>{if(e.bank===name)c++;});
+    });
+    c+=Object.keys(S.stmtBalances||{}).filter(k=>k.split('||')[0]===name).length;
+  }else if(type==='pgkBank'){
+    S.platEntries.forEach(e=>(e.transfers||[]).forEach(t=>{if(t.fromBank===name||t.toBank===name)c++;}));
+    S.dayEntries.forEach(d=>(d.pgkBankDeps||[]).forEach(b=>{if(b.bank===name)c++;}));
+    c+=S.platforms.filter(p=>p.bank===name).length;
+  }else if(type==='exchanger'){
+    S.dayEntries.forEach(d=>(d.exchanges||[]).forEach(x=>{if(x.exchanger===name)c++;}));
+  }else if(type==='funder'){
+    S.dayEntries.forEach(d=>{
+      (d.funderTxns||[]).forEach(t=>{if(t.funder===name)c++;});
+      (d.expenses||[]).forEach(e=>{if(e.funderName===name)c++;});
+    });
+  }
+  return c;
+}
+function renameCascade(type,oldName,newName){
+  if(type==='platform'){
+    S.platEntries.forEach(e=>{if(e.platform===oldName)e.platform=newName;});
+    S.dayEntries.forEach(d=>(d.exchanges||[]).forEach(x=>{if(x.platform===oldName)x.platform=newName;}));
+  }else if(type==='myrBank'){
+    S.dayEntries.forEach(d=>{
+      (d.myrBanks||[]).forEach(b=>{if(b.name===oldName)b.name=newName;});
+      (d.exchanges||[]).forEach(x=>{if(x.myrBank===oldName)x.myrBank=newName;});
+      (d.funderTxns||[]).forEach(t=>{if(t.bank===oldName)t.bank=newName;});
+      (d.expenses||[]).forEach(e=>{if(e.bank===oldName)e.bank=newName;});
+    });
+    const nb={};Object.entries(S.stmtBalances||{}).forEach(([k,v])=>{const parts=k.split('||');nb[(parts[0]===oldName?newName:parts[0])+'||'+parts[1]]=v;});S.stmtBalances=nb;
+  }else if(type==='pgkBank'){
+    S.platEntries.forEach(e=>(e.transfers||[]).forEach(t=>{if(t.fromBank===oldName)t.fromBank=newName;if(t.toBank===oldName)t.toBank=newName;}));
+    S.dayEntries.forEach(d=>(d.pgkBankDeps||[]).forEach(b=>{if(b.bank===oldName)b.bank=newName;}));
+    S.platforms.forEach(p=>{if(p.bank===oldName)p.bank=newName;});
+  }else if(type==='exchanger'){
+    S.dayEntries.forEach(d=>(d.exchanges||[]).forEach(x=>{if(x.exchanger===oldName)x.exchanger=newName;}));
+  }else if(type==='funder'){
+    S.dayEntries.forEach(d=>{
+      (d.funderTxns||[]).forEach(t=>{if(t.funder===oldName)t.funder=newName;});
+      (d.expenses||[]).forEach(e=>{if(e.funderName===oldName)e.funderName=newName;});
+    });
+  }
+}
+function _entityList(type){
+  return type==='platform'?S.platforms:type==='myrBank'?S.myrBanks:type==='pgkBank'?(S.pgkBanks||[]):type==='exchanger'?S.exchangers:S.funders;
+}
+function _entityName(type,item){return type==='exchanger'?item:item.name;}
+function renameEntity(type,i){
+  const list=_entityList(type);if(i<0||i>=list.length)return;
+  const cur=_entityName(type,list[i]);
+  const input=prompt('Rename "'+cur+'" to:',cur);
+  if(input===null)return;
+  const nn=input.trim();
+  if(!nn||nn===cur)return;
+  if(list.some((it,j)=>j!==i&&_entityName(type,it)===nn)){showToast('"'+nn+'" already exists',true);return;}
+  const cnt=usageCount(type,cur);
+  renameCascade(type,cur,nn);
+  if(type==='exchanger')list[i]=nn;else list[i].name=nn;
+  persist();renderSettings();initForms();
+  showToast('Renamed ✓'+(cnt?' — '+cnt+' historical record(s) updated':''));
+}
+function deleteEntity(type,i){
+  const list=_entityList(type);if(i<0||i>=list.length)return;
+  const nm=_entityName(type,list[i]);
+  const cnt=usageCount(type,nm);
+  const msg=cnt>0
+    ?'"'+nm+'" is used in '+cnt+' historical record(s).\nOld records will KEEP the name, but filters and new entries will no longer offer it.\nDelete anyway?'
+    :'Delete "'+nm+'"?';
+  if(!confirm(msg))return;
+  list.splice(i,1);
+  persist();renderSettings();initForms();
+  if(type==='funder')renderFunders_entry();
+  showToast('Deleted ✓');
+}
 function addExchanger(){const nm=document.getElementById('s-ename')?.value.trim();if(!nm){showToast('Enter name',true);return;}S.exchangers.push(nm);persist();renderSettings();document.getElementById('s-ename').value='';}
 function addFunderSetup(){const nm=document.getElementById('s-fname')?.value.trim(),c=n(document.getElementById('s-fcommit')?.value);if(!nm){showToast('Enter funder name',true);return;}S.funders.push({name:nm,commitment:c});persist();renderSettings();renderFunders_entry();document.getElementById('s-fname').value='';document.getElementById('s-fcommit').value='';}
 function clearAll(){if(!confirm('Clear ALL entries? Cannot be undone.'))return;S.platEntries=[];S.dayEntries=[];persist();todayPlats=[];pendingExp=[];exchRows=[];funderRows=[];adjRows=[];pendingExpFile=null;pendingDayFile=null;setHTML('saved-plats','');renderExpList();renderExch();renderFunders_entry();renderSavedPlats();renderAdj();renderExpFilePreview();renderDayFilePreview();showToast('All entries cleared');}
