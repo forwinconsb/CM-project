@@ -480,6 +480,12 @@ tr:hover td{background:var(--bg3)}
       <div id="pgk-tab-adj-list"></div>
       <button class="btn-add" onclick="addAdj2()" data-i18n="pgk_add_adj">+ Add adjustment</button>
     </div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">🔄 Internal Bank Transfers</div>
+      <div style="font-size:11px;color:var(--txt2);margin-bottom:7px;font-style:italic">Zero-sum within platform — does NOT affect reconciliation. For audit trail only.</div>
+      <div id="pgk-tab-xfer-list"></div>
+      <button class="btn-add" onclick="addPgkXfer()">+ Add transfer</button>
+    </div>
     <div style="background:var(--bg3);border-radius:var(--r);padding:10px 14px;margin-bottom:10px;font-size:12px;border:1px solid var(--bdr)">
       <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--txt2)" data-i18n="rc_exp_close">Expected Closing</span><span id="pgk-tab-exp" style="font-weight:700">—</span></div>
       <div style="display:flex;justify-content:space-between"><span style="color:var(--txt2)">Difference (actual − expected)</span><span id="pgk-tab-diff" style="font-weight:700">—</span></div>
@@ -509,6 +515,19 @@ tr:hover td{background:var(--bg3)}
     <div class="tw"><table>
       <thead><tr><th data-i18n="date">Date</th><th data-i18n="pgk_platform">Platform</th><th data-i18n="col_deposit">Deposit</th><th data-i18n="col_withdraw">Withdraw</th><th data-i18n="win_lose">Win / Lose</th><th data-i18n="col_bonus">Bonus</th><th data-i18n="col_players">Players</th><th data-i18n="col_open">PGK Open</th><th data-i18n="col_close">PGK Close</th><th data-i18n="col_diff">Diff</th><th data-i18n="col_recon">Recon</th><th data-i18n="col_action">Action</th></tr></thead>
       <tbody id="pgk-list-body"><tr><td colspan="12" class="empty">No entries yet</td></tr></tbody>
+    </table></div>
+  </div>
+  <div class="card">
+    <div class="ct">🔄 Internal Bank Transfers — listing</div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">All PGK bank-to-bank transfers across platforms. Edit by opening the parent platform entry above.</div>
+    <div class="filter-row">
+      <select id="pgk-xfer-month" onchange="renderPgkXferList()"><option value="">All months</option></select>
+      <select id="pgk-xfer-plat" onchange="renderPgkXferList()"><option value="">All platforms</option></select>
+      <select id="pgk-xfer-bank" onchange="renderPgkXferList()"><option value="">All banks</option></select>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Date</th><th>Platform</th><th>From</th><th>To</th><th>Amount (PGK)</th><th>Note</th></tr></thead>
+      <tbody id="pgk-xfer-list-body"><tr><td colspan="6" class="empty">No transfers yet</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -590,6 +609,13 @@ tr:hover td{background:var(--bg3)}
     <div id="s-myrbanks"></div>
     <div class="f" style="margin-top:10px"><label>Bank label</label><input type="text" id="s-bname" placeholder="e.g. Maybank A"></div>
     <button class="btn-add" onclick="addBank()" style="margin-top:9px">+ Add bank</button>
+  </div>
+  <div class="card">
+    <div class="ct">PGK bank accounts</div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">Used for internal bank-to-bank transfers (e.g. NASHON ↔ MAKUEL overflow)</div>
+    <div id="s-pgkbanks"></div>
+    <div class="f" style="margin-top:10px"><label>PGK bank label</label><input type="text" id="s-pgkbname" placeholder="e.g. BSP-MAKUEL"></div>
+    <button class="btn-add" onclick="addPGKBank()" style="margin-top:9px">+ Add PGK bank</button>
   </div>
   <div class="card">
     <div class="ct">3rd party exchangers</div>
@@ -965,6 +991,7 @@ const SK='ftrk_v2';
 let S={
   platforms:[{name:'LUCKY888',bank:'PNG Bank 888'},{name:'LUCKY777',bank:'PNG Bank 777'}],
   myrBanks:[{name:'Bank A',color:'#3266AD'},{name:'Bank B',color:'#0F6E56'},{name:'Bank C',color:'#854F0B'}],
+  pgkBanks:[],
   exchangers:['Exchanger 1','Exchanger 2'],
   funders:[{name:'Funder A',commitment:45000},{name:'Funder B',commitment:45000}],
   expTypes:[
@@ -1190,7 +1217,10 @@ function renderPage(p){
     document.getElementById('pgk-tab-date').value=new Date().toISOString().slice(0,10);
     setSel('pgk-list-month',[{v:'',l:'All months'},...mopts()]);
     setSel('pgk-list-plat',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);
-    renderPGKListing();return;
+    setSel('pgk-xfer-month',[{v:'',l:'All months'},...mopts()]);
+    setSel('pgk-xfer-plat',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);
+    setSel('pgk-xfer-bank',[{v:'',l:'All banks'},...(S.pgkBanks||[]).map(b=>({v:b.name,l:b.name}))]);
+    renderPgkXfer();renderPGKListing();renderPgkXferList();return;
   }
   if(p==='exchange-tab'){
     setSel('exch-tab-month',[{v:'',l:'All months'},...mopts()]);
@@ -2437,12 +2467,14 @@ function renderStorageMeter(){
 function renderSettings(){
   setHTML('s-platforms',S.platforms.map((p,i)=>`<div class="setting-row"><span><b>${p.name}</b> — ${p.bank}</span><button class="del" onclick="S.platforms.splice(${i},1);persist();renderSettings();initForms()">🗑</button></div>`).join('')||`<div class="empty">No platforms yet</div>`);
   setHTML('s-myrbanks',S.myrBanks.map((b,i)=>`<div class="setting-row"><span style="display:flex;align-items:center;gap:7px"><span class="bdot" style="background:${b.color}"></span><b>${b.name}</b></span><button class="del" onclick="S.myrBanks.splice(${i},1);persist();renderSettings();initForms()">🗑</button></div>`).join('')||`<div class="empty">No banks yet</div>`);
+  setHTML('s-pgkbanks',(S.pgkBanks||[]).map((b,i)=>`<div class="setting-row"><span><b>${b.name}</b></span><button class="del" onclick="S.pgkBanks.splice(${i},1);persist();renderSettings()">🗑</button></div>`).join('')||`<div class="empty">No PGK banks yet</div>`);
   setHTML('s-exchangers',S.exchangers.map((e,i)=>`<div class="setting-row"><span>${e}</span><button class="del" onclick="S.exchangers.splice(${i},1);persist();renderSettings()">🗑</button></div>`).join('')||`<div class="empty">No exchangers yet</div>`);
   setHTML('s-funders',S.funders.map((f,i)=>`<div class="setting-row"><span><b>${f.name}</b> — Commitment: RM ${fmt(f.commitment)}</span><button class="del" onclick="S.funders.splice(${i},1);persist();renderSettings();renderFunders_entry()">🗑</button></div>`).join('')||`<div class="empty">No funders yet</div>`);
   renderStorageMeter();
 }
 function addPlatform(){const nm=document.getElementById('s-pname')?.value.trim(),b=document.getElementById('s-pbank')?.value.trim();if(!nm){showToast('Enter name',true);return;}S.platforms.push({name:nm,bank:b||nm+' PGK'});persist();renderSettings();initForms();document.getElementById('s-pname').value='';document.getElementById('s-pbank').value='';}
 function addBank(){const nm=document.getElementById('s-bname')?.value.trim();if(!nm){showToast('Enter bank name',true);return;}const cols=['#3266AD','#0F6E56','#854F0B','#534AB7','#2A7E6E','#A32D2D'];S.myrBanks.push({name:nm,color:cols[S.myrBanks.length%cols.length]});persist();renderSettings();initForms();document.getElementById('s-bname').value='';}
+function addPGKBank(){const nm=document.getElementById('s-pgkbname')?.value.trim();if(!nm){showToast('Enter PGK bank name',true);return;}if(!S.pgkBanks)S.pgkBanks=[];if(S.pgkBanks.some(b=>b.name===nm)){showToast('Bank already exists',true);return;}S.pgkBanks.push({name:nm});persist();renderSettings();document.getElementById('s-pgkbname').value='';showToast('PGK bank added ✓');}
 function addExchanger(){const nm=document.getElementById('s-ename')?.value.trim();if(!nm){showToast('Enter name',true);return;}S.exchangers.push(nm);persist();renderSettings();document.getElementById('s-ename').value='';}
 function addFunderSetup(){const nm=document.getElementById('s-fname')?.value.trim(),c=n(document.getElementById('s-fcommit')?.value);if(!nm){showToast('Enter funder name',true);return;}S.funders.push({name:nm,commitment:c});persist();renderSettings();renderFunders_entry();document.getElementById('s-fname').value='';document.getElementById('s-fcommit').value='';}
 function clearAll(){if(!confirm('Clear ALL entries? Cannot be undone.'))return;S.platEntries=[];S.dayEntries=[];persist();todayPlats=[];pendingExp=[];exchRows=[];funderRows=[];adjRows=[];pendingExpFile=null;pendingDayFile=null;setHTML('saved-plats','');renderExpList();renderExch();renderFunders_entry();renderSavedPlats();renderAdj();renderExpFilePreview();renderDayFilePreview();showToast('All entries cleared');}
@@ -2643,7 +2675,34 @@ function renderFunderReview(){
 
 
 // ── PGK PLATFORM TAB ──
-let adjRows2=[],pgkTabPlats=[];
+let adjRows2=[],pgkTabPlats=[],xferRows2=[];
+
+// ── PGK INTERNAL BANK TRANSFERS ──
+function addPgkXfer(){
+  if(!S.pgkBanks||!S.pgkBanks.length){showToast('Add PGK banks in Setup first',true);return;}
+  const first=S.pgkBanks[0]?.name||'';
+  const second=S.pgkBanks[1]?.name||first;
+  xferRows2.push({fromBank:first,toBank:second,amount:0,note:''});
+  renderPgkXfer();
+}
+function removePgkXfer(i){xferRows2.splice(i,1);renderPgkXfer();}
+function renderPgkXfer(){
+  const el=document.getElementById('pgk-tab-xfer-list');if(!el)return;
+  if(!S.pgkBanks||!S.pgkBanks.length){
+    el.innerHTML=`<div style="font-size:11px;color:var(--am);padding:6px 10px;background:#FFF3E0;border-radius:var(--r);border:1px solid #F0D49A">⚠ No PGK banks defined. Go to <b>Setup → PGK bank accounts</b> to add them first.</div>`;
+    return;
+  }
+  if(!xferRows2.length){el.innerHTML=`<div style="font-size:11px;color:var(--txt2);padding:4px 0">No transfers — click Add below</div>`;return;}
+  const opts=(sel)=>S.pgkBanks.map(b=>`<option value="${b.name}" ${b.name===sel?'selected':''}>${b.name}</option>`).join('');
+  el.innerHTML=xferRows2.map((r,i)=>`<div class="adj-row" style="background:var(--bg3);border-radius:var(--r);padding:7px 9px;border:1px solid var(--bdr)">
+    <select style="width:140px" onchange="xferRows2[${i}].fromBank=this.value">${opts(r.fromBank)}</select>
+    <span style="font-size:14px;color:var(--txt2)">→</span>
+    <select style="width:140px" onchange="xferRows2[${i}].toBank=this.value">${opts(r.toBank)}</select>
+    <input type="number" value="${r.amount||''}" placeholder="0.00" step="0.01" style="width:100px" oninput="xferRows2[${i}].amount=parseFloat(this.value)||0">
+    <input type="text" value="${r.note||''}" placeholder="note (optional)" style="flex:1;min-width:120px" oninput="xferRows2[${i}].note=this.value">
+    <button class="del" onclick="removePgkXfer(${i})">✕</button>
+  </div>`).join('');
+}
 function calcWL2(){const wl=n(document.getElementById('pgk-tab-dep')?.value)-n(document.getElementById('pgk-tab-with')?.value);const el=document.getElementById('pgk-tab-wl');if(el){el.textContent=fmt(wl);el.style.color=wl>=0?'#0F6E56':'#A32D2D';}updPGK2();}
 function updPGK2(){
   const open=n(document.getElementById('pgk-tab-open')?.value),dep=n(document.getElementById('pgk-tab-dep')?.value),with_=n(document.getElementById('pgk-tab-with')?.value),close=n(document.getElementById('pgk-tab-close')?.value);
@@ -2672,7 +2731,8 @@ function savePlat2(){
   const open=n(document.getElementById('pgk-tab-open')?.value),close=n(document.getElementById('pgk-tab-close')?.value);
   const adjNet=adjRows2.reduce((s,a)=>s+(a.dir==='in'?a.amt:-a.amt),0);
   const expected=open+dep-with_+adjNet;
-  const entry={date,platform,dep,with:with_,winLose:dep-with_,bonus:n(document.getElementById('pgk-tab-bonus')?.value),active:n(document.getElementById('pgk-tab-active')?.value),reg:n(document.getElementById('pgk-tab-reg')?.value),pgkOpen:open,pgkClose:close,pgkExpected:expected,pgkDiff:close-expected,adjustments:[...adjRows2],rem:document.getElementById('pgk-tab-rem')?.value||''};
+  const validXfers=xferRows2.filter(x=>x.fromBank&&x.toBank&&x.amount>0&&x.fromBank!==x.toBank);
+  const entry={date,platform,dep,with:with_,winLose:dep-with_,bonus:n(document.getElementById('pgk-tab-bonus')?.value),active:n(document.getElementById('pgk-tab-active')?.value),reg:n(document.getElementById('pgk-tab-reg')?.value),pgkOpen:open,pgkClose:close,pgkExpected:expected,pgkDiff:close-expected,adjustments:[...adjRows2],transfers:validXfers,rem:document.getElementById('pgk-tab-rem')?.value||''};
   const idx=S.platEntries.findIndex(e=>e.date===date&&e.platform===platform);
   if(idx>=0)S.platEntries[idx]=entry;else S.platEntries.push(entry);
   S.platEntries.sort((a,b)=>a.date.localeCompare(b.date)||a.platform.localeCompare(b.platform));
@@ -2681,6 +2741,7 @@ function savePlat2(){
   renderPGKTabSaved();
   ['pgk-tab-dep','pgk-tab-with','pgk-tab-bonus','pgk-tab-active','pgk-tab-reg','pgk-tab-open','pgk-tab-close','pgk-tab-rem'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   adjRows2=[];renderAdj2();
+  xferRows2=[];renderPgkXfer();renderPgkXferList();
   const wl=document.getElementById('pgk-tab-wl');if(wl){wl.textContent='0.00';wl.style.color='';}
   renderPGKListing();
   showToast(platform+' saved ✓');
@@ -2698,6 +2759,30 @@ function renderPGKTabSaved(){
         <span style="font-weight:700;color:${Math.abs(e.pgkDiff)<0.01?'#0F6E56':Math.abs(e.pgkDiff)<1?'#854F0B':'#A32D2D'}">Diff: ${fmt(e.pgkDiff)}</span>
       </span>
     </div>`).join('');
+}
+function renderPgkXferList(){
+  const month=document.getElementById('pgk-xfer-month')?.value||'';
+  const plat=document.getElementById('pgk-xfer-plat')?.value||'';
+  const bank=document.getElementById('pgk-xfer-bank')?.value||'';
+  const all=[];
+  S.platEntries.forEach(e=>{(e.transfers||[]).forEach(t=>{
+    all.push({date:e.date,platform:e.platform,...t});
+  });});
+  const rows=all.filter(t=>
+    (!month||mk(t.date)===month)&&
+    (!plat||t.platform===plat)&&
+    (!bank||t.fromBank===bank||t.toBank===bank)
+  ).sort((a,b)=>b.date.localeCompare(a.date));
+  const tbody=document.getElementById('pgk-xfer-list-body');if(!tbody)return;
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="6" class="empty">No transfers${month?' for '+ml(month):''}</td></tr>`;return;}
+  tbody.innerHTML=rows.map(t=>`<tr>
+    <td>${fD(t.date)}</td>
+    <td style="font-weight:500">${t.platform}</td>
+    <td><span class="tag tag-out">${t.fromBank}</span></td>
+    <td><span class="tag tag-in">${t.toBank}</span></td>
+    <td style="font-weight:700">${fmt(t.amount)}</td>
+    <td style="color:var(--txt2)">${t.note||'-'}</td>
+  </tr>`).join('');
 }
 function renderPGKListing(){
   const month=document.getElementById('pgk-list-month')?.value||'';
@@ -2732,7 +2817,9 @@ function editPlatEntry(entry){
     document.getElementById('pgk-tab-reg').value=entry.reg||'';
     document.getElementById('pgk-tab-close').value=entry.pgkClose||'';
     document.getElementById('pgk-tab-rem').value=entry.rem||'';
-    adjRows2=[...(entry.adjustments||[])];renderAdj2();calcWL2();
+    adjRows2=[...(entry.adjustments||[])];renderAdj2();
+    xferRows2=[...(entry.transfers||[])];renderPgkXfer();
+    calcWL2();
   },50);
   showToast('Loaded for editing — update and save');
   window.scrollTo(0,0);
