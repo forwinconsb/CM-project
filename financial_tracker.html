@@ -676,10 +676,8 @@ details.collapse-card[open]>summary:before{content:'▾'}
   <div class="card">
     <div class="ct">Platforms & PGK banks</div>
     <div id="s-platforms"></div>
-    <div class="g2" style="margin-top:10px">
-      <div class="f"><label>Platform name</label><input type="text" id="s-pname" placeholder="e.g. LUCKY888"></div>
-      <div class="f"><label>Primary PGK bank (from PGK bank accounts)</label><select id="s-pbank"></select></div>
-    </div>
+    <div class="f" style="margin-top:10px"><label>Platform name</label><input type="text" id="s-pname" placeholder="e.g. LUCKY888"></div>
+    <div style="font-size:10px;color:var(--txt2);margin-top:4px">After adding, assign its PGK banks with the "+ Add bank…" dropdown on the platform row above.</div>
     <button class="btn-add" onclick="addPlatform()" style="margin-top:9px">+ Add platform</button>
   </div>
   <div class="card">
@@ -2676,23 +2674,39 @@ function renderStorageMeter(){
 }
 function renderSettings(){
   setHTML('s-platforms',S.platforms.map((p,i)=>{
-    const banks=p.banks||[];
-    const chips=(S.pgkBanks||[]).length
-      ?(S.pgkBanks||[]).map(b=>{const on=banks.includes(b.name);return`<button onclick="togglePlatBank(${i},'${b.name.replace(/'/g,"\\'")}')" style="font-size:10px;padding:3px 9px;border-radius:20px;cursor:pointer;border:1px solid ${on?'#185FA5':'var(--bdr2)'};background:${on?'#E6F1FB':'#fff'};color:${on?'#0C447C':'var(--txt2)'};font-weight:${on?'700':'400'}">${on?'✓ ':''}${b.name}</button>`;}).join(' ')
-      :`<span style="font-size:10px;color:var(--am)">Add PGK banks below first</span>`;
+    const assigned=p.banks||[];
+    const esc=s=>s.replace(/'/g,"\\'");
+    const tags=assigned.map(bn=>{
+      const bankObj=(S.pgkBanks||[]).find(b=>b.name===bn);
+      const dead=!bankObj||bankObj.inactive;
+      return`<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 5px 3px 9px;border-radius:20px;border:1px solid ${dead?'var(--bdr2)':'#185FA5'};background:${dead?'var(--bg3)':'#E6F1FB'};color:${dead?'var(--txt2)':'#0C447C'};font-weight:700">${bn}${dead?' (inactive)':''}<button onclick="togglePlatBank(${i},'${esc(bn)}')" style="background:none;border:none;cursor:pointer;color:inherit;font-size:11px;padding:0 3px;line-height:1">✕</button></span>`;
+    }).join(' ');
+    const avail=activePgkBanks().filter(b=>!assigned.includes(b.name));
+    const adder=avail.length
+      ?`<select onchange="if(this.value)togglePlatBank(${i},this.value)" style="font-size:10px;padding:3px 7px;border:1px dashed var(--bdr2);border-radius:20px;background:#fff;color:var(--txt2);cursor:pointer"><option value="">+ Add bank…</option>${avail.map(b=>`<option value="${b.name}">${b.name}</option>`).join('')}</select>`
+      :(S.pgkBanks||[]).length?'':`<span style="font-size:10px;color:var(--am)">Add PGK banks below first</span>`;
     return`<div class="setting-row" style="flex-direction:column;align-items:stretch;gap:6px">
       <div style="display:flex;justify-content:space-between;align-items:center"><b>${p.name}</b><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('platform',${i})">✏️</button><button class="del" onclick="deleteEntity('platform',${i})">🗑</button></span></div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center"><span style="font-size:10px;color:var(--txt2)">Uses banks:</span>${chips}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center"><span style="font-size:10px;color:var(--txt2)">Banks:</span>${tags||'<span style="font-size:10px;color:var(--txt2)">none assigned</span>'} ${adder}</div>
     </div>`;
   }).join('')||`<div class="empty">No platforms yet</div>`);
   setHTML('s-myrbanks',S.myrBanks.map((b,i)=>`<div class="setting-row"><span style="display:flex;align-items:center;gap:7px"><span class="bdot" style="background:${b.color}"></span><b>${b.name}</b></span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('myrBank',${i})">✏️</button><button class="del" onclick="deleteEntity('myrBank',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No banks yet</div>`);
-  setHTML('s-pgkbanks',(S.pgkBanks||[]).map((b,i)=>`<div class="setting-row"><span><b>${b.name}</b></span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('pgkBank',${i})">✏️</button><button class="del" onclick="deleteEntity('pgkBank',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No PGK banks yet</div>`);
+  const pgkRow=(b,i)=>`<div class="setting-row"><span style="display:flex;align-items:center;gap:7px"><b style="${b.inactive?'color:var(--txt2)':''}">${b.name}</b>${b.inactive?'<span style="font-size:9px;background:var(--bg3);border:1px solid var(--bdr2);border-radius:20px;padding:1px 7px;color:var(--txt2)">INACTIVE</span>':''}</span><span style="white-space:nowrap">
+    ${b.inactive
+      ?`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="setPgkBankStatus(${i},false)">▶ Reactivate</button>`
+      :`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="setPgkBankStatus(${i},true)">⏸ Deactivate</button>`}
+    <button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('pgkBank',${i})">✏️</button>
+    <button class="del" onclick="deleteEntity('pgkBank',${i})">🗑</button></span></div>`;
+  const pgkActive=(S.pgkBanks||[]).map((b,i)=>({b,i})).filter(x=>!x.b.inactive);
+  const pgkInactive=(S.pgkBanks||[]).map((b,i)=>({b,i})).filter(x=>x.b.inactive);
+  setHTML('s-pgkbanks',
+    (pgkActive.map(x=>pgkRow(x.b,x.i)).join('')||`<div class="empty">No active PGK banks</div>`)+
+    (pgkInactive.length?`<details class="collapse-card" style="margin-top:8px"><summary style="font-size:11px;font-weight:600;color:var(--txt2);padding:4px 0">Inactive banks (${pgkInactive.length})</summary>${pgkInactive.map(x=>pgkRow(x.b,x.i)).join('')}</details>`:''));
   setHTML('s-exchangers',S.exchangers.map((e,i)=>`<div class="setting-row"><span>${e}</span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('exchanger',${i})">✏️</button><button class="del" onclick="deleteEntity('exchanger',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No exchangers yet</div>`);
   setHTML('s-funders',S.funders.map((f,i)=>`<div class="setting-row"><span><b>${f.name}</b> — Commitment: RM ${fmt(f.commitment)}</span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('funder',${i})">✏️</button><button class="del" onclick="deleteEntity('funder',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No funders yet</div>`);
-  setSel('s-pbank',[{v:'',l:'— none —'},...(S.pgkBanks||[]).map(b=>({v:b.name,l:b.name}))]);
   renderStorageMeter();
 }
-function addPlatform(){const nm=document.getElementById('s-pname')?.value.trim(),b=document.getElementById('s-pbank')?.value||'';if(!nm){showToast('Enter name',true);return;}if(S.platforms.some(p=>p.name===nm)){showToast('Platform already exists',true);return;}S.platforms.push({name:nm,bank:b});persist();renderSettings();initForms();document.getElementById('s-pname').value='';}
+function addPlatform(){const nm=document.getElementById('s-pname')?.value.trim();if(!nm){showToast('Enter name',true);return;}if(S.platforms.some(p=>p.name===nm)){showToast('Platform already exists',true);return;}S.platforms.push({name:nm,bank:'',banks:[]});persist();renderSettings();initForms();document.getElementById('s-pname').value='';showToast(nm+' added — now assign its banks above ✓');}
 function addBank(){const nm=document.getElementById('s-bname')?.value.trim();if(!nm){showToast('Enter bank name',true);return;}const cols=['#3266AD','#0F6E56','#854F0B','#534AB7','#2A7E6E','#A32D2D'];S.myrBanks.push({name:nm,color:cols[S.myrBanks.length%cols.length]});persist();renderSettings();initForms();document.getElementById('s-bname').value='';}
 function addPGKBank(){const nm=document.getElementById('s-pgkbname')?.value.trim();if(!nm){showToast('Enter PGK bank name',true);return;}if(!S.pgkBanks)S.pgkBanks=[];if(S.pgkBanks.some(b=>b.name===nm)){showToast('Bank already exists',true);return;}S.pgkBanks.push({name:nm});persist();renderSettings();document.getElementById('s-pgkbname').value='';showToast('PGK bank added ✓');}
 function togglePlatBank(platIdx,bankName){
@@ -2701,6 +2715,18 @@ function togglePlatBank(platIdx,bankName){
   const j=p.banks.indexOf(bankName);
   if(j>=0)p.banks.splice(j,1);else p.banks.push(bankName);
   persist();renderSettings();
+}
+function activePgkBanks(){return(S.pgkBanks||[]).filter(b=>!b.inactive);}
+function activePlatBanks(platformName){
+  const p=S.platforms.find(x=>x.name===platformName);
+  const act=new Set(activePgkBanks().map(b=>b.name));
+  return((p&&p.banks)||[]).filter(bn=>act.has(bn));
+}
+function setPgkBankStatus(i,inactive){
+  const b=(S.pgkBanks||[])[i];if(!b)return;
+  b.inactive=!!inactive;
+  persist();renderSettings();
+  showToast(b.name+(inactive?' set to Inactive — hidden from entry forms, history kept':' reactivated ✓'));
 }
 
 // ── SETUP: RENAME & SAFE DELETE ──
@@ -2776,6 +2802,10 @@ function deleteEntity(type,i){
   const list=_entityList(type);if(i<0||i>=list.length)return;
   const nm=_entityName(type,list[i]);
   const cnt=usageCount(type,nm);
+  if(type==='pgkBank'&&cnt>0){
+    alert('"'+nm+'" has '+cnt+' transaction record(s) — it cannot be deleted.\n\nUse "⏸ Deactivate" instead: the bank disappears from entry forms but all history stays intact.');
+    return;
+  }
   const msg=cnt>0
     ?'"'+nm+'" is used in '+cnt+' historical record(s).\nOld records will KEEP the name, but filters and new entries will no longer offer it.\nDelete anyway?'
     :'Delete "'+nm+'"?';
@@ -3065,21 +3095,22 @@ let adjRows2=[],pgkTabPlats=[],xferRows2=[];
 
 // ── PGK INTERNAL BANK TRANSFERS ──
 function addPgkXfer(){
-  if(!S.pgkBanks||!S.pgkBanks.length){showToast('Add PGK banks in Setup first',true);return;}
-  const first=S.pgkBanks[0]?.name||'';
-  const second=S.pgkBanks[1]?.name||first;
+  const act=activePgkBanks();
+  if(!act.length){showToast('Add PGK banks in Setup first',true);return;}
+  const first=act[0]?.name||'';
+  const second=act[1]?.name||first;
   xferRows2.push({fromBank:first,toBank:second,amount:0,note:''});
   renderPgkXfer();
 }
 function removePgkXfer(i){xferRows2.splice(i,1);renderPgkXfer();}
 function renderPgkXfer(){
   const el=document.getElementById('pgk-tab-xfer-list');if(!el)return;
-  if(!S.pgkBanks||!S.pgkBanks.length){
-    el.innerHTML=`<div style="font-size:11px;color:var(--am);padding:6px 10px;background:#FFF3E0;border-radius:var(--r);border:1px solid #F0D49A">⚠ No PGK banks defined. Go to <b>Setup → PGK bank accounts</b> to add them first.</div>`;
+  if(!activePgkBanks().length){
+    el.innerHTML=`<div style="font-size:11px;color:var(--am);padding:6px 10px;background:#FFF3E0;border-radius:var(--r);border:1px solid #F0D49A">⚠ No active PGK banks. Go to <b>Setup → PGK bank accounts</b> to add or reactivate them.</div>`;
     return;
   }
   if(!xferRows2.length){el.innerHTML=`<div style="font-size:11px;color:var(--txt2);padding:4px 0">No transfers — click Add below</div>`;return;}
-  const opts=(sel)=>S.pgkBanks.map(b=>`<option value="${b.name}" ${b.name===sel?'selected':''}>${b.name}</option>`).join('');
+  const opts=(sel)=>activePgkBanks().map(b=>`<option value="${b.name}" ${b.name===sel?'selected':''}>${b.name}</option>`).join('');
   el.innerHTML=xferRows2.map((r,i)=>`<div class="adj-row" style="background:var(--bg3);border-radius:var(--r);padding:7px 9px;border:1px solid var(--bdr)">
     <select style="width:140px" onchange="xferRows2[${i}].fromBank=this.value">${opts(r.fromBank)}</select>
     <span style="font-size:14px;color:var(--txt2)">→</span>
@@ -3107,8 +3138,7 @@ function renderPlatBanks(){
   const wrap=document.getElementById('pgk-tab-banks');if(!wrap)return;
   const platform=document.getElementById('pgk-tab-platform')?.value||'';
   const date=document.getElementById('pgk-tab-date')?.value||'';
-  const p=S.platforms.find(x=>x.name===platform);
-  const banks=(p&&p.banks)||[];
+  const banks=activePlatBanks(platform);
   if(!banks.length){
     const pr=date&&platform?prevPgkClose(platform,date):null;
     wrap.innerHTML=`<div class="g2">
@@ -3131,8 +3161,7 @@ function renderPlatBanks(){
 }
 function recomputePlatBalances(){
   const platform=document.getElementById('pgk-tab-platform')?.value||'';
-  const p=S.platforms.find(x=>x.name===platform);
-  const banks=(p&&p.banks)||[];
+  const banks=activePlatBanks(platform);
   let to=0,tc=0;
   if(!banks.length){
     to=n(document.getElementById('pgk-bo-all')?.value);
@@ -3152,8 +3181,7 @@ function recomputePlatBalances(){
 }
 function collectPerBank(){
   const platform=document.getElementById('pgk-tab-platform')?.value||'';
-  const p=S.platforms.find(x=>x.name===platform);
-  const banks=(p&&p.banks)||[];
+  const banks=activePlatBanks(platform);
   if(!banks.length)return[];
   return banks.map((bn,i)=>({bank:bn,open:n(document.getElementById('pgk-bo-'+i)?.value),close:n(document.getElementById('pgk-bc-'+i)?.value)}));
 }
@@ -3307,8 +3335,7 @@ function editPlatEntry(entry){
     document.getElementById('pgk-tab-rem').value=entry.rem||'';
     // Render per-bank fields then populate from saved perBank (or totals fallback)
     renderPlatBanks();
-    const p=S.platforms.find(x=>x.name===entry.platform);
-    const banks=(p&&p.banks)||[];
+    const banks=activePlatBanks(entry.platform);
     if(banks.length&&(entry.perBank||[]).length){
       banks.forEach((bn,i)=>{
         const rec=(entry.perBank||[]).find(b=>b.bank===bn);
