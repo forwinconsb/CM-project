@@ -324,11 +324,20 @@ tr:hover td{background:var(--bg3)}
 <!-- RECONCILIATION -->
 <div id="pg-recon" class="pg">
   <div class="filter-row">
-    <select id="rc-month" onchange="renderRecon()"></select>
+    <select id="rc-month" onchange="renderRecon();renderPGKRecon()"></select>
     <select id="rc-bank" onchange="renderRecon()"><option value="">All MYR banks</option></select>
     <button class="btn-sec" onclick="exportPDF('recon')">⬇ PDF</button>
   </div>
   <div id="recon-content"><div class="empty" data-i18n="no_data">No data yet</div></div>
+  <hr class="divider" style="margin:20px 0">
+  <div class="card">
+    <div class="ct">🎰 PGK Platform Reconciliation</div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:10px">Computed book closing vs entered closing per platform. Exchanges auto-linked by platform + date.</div>
+    <div class="filter-row">
+      <select id="rc-pgk-platform" onchange="renderPGKRecon()"><option value="">All platforms</option></select>
+    </div>
+    <div id="pgk-recon-content"><div class="empty">No data yet</div></div>
+  </div>
 </div>
 
 <!-- CASH FLOW -->
@@ -454,12 +463,12 @@ tr:hover td{background:var(--bg3)}
   <div class="info-box">🎮 <b>PGK Platform Entry</b> — Enter each platform's daily figures here. This can be done by a separate user. Save each platform individually.</div>
   <div class="card">
     <div class="ct">Entry date</div>
-    <div style="max-width:200px"><div class="f"><label data-i18n="date">Date</label><input type="date" id="pgk-tab-date" onchange="renderBankDeps()"></div></div>
+    <div style="max-width:200px"><div class="f"><label data-i18n="date">Date</label><input type="date" id="pgk-tab-date" onchange="renderBankDeps();updPGK2()"></div></div>
   </div>
   <div class="card">
     <div class="step-lbl">① PGK Platform Entry — save each platform separately</div>
     <div class="g3" style="margin-bottom:10px">
-      <div class="f"><label data-i18n="pgk_platform">Platform</label><select id="pgk-tab-platform"></select></div>
+      <div class="f"><label data-i18n="pgk_platform">Platform</label><select id="pgk-tab-platform" onchange="updPGK2()"></select></div>
       <div class="f"><label data-i18n="pgk_open">PGK bank opening</label><input type="number" id="pgk-tab-open" placeholder="0.00" step="0.01" oninput="updPGK2()"></div>
       <div style="display:flex;align-items:flex-end;padding-bottom:2px">
         <div style="background:var(--bg3);border-radius:var(--r);padding:8px 12px;font-size:12px;width:100%;border:1px solid var(--bdr)">Win / Lose: <span id="pgk-tab-wl" style="font-weight:700">0.00</span></div>
@@ -475,6 +484,12 @@ tr:hover td{background:var(--bg3)}
       <div class="f"><label data-i18n="pgk_reg">New registrations</label><input type="number" id="pgk-tab-reg" placeholder="0"></div>
       <div class="f"><label data-i18n="pgk_close">PGK bank closing (actual)</label><input type="number" id="pgk-tab-close" placeholder="0.00" step="0.01" oninput="updPGK2()"></div>
     </div>
+    <div class="g4" style="margin-bottom:10px">
+      <div class="f"><label>Txn count (optional)</label><input type="number" id="pgk-tab-txn" placeholder="0"></div>
+      <div class="f"><label>New depositors (optional)</label><input type="number" id="pgk-tab-newdep" placeholder="0"></div>
+      <div class="f"><label>Rebate PGK (optional)</label><input type="number" id="pgk-tab-rebate" placeholder="0.00" step="0.01"></div>
+      <div class="f"><label>Bank charges PGK (optional)</label><input type="number" id="pgk-tab-charges" placeholder="0.00" step="0.01" oninput="updPGK2()"></div>
+    </div>
     <div style="margin-bottom:10px">
       <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em">Adjustments</div>
       <div id="pgk-tab-adj-list"></div>
@@ -487,6 +502,7 @@ tr:hover td{background:var(--bg3)}
       <button class="btn-add" onclick="addPgkXfer()">+ Add transfer</button>
     </div>
     <div style="background:var(--bg3);border-radius:var(--r);padding:10px 14px;margin-bottom:10px;font-size:12px;border:1px solid var(--bdr)">
+      <div id="pgk-tab-exch-info" style="font-size:11px;color:var(--txt2);margin-bottom:6px"></div>
       <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--txt2)" data-i18n="rc_exp_close">Expected Closing</span><span id="pgk-tab-exp" style="font-weight:700">—</span></div>
       <div style="display:flex;justify-content:space-between"><span style="color:var(--txt2)">Difference (actual − expected)</span><span id="pgk-tab-diff" style="font-weight:700">—</span></div>
     </div>
@@ -548,13 +564,14 @@ tr:hover td{background:var(--bg3)}
       <select id="exch-tab-month" onchange="renderExchTab()"></select>
       <select id="exch-tab-dir" onchange="renderExchTab()"><option value="">All directions</option><option value="out">PGK→MYR</option><option value="in">MYR→PGK</option></select>
       <select id="exch-tab-exchanger" onchange="renderExchTab()"><option value="">All exchangers</option></select>
+      <select id="exch-tab-platform" onchange="renderExchTab()"><option value="">All platforms</option></select>
       <button class="btn-sec" onclick="exportExchCSV()">⬇ CSV</button>
       <button class="btn-sec" onclick="exportExchPDF()">⬇ PDF</button>
     </div>
     <div id="exch-tab-metrics" class="metrics" style="margin-bottom:12px"></div>
     <div class="tw"><table>
-      <thead><tr><th data-i18n="date">Date</th><th data-i18n="exch_dir">Direction</th><th data-i18n="exch_exchanger">Exchanger</th><th data-i18n="exch_pgk">PGK</th><th data-i18n="exch_rate">Rate</th><th data-i18n="exch_myr_equiv">MYR equiv</th><th data-i18n="exch_myr_actual">MYR actual</th><th data-i18n="exch_balance">Balance Owed</th><th data-i18n="bank">MYR bank</th><th data-i18n="col_action">Action</th></tr></thead>
-      <tbody id="exch-tab-body"><tr><td colspan="10" class="empty">No entries yet</td></tr></tbody>
+      <thead><tr><th data-i18n="date">Date</th><th data-i18n="exch_dir">Direction</th><th data-i18n="pgk_platform">Platform</th><th data-i18n="exch_exchanger">Exchanger</th><th data-i18n="exch_pgk">PGK</th><th data-i18n="exch_rate">Rate</th><th data-i18n="exch_myr_equiv">MYR equiv</th><th data-i18n="exch_myr_actual">MYR actual</th><th data-i18n="exch_balance">Balance Owed</th><th data-i18n="bank">MYR bank</th><th data-i18n="col_action">Action</th></tr></thead>
+      <tbody id="exch-tab-body"><tr><td colspan="11" class="empty">No entries yet</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -1233,11 +1250,12 @@ function renderPage(p){
     setSel('exch-tab-month',[{v:'',l:'All months'},...mopts()]);
     const exSel=document.getElementById('exch-tab-exchanger');
     if(exSel){exSel.innerHTML='<option value="">All exchangers</option>'+S.exchangers.map(e=>`<option value="${e}">${e}</option>`).join('');}
+    setSel('exch-tab-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);
     renderExchTab();return;
   }
   if(p==='fnd-tab'){initFndTab();return;}
   if(p==='exp-tab'){initExpTab();return;}
-  if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);renderRecon();}
+  if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);setSel('rc-pgk-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);renderRecon();renderPGKRecon();}
   if(p==='cashflow'){toggleCFCustom();setSel('cf-plat',[{v:'',l:'All platforms'},...S.platforms.map(q=>({v:q.name,l:q.name}))]);renderCF();}
   if(p==='weekly'){setSel('wk-month',mopts());renderWeekly();}
   if(p==='pl'){togglePLCustom();renderPL();}
@@ -1252,7 +1270,7 @@ function renderPage(p){
 
 // ── EXCHANGE ENTRY IN PGK TAB ──
 let exchRows2=[];
-function addExch2(){exchRows2.push({dir:'out',exchanger:S.exchangers[0]||'',pgk:0,rate:0.885,myr:0,paid:0,myrBank:S.myrBanks[0]?.name||''});renderExch2();}
+function addExch2(){exchRows2.push({dir:'out',platform:document.getElementById('pgk-tab-platform')?.value||S.platforms[0]?.name||'',exchanger:S.exchangers[0]||'',pgk:0,rate:0.885,myr:0,paid:0,myrBank:S.myrBanks[0]?.name||''});renderExch2();}
 function removeExch2(i){exchRows2.splice(i,1);renderExch2();}
 function renderExch2(){
   const el=document.getElementById('pgk-tab-exch-list');if(!el)return;
@@ -1263,13 +1281,13 @@ function renderExch2(){
       <button class="del" onclick="removeExch2(${i})">✕</button></div>
     <div class="g4" style="margin-bottom:8px">
       <div class="f"><label>Direction</label><select onchange="exchRows2[${i}].dir=this.value;renderExch2()"><option value="out" ${r.dir==='out'?'selected':''}>PGK → MYR</option><option value="in" ${r.dir==='in'?'selected':''}>MYR → PGK</option></select></div>
+      <div class="f"><label>Platform</label><select onchange="exchRows2[${i}].platform=this.value">${S.platforms.map(p=>`<option ${p.name===r.platform?'selected':''}>${p.name}</option>`).join('')}</select></div>
       <div class="f"><label>Exchanger</label><select onchange="exchRows2[${i}].exchanger=this.value">${S.exchangers.map(e=>`<option ${e===r.exchanger?'selected':''}>${e}</option>`).join('')}</select></div>
-      <div class="f"><label>${r.dir==='out'?tr('lbl_pkgsent'):'MYR sent'}</label><input type="number" value="${r.pgk||''}" placeholder="0.00" step="0.01" oninput="exchRows2[${i}].pgk=parseFloat(this.value)||0;aMYR2(${i})"></div>
-      <div class="f"><label>Rate</label><input type="number" value="${r.rate||''}" placeholder="0.885" step="0.001" oninput="exchRows2[${i}].rate=parseFloat(this.value)||0;aMYR2(${i})"></div></div>
+      <div class="f"><label>${r.dir==='out'?tr('lbl_pkgsent'):'MYR sent'}</label><input type="number" value="${r.pgk||''}" placeholder="0.00" step="0.01" oninput="exchRows2[${i}].pgk=parseFloat(this.value)||0;aMYR2(${i})"></div></div>
     <div class="g4">
+      <div class="f"><label>Rate</label><input type="number" value="${r.rate||''}" placeholder="0.885" step="0.001" oninput="exchRows2[${i}].rate=parseFloat(this.value)||0;aMYR2(${i})"></div>
       <div class="f"><label>MYR equiv (auto)</label><input type="number" value="${r.myr||''}" readonly></div>
       <div class="f"><label>MYR actually ${r.dir==='out'?'received':'paid'}</label><input type="number" value="${r.paid||''}" placeholder="0.00" step="0.01" oninput="exchRows2[${i}].paid=parseFloat(this.value)||0"></div>
-      <div class="f"><label data-i18n="lbl_balance_owed">Balance Owed</label><input type="number" value="${(Math.max(0,(r.myr||0)-(r.paid||0))).toFixed(2)}" readonly></div>
       <div class="f"><label>MYR bank</label><select onchange="exchRows2[${i}].myrBank=this.value">${S.myrBanks.map(b=>`<option ${b.name===r.myrBank?'selected':''}>${b.name}</option>`).join('')}</select></div>
     </div></div>`).join('');
 }
@@ -1282,7 +1300,7 @@ function saveExchDay(){
   const idx=S.dayEntries.findIndex(e=>e.date===date);
   if(idx>=0){S.dayEntries[idx].exchanges=[...exchRows2];}
   else{S.dayEntries.push({date,exchanges:[...exchRows2],myrBanks:[],funderTxns:[],expenses:[],totalExp:0});S.dayEntries.sort((a,b)=>a.date.localeCompare(b.date));}
-  persist();exchRows2=[];renderExch2();renderExchTab();showToast('Exchanges saved for '+fD(date)+' ✓');
+  persist();exchRows2=[];renderExch2();renderExchTab();updPGK2();renderPGKRecon();showToast('Exchanges saved for '+fD(date)+' ✓');
 }
 
 // ── WEEKLY — add edit/delete links ──
@@ -1842,7 +1860,7 @@ function renderAdj(){
 }
 
 // ── EXCHANGE ──
-function addExch(){exchRows.push({dir:'out',exchanger:S.exchangers[0]||'',pgk:0,rate:0.885,myr:0,paid:0,myrBank:S.myrBanks[0]?.name||''});renderExch();}
+function addExch(){exchRows.push({dir:'out',platform:document.getElementById('e-platform')?.value||S.platforms[0]?.name||'',exchanger:S.exchangers[0]||'',pgk:0,rate:0.885,myr:0,paid:0,myrBank:S.myrBanks[0]?.name||''});renderExch();}
 function removeExch(i){exchRows.splice(i,1);renderExch();updPGK();}
 function renderExch(){
   const el=document.getElementById('exch-list');if(!el)return;
@@ -1853,8 +1871,10 @@ function renderExch(){
       <button class="del" onclick="removeExch(${i})">✕</button></div>
     <div class="g4" style="margin-bottom:8px">
       <div class="f"><label>Direction</label><select onchange="exchRows[${i}].dir=this.value;renderExch();updPGK()"><option value="out" ${r.dir==='out'?'selected':''}>PGK → MYR</option><option value="in" ${r.dir==='in'?'selected':''}>MYR → PGK</option></select></div>
+      <div class="f"><label>Platform</label><select onchange="exchRows[${i}].platform=this.value">${S.platforms.map(p=>`<option ${p.name===r.platform?'selected':''}>${p.name}</option>`).join('')}</select></div>
       <div class="f"><label>Exchanger</label><select onchange="exchRows[${i}].exchanger=this.value">${S.exchangers.map(e=>`<option ${e===r.exchanger?'selected':''}>${e}</option>`).join('')}</select></div>
-      <div class="f"><label>${r.dir==='out'?tr('lbl_pkgsent'):'MYR sent'}</label><input type="number" value="${r.pgk||''}" placeholder="0.00" step="0.01" oninput="exchRows[${i}].pgk=parseFloat(this.value)||0;aMYR(${i})"></div>
+      <div class="f"><label>${r.dir==='out'?tr('lbl_pkgsent'):'MYR sent'}</label><input type="number" value="${r.pgk||''}" placeholder="0.00" step="0.01" oninput="exchRows[${i}].pgk=parseFloat(this.value)||0;aMYR(${i})"></div></div>
+    <div class="g4" style="margin-bottom:8px">
       <div class="f"><label>Rate (PGK:MYR)</label><input type="number" value="${r.rate||''}" placeholder="0.885" step="0.001" oninput="exchRows[${i}].rate=parseFloat(this.value)||0;aMYR(${i})"></div></div>
     <div class="g4">
       <div class="f"><label>MYR equiv (auto)</label><input type="number" value="${r.myr||''}" placeholder="0.00" readonly></div>
@@ -2050,6 +2070,65 @@ function buildLedger(date,d){
   // Only bank-paid expenses go into bank ledger; funder-direct excluded
   (d.expenses||[]).filter(e=>e.paySource!=='funder').forEach(e=>{txns.push({bank:e.bank||'',type:'expense',desc:(e.cat||'')+(e.note?' ('+e.note+')':''),in:0,out:e.amt||0,attachment:e.attachment||null,expRef:e});});
   return txns;
+}
+
+// ── PGK PLATFORM RECONCILIATION ──
+function buildPGKLedger(platformName,dayEntries){
+  const days=dayEntries||S.dayEntries;
+  return S.platEntries.filter(e=>e.platform===platformName)
+    .sort((a,b)=>a.date.localeCompare(b.date))
+    .map(e=>{
+      const day=days.find(d=>d.date===e.date);
+      const linked=(day?.exchanges||[]).filter(x=>x.platform===platformName);
+      const exchOut=linked.filter(x=>x.dir==='out').reduce((s,x)=>s+(x.pgk||0),0);
+      const exchIn=linked.filter(x=>x.dir==='in').reduce((s,x)=>s+(x.myr||0),0);
+      const adjNet=(e.adjustments||[]).reduce((s,a)=>s+(a.dir==='in'?a.amt:-a.amt),0);
+      const computed=(e.pgkOpen||0)+(e.dep||0)-(e.with||0)-(e.bankCharges||0)-exchOut+exchIn+adjNet;
+      return{date:e.date,entry:e,linked,exchOut,exchIn,adjNet,computed,entered:e.pgkClose||0,diff:(e.pgkClose||0)-computed};
+    });
+}
+function renderPGKRecon(){
+  const cont=document.getElementById('pgk-recon-content');if(!cont)return;
+  const platF=document.getElementById('rc-pgk-platform')?.value||'';
+  const month=document.getElementById('rc-month')?.value||'';
+  const plats=platF?[platF]:S.platforms.map(p=>p.name);
+  let html='';
+  plats.forEach(pn=>{
+    let ledger=buildPGKLedger(pn);
+    if(month)ledger=ledger.filter(r=>mk(r.date)===month);
+    if(!ledger.length)return;
+    const totDiff=ledger.reduce((s,r)=>s+r.diff,0);
+    const allOk=ledger.every(r=>Math.abs(r.diff)<0.01);
+    html+=`<div class="plat-recon">
+      <div class="plat-recon-hdr">
+        <span>🎰 ${pn} <span style="font-weight:400;color:var(--txt2)">(${ledger.length} day${ledger.length>1?'s':''})</span></span>
+        <span style="color:${allOk?'#0F6E56':'#A32D2D'}">${allOk?'✓ All reconciled':'⚠ Out by '+fmt(totDiff)+' PGK total'}</span>
+      </div>
+      <div style="padding:10px 14px">`;
+    ledger.forEach(r=>{
+      const ok=Math.abs(r.diff)<0.01;
+      html+=`<div style="margin-bottom:12px;border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden">
+        <div style="display:flex;justify-content:space-between;padding:7px 12px;background:var(--bg3);font-size:12px;font-weight:700">
+          <span>${fD(r.date)}</span>
+          <span style="color:${ok?'#0F6E56':'#A32D2D'}">${ok?'✓ Reconciled':'⚠ Out of balance: '+fmt(r.diff)+' PGK'}</span>
+        </div>
+        <div style="padding:8px 12px;font-size:12px">
+          <div class="recon-row"><span>Opening</span><span>${fmt(r.entry.pgkOpen||0)}</span></div>
+          <div class="recon-row"><span>+ Deposit</span><span class="pos">${fmt(r.entry.dep||0)}</span></div>
+          <div class="recon-row"><span>− Withdraw</span><span class="neg">${fmt(r.entry.with||0)}</span></div>
+          ${r.entry.bankCharges?`<div class="recon-row"><span>− Bank charges</span><span class="neg">${fmt(r.entry.bankCharges)}</span></div>`:''}
+          ${r.exchOut?`<div class="recon-row"><span>− Exchange out (${r.linked.filter(x=>x.dir==='out').length} txn)</span><span class="neg">${fmt(r.exchOut)}</span></div>`:''}
+          ${r.exchIn?`<div class="recon-row"><span>+ Exchange in (${r.linked.filter(x=>x.dir==='in').length} txn)</span><span class="pos">${fmt(r.exchIn)}</span></div>`:''}
+          ${r.adjNet?`<div class="recon-row"><span>± Adjustments</span><span>${fmt(r.adjNet)}</span></div>`:''}
+          <div class="recon-row subtot"><span>Computed book closing</span><span>${fmt(r.computed)}</span></div>
+          <div class="recon-row"><span>Entered closing (actual)</span><span style="font-weight:700">${fmt(r.entered)}</span></div>
+          ${r.linked.length?`<div style="font-size:11px;color:var(--txt2);margin-top:7px">Linked exchanges: ${r.linked.map(x=>`${x.dir==='out'?'−':'+'}${fmt(x.dir==='out'?x.pgk:x.myr)} (${x.exchanger||'?'})`).join(', ')}</div>`:''}
+        </div>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  });
+  cont.innerHTML=html||`<div class="empty">No PGK platform entries${month?' for '+ml(month):''}</div>`;
 }
 
 // ── RECONCILIATION ──
@@ -2798,11 +2877,26 @@ function renderPgkXfer(){
   </div>`).join('');
 }
 function calcWL2(){const wl=n(document.getElementById('pgk-tab-dep')?.value)-n(document.getElementById('pgk-tab-with')?.value);const el=document.getElementById('pgk-tab-wl');if(el){el.textContent=fmt(wl);el.style.color=wl>=0?'#0F6E56':'#A32D2D';}updPGK2();}
+function pgkExchForPlatDate(platform,date){
+  // PGK out = pgk field on 'out' rows; PGK in = converted equiv (myr field) on 'in' rows
+  const day=S.dayEntries.find(d=>d.date===date);
+  const linked=(day?.exchanges||[]).filter(x=>x.platform===platform);
+  return{
+    out:linked.filter(x=>x.dir==='out').reduce((s,x)=>s+(x.pgk||0),0),
+    in:linked.filter(x=>x.dir==='in').reduce((s,x)=>s+(x.myr||0),0),
+    count:linked.length
+  };
+}
 function updPGK2(){
   const open=n(document.getElementById('pgk-tab-open')?.value),dep=n(document.getElementById('pgk-tab-dep')?.value),with_=n(document.getElementById('pgk-tab-with')?.value),close=n(document.getElementById('pgk-tab-close')?.value);
+  const charges=n(document.getElementById('pgk-tab-charges')?.value);
   const adjNet=adjRows2.reduce((s,a)=>s+(a.dir==='in'?a.amt:-a.amt),0);
-  const exp=open+dep-with_+adjNet,diff=close-exp;
-  const eEl=document.getElementById('pgk-tab-exp'),dEl=document.getElementById('pgk-tab-diff');
+  const platform=document.getElementById('pgk-tab-platform')?.value||'';
+  const date=document.getElementById('pgk-tab-date')?.value||'';
+  const ex=pgkExchForPlatDate(platform,date);
+  const exp=open+dep-with_-charges-ex.out+ex.in+adjNet,diff=close-exp;
+  const eEl=document.getElementById('pgk-tab-exp'),dEl=document.getElementById('pgk-tab-diff'),xEl=document.getElementById('pgk-tab-exch-info');
+  if(xEl)xEl.innerHTML=ex.count?`− ${fmt(ex.out)} PGK exchange out / + ${fmt(ex.in)} PGK exchange in <b>(${ex.count} txn${ex.count>1?'s':''} auto-linked)</b>`:`No saved exchanges linked to ${platform||'this platform'} on this date`;
   if(eEl)eEl.textContent=(open||dep||with_||close)?fmt(exp)+' PGK':'—';
   if(dEl){dEl.textContent=(close&&(open||dep||with_))?fmt(diff)+' PGK':'—';dEl.style.color=Math.abs(diff)<0.01?'#0F6E56':diff>0?'#854F0B':'#A32D2D';}
 }
@@ -2873,18 +2967,20 @@ function savePlat2(){
   const dep=n(document.getElementById('pgk-tab-dep')?.value),with_=n(document.getElementById('pgk-tab-with')?.value);
   const open=n(document.getElementById('pgk-tab-open')?.value),close=n(document.getElementById('pgk-tab-close')?.value);
   const adjNet=adjRows2.reduce((s,a)=>s+(a.dir==='in'?a.amt:-a.amt),0);
-  const expected=open+dep-with_+adjNet;
+  const charges=n(document.getElementById('pgk-tab-charges')?.value);
+  const ex=pgkExchForPlatDate(platform,date);
+  const expected=open+dep-with_-charges-ex.out+ex.in+adjNet;
   const validXfers=xferRows2.filter(x=>x.fromBank&&x.toBank&&x.amount>0&&x.fromBank!==x.toBank);
-  const entry={date,platform,dep,with:with_,winLose:dep-with_,bonus:n(document.getElementById('pgk-tab-bonus')?.value),active:n(document.getElementById('pgk-tab-active')?.value),reg:n(document.getElementById('pgk-tab-reg')?.value),pgkOpen:open,pgkClose:close,pgkExpected:expected,pgkDiff:close-expected,adjustments:[...adjRows2],transfers:validXfers,rem:document.getElementById('pgk-tab-rem')?.value||''};
+  const entry={date,platform,dep,with:with_,winLose:dep-with_,bonus:n(document.getElementById('pgk-tab-bonus')?.value),active:n(document.getElementById('pgk-tab-active')?.value),reg:n(document.getElementById('pgk-tab-reg')?.value),txnCount:n(document.getElementById('pgk-tab-txn')?.value),newDep:n(document.getElementById('pgk-tab-newdep')?.value),rebate:n(document.getElementById('pgk-tab-rebate')?.value),bankCharges:charges,exchOut:ex.out,exchIn:ex.in,pgkOpen:open,pgkClose:close,pgkExpected:expected,pgkDiff:close-expected,adjustments:[...adjRows2],transfers:validXfers,rem:document.getElementById('pgk-tab-rem')?.value||''};
   const idx=S.platEntries.findIndex(e=>e.date===date&&e.platform===platform);
   if(idx>=0)S.platEntries[idx]=entry;else S.platEntries.push(entry);
   S.platEntries.sort((a,b)=>a.date.localeCompare(b.date)||a.platform.localeCompare(b.platform));
   persist();
   const ti=pgkTabPlats.findIndex(e=>e.platform===platform);if(ti>=0)pgkTabPlats[ti]=entry;else pgkTabPlats.push(entry);
   renderPGKTabSaved();
-  ['pgk-tab-dep','pgk-tab-with','pgk-tab-bonus','pgk-tab-active','pgk-tab-reg','pgk-tab-open','pgk-tab-close','pgk-tab-rem'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['pgk-tab-dep','pgk-tab-with','pgk-tab-bonus','pgk-tab-active','pgk-tab-reg','pgk-tab-txn','pgk-tab-newdep','pgk-tab-rebate','pgk-tab-charges','pgk-tab-open','pgk-tab-close','pgk-tab-rem'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   adjRows2=[];renderAdj2();
-  xferRows2=[];renderPgkXfer();renderPgkXferList();updBankDepSummary();
+  xferRows2=[];renderPgkXfer();renderPgkXferList();updBankDepSummary();renderPGKRecon();
   const wl=document.getElementById('pgk-tab-wl');if(wl){wl.textContent='0.00';wl.style.color='';}
   renderPGKListing();
   showToast(platform+' saved ✓');
@@ -2958,6 +3054,8 @@ function editPlatEntry(entry){
     document.getElementById('pgk-tab-bonus').value=entry.bonus||'';
     document.getElementById('pgk-tab-active').value=entry.active||'';
     document.getElementById('pgk-tab-reg').value=entry.reg||'';
+    const _sf=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+    _sf('pgk-tab-txn',entry.txnCount);_sf('pgk-tab-newdep',entry.newDep);_sf('pgk-tab-rebate',entry.rebate);_sf('pgk-tab-charges',entry.bankCharges);
     document.getElementById('pgk-tab-close').value=entry.pgkClose||'';
     document.getElementById('pgk-tab-rem').value=entry.rem||'';
     adjRows2=[...(entry.adjustments||[])];renderAdj2();
@@ -2992,15 +3090,17 @@ function renderExchTab(){
   const month=document.getElementById('exch-tab-month')?.value||'';
   const dir=document.getElementById('exch-tab-dir')?.value||'';
   const exName=document.getElementById('exch-tab-exchanger')?.value||'';
+  const platF=document.getElementById('exch-tab-platform')?.value||'';
   const allExch=S.dayEntries.filter(e=>!month||mk(e.date)===month).flatMap(d=>(d.exchanges||[]).map(x=>({...x,date:d.date})));
-  const filtered=allExch.filter(x=>(!dir||x.dir===dir)&&(!exName||x.exchanger===exName));
+  const filtered=allExch.filter(x=>(!dir||x.dir===dir)&&(!exName||x.exchanger===exName)&&(!platF||x.platform===platF));
   const tbody=document.getElementById('exch-tab-body');if(!tbody)return;
-  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="10" class="empty">No exchange transactions${month?' for '+ml(month):''}</td></tr>`;setHTML('exch-tab-metrics','');return;}
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="11" class="empty">No exchange transactions${month?' for '+ml(month):''}</td></tr>`;setHTML('exch-tab-metrics','');return;}
   tbody.innerHTML=filtered.map((x,xi)=>{
     const owed=Math.max(0,(x.myr||0)-(x.paid||0));
     return`<tr style="cursor:pointer" onclick="viewEditExch(${JSON.stringify(x).replace(/"/g,'&quot;')})">
       <td>${fD(x.date)}</td>
       <td><span class="tag ${x.dir==='out'?'tag-out':'tag-in'}">${x.dir==='out'?'PGK→MYR':'MYR→PGK'}</span></td>
+      <td>${x.platform?`<span style="background:#E6F1FB;color:#0C447C;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700">${x.platform}</span>`:'-'}</td>
       <td>${x.exchanger||'-'}</td><td>${fmt(x.pgk)}</td><td>${x.rate}</td>
       <td>${fmt(x.myr||0)}</td>
       <td style="color:${x.dir==='out'?'var(--gr)':'var(--rd)'}">${fmt(x.paid||0)}</td>
@@ -3027,6 +3127,7 @@ function viewEditExch(x){
           <option value="in"  ${x.dir==='in'?'selected':''}>MYR → PGK</option>
         </select>
       </div>
+      <div class="f"><label>Platform</label><select id="exch-edit-platform">${S.platforms.map(p=>`<option value="${p.name}" ${p.name===x.platform?'selected':''}>${p.name}</option>`).join('')}</select></div>
       <div class="f"><label>Exchanger</label><select id="exch-edit-exchanger">${exchOpts}</select></div>
       <div class="f"><label>PGK amount</label><input type="number" id="exch-edit-pgk" value="${x.pgk||0}" step="0.01" oninput="exchEditCalcMYR()"></div>
       <div class="f"><label>Rate</label><input type="number" id="exch-edit-rate" value="${x.rate||0}" step="0.0001" oninput="exchEditCalcMYR()"></div>
@@ -3059,13 +3160,14 @@ function saveExchEdit(orig){
   S.dayEntries[dIdx].exchanges[xIdx]={
     ...S.dayEntries[dIdx].exchanges[xIdx],
     dir:document.getElementById('exch-edit-dir')?.value||orig.dir,
+    platform:document.getElementById('exch-edit-platform')?.value||orig.platform||'',
     exchanger:document.getElementById('exch-edit-exchanger')?.value||orig.exchanger,
     pgk,rate,
     myr:Math.round(pgk*rate*100)/100,
     paid:parseFloat(document.getElementById('exch-edit-paid')?.value)||0,
     myrBank:document.getElementById('exch-edit-bank')?.value||orig.myrBank
   };
-  persist();closeModal();renderExchTab();showToast('Exchange updated ✓');
+  persist();closeModal();renderExchTab();renderPGKRecon();showToast('Exchange updated ✓');
 }
 function deleteExchEntry(orig){
   if(!confirm(`Delete this exchange entry (${fD(orig.date)}, ${fmt(orig.pgk)} PGK)? Cannot be undone.`))return;
@@ -3077,14 +3179,14 @@ function deleteExchEntry(orig){
       Math.abs(x.pgk-orig.pgk)<0.001&&Math.abs((x.paid||0)-(orig.paid||0))<0.001)
   );
   if(S.dayEntries[dIdx].exchanges.length===before){showToast('Entry not found',true);closeModal();return;}
-  persist();closeModal();renderExchTab();showToast('Exchange deleted ✓');
+  persist();closeModal();renderExchTab();renderPGKRecon();showToast('Exchange deleted ✓');
 }
 function exportExchCSV(){
   const month=document.getElementById('exch-tab-month')?.value||'';
   const rows=S.dayEntries.filter(e=>!month||mk(e.date)===month).flatMap(d=>(d.exchanges||[]).map(x=>({...x,date:d.date})));
   if(!rows.length){showToast('No data',true);return;}
-  let csv='Date,Direction,Exchanger,PGK,Rate,MYR Equiv,MYR Actual,Balance Owed,MYR Bank\n';
-  rows.forEach(x=>{csv+=`${x.date},${x.dir==='out'?'PGK->MYR':'MYR->PGK'},${x.exchanger||''},${x.pgk},${x.rate},${x.myr||0},${x.paid||0},${Math.max(0,(x.myr||0)-(x.paid||0))},${x.myrBank||''}\n`;});
+  let csv='Date,Direction,Platform,Exchanger,PGK,Rate,MYR Equiv,MYR Actual,Balance Owed,MYR Bank\n';
+  rows.forEach(x=>{csv+=`${x.date},${x.dir==='out'?'PGK->MYR':'MYR->PGK'},${x.platform||''},${x.exchanger||''},${x.pgk},${x.rate},${x.myr||0},${x.paid||0},${Math.max(0,(x.myr||0)-(x.paid||0))},${x.myrBank||''}\n`;});
   dlFile(csv,'text/csv','exchanges_'+(month||'all')+'.csv');showToast('CSV exported ✓');
 }
 function exportExchPDF(){
