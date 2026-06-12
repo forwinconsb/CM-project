@@ -1328,10 +1328,10 @@ function deletePlExpAndRefresh(dayIdx,expIdx){
   persist();closeModal();renderPL();showToast(tr('toast_deleted'));
 }
 function deletePlatEntry(date,platform){
-  if(!confirm(`Delete ${platform} entry for ${fD(date)}?`))return;
+  if(!confirm(`Delete ${platform||'(blank platform)'} entry for ${fD(date)}?`))return;
   const idx=S.platEntries.findIndex(e=>e.date===date&&e.platform===platform);
   if(idx<0)return;
-  S.platEntries.splice(idx,1);persist();renderWeekly();renderPGKListing();showToast('Platform entry deleted ✓');
+  S.platEntries.splice(idx,1);persist();renderWeekly();renderPGKListing();renderPGKRecon();showToast('Platform entry deleted ✓');
 }
 
 
@@ -3025,6 +3025,7 @@ function saveBankDeps(){
 function savePlat2(){
   const date=document.getElementById('pgk-tab-date')?.value;if(!date){showToast('Select date first',true);return;}
   const platform=document.getElementById('pgk-tab-platform')?.value;
+  if(!platform){showToast('Select platform first',true);return;}
   const dep=n(document.getElementById('pgk-tab-dep')?.value),with_=n(document.getElementById('pgk-tab-with')?.value);
   const open=n(document.getElementById('pgk-tab-open')?.value),close=n(document.getElementById('pgk-tab-close')?.value);
   const adjNet=adjRows2.reduce((s,a)=>s+(a.dir==='in'?a.amt:-a.amt),0);
@@ -3100,13 +3101,15 @@ function renderPGKListing(){
       <td>${fmt(e.pgkOpen||0)}</td><td>${fmt(e.pgkClose)}</td>
       <td style="color:${ok?'var(--gr)':Math.abs(e.pgkDiff)<1?'var(--am)':'var(--rd)'}; font-weight:700">${ok?'✓ OK':fmt(e.pgkDiff||0)}</td>
       <td><span style="font-size:10px;color:${ok?'#0F6E56':'#854F0B'};font-weight:700">${ok?'✓ Recon':'⚠ Diff'}</span></td>
-      <td><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="editPlatEntry(${JSON.stringify(e).replace(/"/g,'&quot;')})">✏️ Edit</button></td>
+      <td style="white-space:nowrap"><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="editPlatEntry(${JSON.stringify(e).replace(/"/g,'&quot;')})">✏️ Edit</button> <button class="del" onclick="deletePlatEntry('${e.date}','${(e.platform||'').replace(/'/g,"\\'")}')">🗑</button></td>
     </tr>`;
   }).join('');
 }
 function editPlatEntry(entry){
   document.getElementById('pgk-tab-date').value=entry.date;
-  setSel('pgk-tab-platform',[]);// refresh
+  const platOpts=S.platforms.map(pl=>pl.name);
+  if(entry.platform&&!platOpts.includes(entry.platform))platOpts.push(entry.platform);
+  setSel('pgk-tab-platform',platOpts);
   setTimeout(()=>{
     const ps=document.getElementById('pgk-tab-platform');if(ps)ps.value=entry.platform;
     document.getElementById('pgk-tab-open').value=entry.pgkOpen||'';
