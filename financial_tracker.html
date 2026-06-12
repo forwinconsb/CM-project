@@ -521,17 +521,26 @@ details.collapse-card[open]>summary:before{content:'▾'}
     <div id="pgk-tab-saved" style="margin-top:12px"></div>
   </div>
   <div class="card">
-    <div class="step-lbl">② Exchange Transactions — for this date, tag MYR bank</div>
-    <div id="pgk-tab-exch-list"></div>
-    <button class="btn-add" onclick="addExch2()" style="margin-top:7px">+ Add exchange transaction</button>
-    <button class="btn-pri" onclick="saveExchDay()" style="margin-top:10px" data-i18n="pgk_save_exch">💾 Save exchanges for this date</button>
+    <details class="collapse-card">
+      <summary><span class="step-lbl" style="margin-bottom:0">② Exchange Transactions — for this date, tag MYR bank</span></summary>
+      <div style="margin-top:11px">
+        <div id="pgk-tab-exch-list"></div>
+        <button class="btn-add" onclick="addExch2()" style="margin-top:7px">+ Add exchange transaction</button>
+        <button class="btn-pri" onclick="saveExchDay()" style="margin-top:10px" data-i18n="pgk_save_exch">💾 Save exchanges for this date</button>
+      </div>
+    </details>
   </div>
   <div class="card">
-    <div class="step-lbl gr">③ PGK Bank Deposits — verify against bank apps</div>
-    <div style="font-size:11px;color:var(--txt2);margin-bottom:10px">Enter deposits received per PGK bank (check each bank app). Compared against platform report totals for this date — helps catch missing or misrouted deposits.</div>
-    <div id="pgk-tab-bankdep-list"></div>
-    <div id="pgk-tab-bankdep-summary" style="margin-top:10px"></div>
-    <button class="btn-pri" onclick="saveBankDeps()" style="margin-top:10px">💾 Save bank deposits for this date</button>
+    <details class="collapse-card">
+      <summary><span class="step-lbl gr" style="margin-bottom:0">③ PGK Bank Deposits — verify against bank apps</span></summary>
+      <div style="margin-top:11px">
+        <div style="font-size:11px;color:var(--txt2);margin-bottom:4px">Enter deposits received per PGK bank (check each bank app). Compared against platform report totals for this date — helps catch missing or misrouted deposits.</div>
+        <div style="font-size:11px;color:var(--am);margin-bottom:10px">⚠ Player deposits only — exclude internal transfers, exchanger top-ups, and withdrawals. Verification only: does NOT change reconciliation numbers.</div>
+        <div id="pgk-tab-bankdep-list"></div>
+        <div id="pgk-tab-bankdep-summary" style="margin-top:10px"></div>
+        <button class="btn-pri" onclick="saveBankDeps()" style="margin-top:10px">💾 Save bank deposits for this date</button>
+      </div>
+    </details>
   </div>
 
   <div class="card">
@@ -541,6 +550,11 @@ details.collapse-card[open]>summary:before{content:'▾'}
         <div class="filter-row">
           <select id="pgk-list-month" onchange="renderPGKListing()"></select>
           <select id="pgk-list-plat" onchange="renderPGKListing()"><option value="">All platforms</option></select>
+          <span style="font-size:11px;color:var(--txt2)">or custom:</span>
+          <input type="date" id="pgk-list-from" onchange="renderPGKListing()" style="padding:6px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r)">
+          <span style="font-size:11px;color:var(--txt2)">to</span>
+          <input type="date" id="pgk-list-to" onchange="renderPGKListing()" style="padding:6px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r)">
+          <button class="btn-add" onclick="document.getElementById('pgk-list-from').value='';document.getElementById('pgk-list-to').value='';renderPGKListing()">✕ Clear</button>
           <button class="btn-sec" onclick="exportPGKCSV()">⬇ CSV</button>
           <button class="btn-sec" onclick="exportPGKPDF()">⬇ PDF</button>
         </div>
@@ -3100,10 +3114,22 @@ function renderPgkXferList(){
     <td style="color:var(--txt2)">${t.note||'-'}</td>
   </tr>`).join('');
 }
-function renderPGKListing(){
+function pgkListFilter(){
   const month=document.getElementById('pgk-list-month')?.value||'';
   const plat=document.getElementById('pgk-list-plat')?.value||'';
-  const rows=S.platEntries.filter(e=>(!month||mk(e.date)===month)&&(!plat||e.platform===plat));
+  const from=document.getElementById('pgk-list-from')?.value||'';
+  const to=document.getElementById('pgk-list-to')?.value||'';
+  return S.platEntries.filter(e=>{
+    if(from&&e.date<from)return false;
+    if(to&&e.date>to)return false;
+    if(!from&&!to&&month&&mk(e.date)!==month)return false;
+    if(plat&&e.platform!==plat)return false;
+    return true;
+  });
+}
+function renderPGKListing(){
+  const month=document.getElementById('pgk-list-month')?.value||'';
+  const rows=pgkListFilter();
   const tbody=document.getElementById('pgk-list-body');if(!tbody)return;
   if(!rows.length){tbody.innerHTML=`<tr><td colspan="12" class="empty">No entries${month?' for '+ml(month):''}</td></tr>`;return;}
   tbody.innerHTML=rows.map(e=>{
@@ -3147,8 +3173,7 @@ function editPlatEntry(entry){
 }
 function exportPGKCSV(){
   const month=document.getElementById('pgk-list-month')?.value||'';
-  const plat=document.getElementById('pgk-list-plat')?.value||'';
-  const rows=S.platEntries.filter(e=>(!month||mk(e.date)===month)&&(!plat||e.platform===plat));
+  const rows=pgkListFilter();
   if(!rows.length){showToast('No data',true);return;}
   let csv='Date,Platform,Deposit,Withdraw,Win/Lose,Bonus,Players,PGK Open,PGK Close,Diff,Remark\n';
   rows.forEach(e=>{csv+=`${e.date},${e.platform},${e.dep},${e.with},${e.winLose},${e.bonus||0},${e.active||0},${e.pgkOpen||0},${e.pgkClose},${e.pgkDiff||0},"${e.rem||''}"\n`;});
@@ -3156,8 +3181,7 @@ function exportPGKCSV(){
 }
 function exportPGKPDF(){
   const month=document.getElementById('pgk-list-month')?.value||'';
-  const plat=document.getElementById('pgk-list-plat')?.value||'';
-  const rows=S.platEntries.filter(e=>(!month||mk(e.date)===month)&&(!plat||e.platform===plat));
+  const rows=pgkListFilter();
   if(!rows.length){showToast('No data',true);return;}
   const cols=['Date','Platform','Deposit','Withdraw','Win/Lose','PGK Open','PGK Close','Diff'];
   const data=rows.map(e=>[fD(e.date),e.platform,fmt(e.dep),fmt(e.with),fmt(e.winLose),fmt(e.pgkOpen||0),fmt(e.pgkClose),fmt(e.pgkDiff||0)]);
