@@ -454,7 +454,7 @@ tr:hover td{background:var(--bg3)}
   <div class="info-box">🎮 <b>PGK Platform Entry</b> — Enter each platform's daily figures here. This can be done by a separate user. Save each platform individually.</div>
   <div class="card">
     <div class="ct">Entry date</div>
-    <div style="max-width:200px"><div class="f"><label data-i18n="date">Date</label><input type="date" id="pgk-tab-date"></div></div>
+    <div style="max-width:200px"><div class="f"><label data-i18n="date">Date</label><input type="date" id="pgk-tab-date" onchange="renderBankDeps()"></div></div>
   </div>
   <div class="card">
     <div class="step-lbl">① PGK Platform Entry — save each platform separately</div>
@@ -502,6 +502,13 @@ tr:hover td{background:var(--bg3)}
     <div id="pgk-tab-exch-list"></div>
     <button class="btn-add" onclick="addExch2()" style="margin-top:7px">+ Add exchange transaction</button>
     <button class="btn-pri" onclick="saveExchDay()" style="margin-top:10px" data-i18n="pgk_save_exch">💾 Save exchanges for this date</button>
+  </div>
+  <div class="card">
+    <div class="step-lbl gr">③ PGK Bank Deposits — verify against bank apps</div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:10px">Enter deposits received per PGK bank (check each bank app). Compared against platform report totals for this date — helps catch missing or misrouted deposits.</div>
+    <div id="pgk-tab-bankdep-list"></div>
+    <div id="pgk-tab-bankdep-summary" style="margin-top:10px"></div>
+    <button class="btn-pri" onclick="saveBankDeps()" style="margin-top:10px">💾 Save bank deposits for this date</button>
   </div>
 
   <div class="card">
@@ -1220,7 +1227,7 @@ function renderPage(p){
     setSel('pgk-xfer-month',[{v:'',l:'All months'},...mopts()]);
     setSel('pgk-xfer-plat',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);
     setSel('pgk-xfer-bank',[{v:'',l:'All banks'},...(S.pgkBanks||[]).map(b=>({v:b.name,l:b.name}))]);
-    renderPgkXfer();renderPGKListing();renderPgkXferList();return;
+    renderPgkXfer();renderBankDeps();renderPGKListing();renderPgkXferList();return;
   }
   if(p==='exchange-tab'){
     setSel('exch-tab-month',[{v:'',l:'All months'},...mopts()]);
@@ -2724,6 +2731,55 @@ function renderAdj2(){
     <button class="del" onclick="removeAdj2(${i})">✕</button></div>`).join('');
   updPGK2();
 }
+// ── PGK BANK DEPOSITS (per-bank verification) ──
+function renderBankDeps(){
+  const el=document.getElementById('pgk-tab-bankdep-list');if(!el)return;
+  if(!S.pgkBanks||!S.pgkBanks.length){
+    el.innerHTML=`<div style="font-size:11px;color:var(--am);padding:6px 10px;background:#FFF3E0;border-radius:var(--r);border:1px solid #F0D49A">⚠ No PGK banks defined. Go to <b>Setup → PGK bank accounts</b> to add them first.</div>`;
+    const sum=document.getElementById('pgk-tab-bankdep-summary');if(sum)sum.innerHTML='';
+    return;
+  }
+  const date=document.getElementById('pgk-tab-date')?.value||'';
+  const day=S.dayEntries.find(e=>e.date===date);
+  const saved=day?.pgkBankDeps||[];
+  el.innerHTML=`<div class="g3">`+S.pgkBanks.map((b,i)=>{
+    const v=saved.find(s=>s.bank===b.name)?.amount||'';
+    return`<div class="f"><label>${b.name} — deposits received</label><input type="number" id="pgk-bankdep-${i}" value="${v}" placeholder="0.00" step="0.01" oninput="updBankDepSummary()"></div>`;
+  }).join('')+`</div>`;
+  updBankDepSummary();
+}
+function updBankDepSummary(){
+  const el=document.getElementById('pgk-tab-bankdep-summary');if(!el)return;
+  if(!S.pgkBanks||!S.pgkBanks.length){el.innerHTML='';return;}
+  const date=document.getElementById('pgk-tab-date')?.value||'';
+  const bankTotal=S.pgkBanks.reduce((s,b,i)=>s+n(document.getElementById('pgk-bankdep-'+i)?.value),0);
+  const platTotal=S.platEntries.filter(e=>e.date===date).reduce((s,e)=>s+(e.dep||0),0);
+  const diff=bankTotal-platTotal;
+  const hasInput=bankTotal>0;
+  const hasPlat=platTotal>0;
+  let verdict='';
+  if(hasInput&&hasPlat){
+    verdict=Math.abs(diff)<0.01
+      ?`<div class="recon-ok">✓ Matched — bank apps total equals platform report total</div>`
+      :`<div class="recon-fail">⚠ Out by ${fmt(diff)} PGK (bank apps ${diff>0?'higher':'lower'} than platform report)</div>`;
+  }else if(hasInput&&!hasPlat){
+    verdict=`<div style="font-size:11px;color:var(--txt2);margin-top:6px">No platform entries saved for this date yet — save step ① first to compare.</div>`;
+  }
+  el.innerHTML=`<div style="background:var(--bg3);border-radius:var(--r);padding:10px 14px;font-size:12px;border:1px solid var(--bdr)">
+    <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--txt2)">Bank apps total (entered)</span><span style="font-weight:700">${fmt(bankTotal)} PGK</span></div>
+    <div style="display:flex;justify-content:space-between"><span style="color:var(--txt2)">Platform report total (this date)</span><span style="font-weight:700">${fmt(platTotal)} PGK</span></div>
+  </div>`+verdict;
+}
+function saveBankDeps(){
+  const date=document.getElementById('pgk-tab-date')?.value;if(!date){showToast('Select date first',true);return;}
+  if(!S.pgkBanks||!S.pgkBanks.length){showToast('Add PGK banks in Setup first',true);return;}
+  const deps=S.pgkBanks.map((b,i)=>({bank:b.name,amount:n(document.getElementById('pgk-bankdep-'+i)?.value)})).filter(d=>d.amount>0);
+  const idx=S.dayEntries.findIndex(e=>e.date===date);
+  if(idx>=0){S.dayEntries[idx].pgkBankDeps=deps;}
+  else{S.dayEntries.push({date,exchanges:[],myrBanks:[],funderTxns:[],expenses:[],totalExp:0,pgkBankDeps:deps});S.dayEntries.sort((a,b)=>a.date.localeCompare(b.date));}
+  persist();updBankDepSummary();
+  showToast('Bank deposits saved for '+fD(date)+' ✓');
+}
 function savePlat2(){
   const date=document.getElementById('pgk-tab-date')?.value;if(!date){showToast('Select date first',true);return;}
   const platform=document.getElementById('pgk-tab-platform')?.value;
@@ -2741,7 +2797,7 @@ function savePlat2(){
   renderPGKTabSaved();
   ['pgk-tab-dep','pgk-tab-with','pgk-tab-bonus','pgk-tab-active','pgk-tab-reg','pgk-tab-open','pgk-tab-close','pgk-tab-rem'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   adjRows2=[];renderAdj2();
-  xferRows2=[];renderPgkXfer();renderPgkXferList();
+  xferRows2=[];renderPgkXfer();renderPgkXferList();updBankDepSummary();
   const wl=document.getElementById('pgk-tab-wl');if(wl){wl.textContent='0.00';wl.style.color='';}
   renderPGKListing();
   showToast(platform+' saved ✓');
