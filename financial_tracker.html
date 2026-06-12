@@ -494,22 +494,24 @@ details.collapse-card[open]>summary:before{content:'▾'}
   <div class="info-box">🎮 <b>PGK Platform Entry</b> — Enter each platform's daily figures here. This can be done by a separate user. Save each platform individually.</div>
   <div class="card">
     <div class="ct">Entry date</div>
-    <div style="max-width:200px"><div class="f"><label data-i18n="date">Date</label><input type="date" id="pgk-tab-date" onchange="renderBankDeps();autoFillPgkOpen()"></div></div>
+    <div style="max-width:200px"><div class="f"><label data-i18n="date">Date</label><input type="date" id="pgk-tab-date" onchange="renderPlatBanks()"></div></div>
   </div>
   <div class="card">
     <div class="step-lbl">① PGK Platform Entry — save each platform separately</div>
-    <div class="g3" style="margin-bottom:10px">
-      <div class="f"><label data-i18n="pgk_platform">Platform</label><select id="pgk-tab-platform" onchange="autoFillPgkOpen()"></select></div>
-      <div class="f"><label data-i18n="pgk_open">PGK bank opening</label><input type="number" id="pgk-tab-open" placeholder="0.00" step="0.01" oninput="chkOpenDiff();updPGK2()"><div id="pgk-tab-open-note" style="font-size:10px;color:var(--txt2);margin-top:3px"></div></div>
+    <div class="g2" style="margin-bottom:10px">
+      <div class="f"><label data-i18n="pgk_platform">Platform</label><select id="pgk-tab-platform" onchange="renderPlatBanks()"></select></div>
       <div style="display:flex;align-items:flex-end;padding-bottom:2px">
         <div style="background:var(--bg3);border-radius:var(--r);padding:8px 12px;font-size:12px;width:100%;border:1px solid var(--bdr)">Win / Lose: <span id="pgk-tab-wl" style="font-weight:700">0.00</span></div>
       </div>
     </div>
-    <div class="g4" style="margin-bottom:10px">
+    <input type="hidden" id="pgk-tab-open"><input type="hidden" id="pgk-tab-close">
+    <div class="g3" style="margin-bottom:10px">
       <div class="f"><label data-i18n="pgk_dep">Total deposit (PGK)</label><input type="number" id="pgk-tab-dep" placeholder="0.00" step="0.01" oninput="calcWL2()"></div>
       <div class="f"><label data-i18n="pgk_with">Total withdraw (PGK)</label><input type="number" id="pgk-tab-with" placeholder="0.00" step="0.01" oninput="calcWL2()"></div>
       <div class="f"><label>Bank charges (PGK)</label><input type="number" id="pgk-tab-charges" placeholder="0.00" step="0.01" oninput="updPGK2()"></div>
-      <div class="f"><label data-i18n="pgk_close">PGK bank closing (actual)</label><input type="number" id="pgk-tab-close" placeholder="0.00" step="0.01" oninput="updPGK2()"></div>
+    </div>
+    <div style="border:1px solid var(--bdr);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;background:var(--bg2)">
+      <div id="pgk-tab-banks"></div>
     </div>
     <details class="collapse-card" id="pgk-opt-details" style="margin-bottom:10px">
       <summary style="font-size:11px;font-weight:600;color:var(--txt2);padding:4px 0">More fields — bonus, players, registrations, rebate (optional)</summary>
@@ -554,18 +556,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
         <div id="pgk-tab-exch-list"></div>
         <button class="btn-add" onclick="addExch2()" style="margin-top:7px">+ Add exchange transaction</button>
         <button class="btn-pri" onclick="saveExchDay()" style="margin-top:10px" data-i18n="pgk_save_exch">💾 Save exchanges for this date</button>
-      </div>
-    </details>
-  </div>
-  <div class="card">
-    <details class="collapse-card">
-      <summary><span class="step-lbl gr" style="margin-bottom:0">③ PGK Bank Deposits — verify against bank apps</span></summary>
-      <div style="margin-top:11px">
-        <div style="font-size:11px;color:var(--txt2);margin-bottom:4px">Enter deposits received per PGK bank (check each bank app). Compared against platform report totals for this date — helps catch missing or misrouted deposits.</div>
-        <div style="font-size:11px;color:var(--am);margin-bottom:10px">⚠ Player deposits only — exclude internal transfers, exchanger top-ups, and withdrawals. Verification only: does NOT change reconciliation numbers.</div>
-        <div id="pgk-tab-bankdep-list"></div>
-        <div id="pgk-tab-bankdep-summary" style="margin-top:10px"></div>
-        <button class="btn-pri" onclick="saveBankDeps()" style="margin-top:10px">💾 Save bank deposits for this date</button>
       </div>
     </details>
   </div>
@@ -1309,7 +1299,7 @@ function renderPage(p){
     setSel('pgk-xfer-month',[{v:'',l:'All months'},...mopts()]);
     setSel('pgk-xfer-plat',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);
     setSel('pgk-xfer-bank',[{v:'',l:'All banks'},...(S.pgkBanks||[]).map(b=>({v:b.name,l:b.name}))]);
-    renderPgkXfer();renderBankDeps();renderPGKListing();renderPgkXferList();autoFillPgkOpen();return;
+    renderPgkXfer();renderPGKListing();renderPgkXferList();renderPlatBanks();return;
   }
   if(p==='exchange-tab'){
     setSel('exch-tab-month',[{v:'',l:'All months'},...mopts()]);
@@ -2685,8 +2675,16 @@ function renderStorageMeter(){
   }catch(e){el.innerHTML='';}
 }
 function renderSettings(){
-  const pgkOpts=(sel)=>[`<option value="" ${!sel?'selected':''}>— none —</option>`,...(S.pgkBanks||[]).map(b=>`<option value="${b.name}" ${b.name===sel?'selected':''}>${b.name}</option>`)].join('');
-  setHTML('s-platforms',S.platforms.map((p,i)=>`<div class="setting-row"><span style="display:flex;align-items:center;gap:8px"><b>${p.name}</b> — <select style="padding:4px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r)" onchange="S.platforms[${i}].bank=this.value;persist();showToast('Primary bank updated ✓')">${pgkOpts((S.pgkBanks||[]).some(b=>b.name===p.bank)?p.bank:'')}</select>${(S.pgkBanks||[]).some(b=>b.name===p.bank)?'':p.bank?`<span style="font-size:10px;color:var(--am)">(old label: ${p.bank})</span>`:''}</span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('platform',${i})">✏️</button><button class="del" onclick="deleteEntity('platform',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No platforms yet</div>`);
+  setHTML('s-platforms',S.platforms.map((p,i)=>{
+    const banks=p.banks||[];
+    const chips=(S.pgkBanks||[]).length
+      ?(S.pgkBanks||[]).map(b=>{const on=banks.includes(b.name);return`<button onclick="togglePlatBank(${i},'${b.name.replace(/'/g,"\\'")}')" style="font-size:10px;padding:3px 9px;border-radius:20px;cursor:pointer;border:1px solid ${on?'#185FA5':'var(--bdr2)'};background:${on?'#E6F1FB':'#fff'};color:${on?'#0C447C':'var(--txt2)'};font-weight:${on?'700':'400'}">${on?'✓ ':''}${b.name}</button>`;}).join(' ')
+      :`<span style="font-size:10px;color:var(--am)">Add PGK banks below first</span>`;
+    return`<div class="setting-row" style="flex-direction:column;align-items:stretch;gap:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><b>${p.name}</b><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('platform',${i})">✏️</button><button class="del" onclick="deleteEntity('platform',${i})">🗑</button></span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center"><span style="font-size:10px;color:var(--txt2)">Uses banks:</span>${chips}</div>
+    </div>`;
+  }).join('')||`<div class="empty">No platforms yet</div>`);
   setHTML('s-myrbanks',S.myrBanks.map((b,i)=>`<div class="setting-row"><span style="display:flex;align-items:center;gap:7px"><span class="bdot" style="background:${b.color}"></span><b>${b.name}</b></span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('myrBank',${i})">✏️</button><button class="del" onclick="deleteEntity('myrBank',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No banks yet</div>`);
   setHTML('s-pgkbanks',(S.pgkBanks||[]).map((b,i)=>`<div class="setting-row"><span><b>${b.name}</b></span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('pgkBank',${i})">✏️</button><button class="del" onclick="deleteEntity('pgkBank',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No PGK banks yet</div>`);
   setHTML('s-exchangers',S.exchangers.map((e,i)=>`<div class="setting-row"><span>${e}</span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('exchanger',${i})">✏️</button><button class="del" onclick="deleteEntity('exchanger',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No exchangers yet</div>`);
@@ -2697,6 +2695,13 @@ function renderSettings(){
 function addPlatform(){const nm=document.getElementById('s-pname')?.value.trim(),b=document.getElementById('s-pbank')?.value||'';if(!nm){showToast('Enter name',true);return;}if(S.platforms.some(p=>p.name===nm)){showToast('Platform already exists',true);return;}S.platforms.push({name:nm,bank:b});persist();renderSettings();initForms();document.getElementById('s-pname').value='';}
 function addBank(){const nm=document.getElementById('s-bname')?.value.trim();if(!nm){showToast('Enter bank name',true);return;}const cols=['#3266AD','#0F6E56','#854F0B','#534AB7','#2A7E6E','#A32D2D'];S.myrBanks.push({name:nm,color:cols[S.myrBanks.length%cols.length]});persist();renderSettings();initForms();document.getElementById('s-bname').value='';}
 function addPGKBank(){const nm=document.getElementById('s-pgkbname')?.value.trim();if(!nm){showToast('Enter PGK bank name',true);return;}if(!S.pgkBanks)S.pgkBanks=[];if(S.pgkBanks.some(b=>b.name===nm)){showToast('Bank already exists',true);return;}S.pgkBanks.push({name:nm});persist();renderSettings();document.getElementById('s-pgkbname').value='';showToast('PGK bank added ✓');}
+function togglePlatBank(platIdx,bankName){
+  const p=S.platforms[platIdx];if(!p)return;
+  if(!p.banks)p.banks=[];
+  const j=p.banks.indexOf(bankName);
+  if(j>=0)p.banks.splice(j,1);else p.banks.push(bankName);
+  persist();renderSettings();
+}
 
 // ── SETUP: RENAME & SAFE DELETE ──
 function usageCount(type,name){
@@ -2713,9 +2718,8 @@ function usageCount(type,name){
     });
     c+=Object.keys(S.stmtBalances||{}).filter(k=>k.split('||')[0]===name).length;
   }else if(type==='pgkBank'){
-    S.platEntries.forEach(e=>(e.transfers||[]).forEach(t=>{if(t.fromBank===name||t.toBank===name)c++;}));
-    S.dayEntries.forEach(d=>(d.pgkBankDeps||[]).forEach(b=>{if(b.bank===name)c++;}));
-    c+=S.platforms.filter(p=>p.bank===name).length;
+    S.platEntries.forEach(e=>{(e.transfers||[]).forEach(t=>{if(t.fromBank===name||t.toBank===name)c++;});(e.perBank||[]).forEach(b=>{if(b.bank===name)c++;});});
+    c+=S.platforms.filter(p=>(p.banks||[]).includes(name)||p.bank===name).length;
   }else if(type==='exchanger'){
     S.dayEntries.forEach(d=>(d.exchanges||[]).forEach(x=>{if(x.exchanger===name)c++;}));
   }else if(type==='funder'){
@@ -2739,9 +2743,8 @@ function renameCascade(type,oldName,newName){
     });
     const nb={};Object.entries(S.stmtBalances||{}).forEach(([k,v])=>{const parts=k.split('||');nb[(parts[0]===oldName?newName:parts[0])+'||'+parts[1]]=v;});S.stmtBalances=nb;
   }else if(type==='pgkBank'){
-    S.platEntries.forEach(e=>(e.transfers||[]).forEach(t=>{if(t.fromBank===oldName)t.fromBank=newName;if(t.toBank===oldName)t.toBank=newName;}));
-    S.dayEntries.forEach(d=>(d.pgkBankDeps||[]).forEach(b=>{if(b.bank===oldName)b.bank=newName;}));
-    S.platforms.forEach(p=>{if(p.bank===oldName)p.bank=newName;});
+    S.platEntries.forEach(e=>{(e.transfers||[]).forEach(t=>{if(t.fromBank===oldName)t.fromBank=newName;if(t.toBank===oldName)t.toBank=newName;});(e.perBank||[]).forEach(b=>{if(b.bank===oldName)b.bank=newName;});});
+    S.platforms.forEach(p=>{if(p.bank===oldName)p.bank=newName;if(p.banks)p.banks=p.banks.map(b=>b===oldName?newName:b);});
   }else if(type==='exchanger'){
     S.dayEntries.forEach(d=>(d.exchanges||[]).forEach(x=>{if(x.exchanger===oldName)x.exchanger=newName;}));
   }else if(type==='funder'){
@@ -2778,6 +2781,7 @@ function deleteEntity(type,i){
     :'Delete "'+nm+'"?';
   if(!confirm(msg))return;
   list.splice(i,1);
+  if(type==='pgkBank')S.platforms.forEach(p=>{if(p.banks)p.banks=p.banks.filter(b=>b!==nm);});
   persist();renderSettings();initForms();
   if(type==='funder')renderFunders_entry();
   showToast('Deleted ✓');
@@ -3086,43 +3090,72 @@ function renderPgkXfer(){
   </div>`).join('');
 }
 function calcWL2(){const wl=n(document.getElementById('pgk-tab-dep')?.value)-n(document.getElementById('pgk-tab-with')?.value);const el=document.getElementById('pgk-tab-wl');if(el){el.textContent=fmt(wl);el.style.color=wl>=0?'#0F6E56':'#A32D2D';}updPGK2();}
-// ── OPENING BALANCE AUTO-FILL ──
+// ── PER-BANK OPENING/CLOSING ──
 function prevPgkClose(platform,date){
   const prior=S.platEntries.filter(e=>e.platform===platform&&e.date<date)
     .sort((a,b)=>b.date.localeCompare(a.date))[0];
   return prior?{date:prior.date,close:prior.pgkClose||0}:null;
 }
-function autoFillPgkOpen(){
+function prevBankClose(platform,date,bankName){
+  const prior=S.platEntries.filter(e=>e.platform===platform&&e.date<date&&(e.perBank||[]).some(b=>b.bank===bankName))
+    .sort((a,b)=>b.date.localeCompare(a.date))[0];
+  if(!prior)return null;
+  const rec=(prior.perBank||[]).find(b=>b.bank===bankName);
+  return rec?{date:prior.date,close:rec.close||0}:null;
+}
+function renderPlatBanks(){
+  const wrap=document.getElementById('pgk-tab-banks');if(!wrap)return;
   const platform=document.getElementById('pgk-tab-platform')?.value||'';
   const date=document.getElementById('pgk-tab-date')?.value||'';
-  const openEl=document.getElementById('pgk-tab-open');
-  const note=document.getElementById('pgk-tab-open-note');
-  if(!openEl)return;
-  const p=platform&&date?prevPgkClose(platform,date):null;
-  if(p){
-    openEl.value=p.close;
-    if(note){note.innerHTML=`Auto-filled from ${fD(p.date)} closing: <b>${fmt(p.close)}</b> PGK`;note.style.color='var(--txt2)';}
+  const p=S.platforms.find(x=>x.name===platform);
+  const banks=(p&&p.banks)||[];
+  if(!banks.length){
+    const pr=date&&platform?prevPgkClose(platform,date):null;
+    wrap.innerHTML=`<div class="g2">
+      <div class="f"><label>PGK opening (total)</label><input type="number" id="pgk-bo-all" placeholder="0.00" step="0.01" value="${pr?pr.close:''}" oninput="recomputePlatBalances()"></div>
+      <div class="f"><label>PGK closing (actual, total)</label><input type="number" id="pgk-bc-all" placeholder="0.00" step="0.01" oninput="recomputePlatBalances()"></div>
+    </div><div style="font-size:10px;color:var(--am);margin-top:5px">💡 Assign PGK banks to this platform in Setup to enter and verify each bank's balance individually.</div>`;
   }else{
-    if(note){note.textContent='No previous entry — enter opening manually';note.style.color='var(--txt2)';}
+    wrap.innerHTML=`<div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Per-bank balances — verify each individually</div>`+
+      banks.map((bn,i)=>{
+        const pr=prevBankClose(platform,date,bn);
+        return`<div class="g3" style="margin-bottom:6px;align-items:end">
+          <div class="f"><label>${bn} — opening</label><input type="number" id="pgk-bo-${i}" data-bank="${bn}" value="${pr?pr.close:''}" placeholder="0.00" step="0.01" oninput="recomputePlatBalances()"></div>
+          <div class="f"><label>${bn} — closing (actual)</label><input type="number" id="pgk-bc-${i}" data-bank="${bn}" placeholder="0.00" step="0.01" oninput="recomputePlatBalances()"></div>
+          <div class="f"><label>movement</label><input type="text" id="pgk-bm-${i}" readonly style="background:var(--bg3);color:var(--txt2)"></div>
+        </div>`;
+      }).join('')+
+      `<div style="display:flex;justify-content:space-between;font-size:12px;padding:7px 11px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--bdr);margin-top:6px"><span>Total opening: <b id="pgk-bo-total">0.00</b></span><span>Total closing: <b id="pgk-bc-total">0.00</b></span></div>`;
   }
+  recomputePlatBalances();
+}
+function recomputePlatBalances(){
+  const platform=document.getElementById('pgk-tab-platform')?.value||'';
+  const p=S.platforms.find(x=>x.name===platform);
+  const banks=(p&&p.banks)||[];
+  let to=0,tc=0;
+  if(!banks.length){
+    to=n(document.getElementById('pgk-bo-all')?.value);
+    tc=n(document.getElementById('pgk-bc-all')?.value);
+  }else{
+    banks.forEach((bn,i)=>{
+      const o=n(document.getElementById('pgk-bo-'+i)?.value),c=n(document.getElementById('pgk-bc-'+i)?.value);
+      to+=o;tc+=c;
+      const mv=document.getElementById('pgk-bm-'+i);if(mv){mv.value=fmt(c-o);mv.style.color=(c-o)>=0?'#0F6E56':'#A32D2D';}
+    });
+    const toT=document.getElementById('pgk-bo-total');if(toT)toT.textContent=fmt(to);
+    const tcT=document.getElementById('pgk-bc-total');if(tcT)tcT.textContent=fmt(tc);
+  }
+  const oEl=document.getElementById('pgk-tab-open');if(oEl)oEl.value=to||'';
+  const cEl=document.getElementById('pgk-tab-close');if(cEl)cEl.value=tc||'';
   updPGK2();
 }
-function chkOpenDiff(){
+function collectPerBank(){
   const platform=document.getElementById('pgk-tab-platform')?.value||'';
-  const date=document.getElementById('pgk-tab-date')?.value||'';
-  const note=document.getElementById('pgk-tab-open-note');
-  if(!note)return;
-  const p=platform&&date?prevPgkClose(platform,date):null;
-  if(!p)return;
-  const open=n(document.getElementById('pgk-tab-open')?.value);
-  const diff=open-p.close;
-  if(Math.abs(diff)>0.009){
-    note.innerHTML=`⚠ Differs from ${fD(p.date)} closing (${fmt(p.close)}) by <b>${fmt(diff)}</b> PGK`;
-    note.style.color='var(--am)';
-  }else{
-    note.innerHTML=`Matches ${fD(p.date)} closing: <b>${fmt(p.close)}</b> PGK ✓`;
-    note.style.color='var(--txt2)';
-  }
+  const p=S.platforms.find(x=>x.name===platform);
+  const banks=(p&&p.banks)||[];
+  if(!banks.length)return[];
+  return banks.map((bn,i)=>({bank:bn,open:n(document.getElementById('pgk-bo-'+i)?.value),close:n(document.getElementById('pgk-bc-'+i)?.value)}));
 }
 function pgkExchForPlatDate(platform,date){
   // PGK out = pgk field on 'out' rows; PGK in = converted equiv (myr field) on 'in' rows
@@ -3159,55 +3192,6 @@ function renderAdj2(){
     <button class="del" onclick="removeAdj2(${i})">✕</button></div>`).join('');
   updPGK2();
 }
-// ── PGK BANK DEPOSITS (per-bank verification) ──
-function renderBankDeps(){
-  const el=document.getElementById('pgk-tab-bankdep-list');if(!el)return;
-  if(!S.pgkBanks||!S.pgkBanks.length){
-    el.innerHTML=`<div style="font-size:11px;color:var(--am);padding:6px 10px;background:#FFF3E0;border-radius:var(--r);border:1px solid #F0D49A">⚠ No PGK banks defined. Go to <b>Setup → PGK bank accounts</b> to add them first.</div>`;
-    const sum=document.getElementById('pgk-tab-bankdep-summary');if(sum)sum.innerHTML='';
-    return;
-  }
-  const date=document.getElementById('pgk-tab-date')?.value||'';
-  const day=S.dayEntries.find(e=>e.date===date);
-  const saved=day?.pgkBankDeps||[];
-  el.innerHTML=`<div class="g3">`+S.pgkBanks.map((b,i)=>{
-    const v=saved.find(s=>s.bank===b.name)?.amount||'';
-    return`<div class="f"><label>${b.name} — deposits received</label><input type="number" id="pgk-bankdep-${i}" value="${v}" placeholder="0.00" step="0.01" oninput="updBankDepSummary()"></div>`;
-  }).join('')+`</div>`;
-  updBankDepSummary();
-}
-function updBankDepSummary(){
-  const el=document.getElementById('pgk-tab-bankdep-summary');if(!el)return;
-  if(!S.pgkBanks||!S.pgkBanks.length){el.innerHTML='';return;}
-  const date=document.getElementById('pgk-tab-date')?.value||'';
-  const bankTotal=S.pgkBanks.reduce((s,b,i)=>s+n(document.getElementById('pgk-bankdep-'+i)?.value),0);
-  const platTotal=S.platEntries.filter(e=>e.date===date).reduce((s,e)=>s+(e.dep||0),0);
-  const diff=bankTotal-platTotal;
-  const hasInput=bankTotal>0;
-  const hasPlat=platTotal>0;
-  let verdict='';
-  if(hasInput&&hasPlat){
-    verdict=Math.abs(diff)<0.01
-      ?`<div class="recon-ok">✓ Matched — bank apps total equals platform report total</div>`
-      :`<div class="recon-fail">⚠ Out by ${fmt(diff)} PGK (bank apps ${diff>0?'higher':'lower'} than platform report)</div>`;
-  }else if(hasInput&&!hasPlat){
-    verdict=`<div style="font-size:11px;color:var(--txt2);margin-top:6px">No platform entries saved for this date yet — save step ① first to compare.</div>`;
-  }
-  el.innerHTML=`<div style="background:var(--bg3);border-radius:var(--r);padding:10px 14px;font-size:12px;border:1px solid var(--bdr)">
-    <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--txt2)">Bank apps total (entered)</span><span style="font-weight:700">${fmt(bankTotal)} PGK</span></div>
-    <div style="display:flex;justify-content:space-between"><span style="color:var(--txt2)">Platform report total (this date)</span><span style="font-weight:700">${fmt(platTotal)} PGK</span></div>
-  </div>`+verdict;
-}
-function saveBankDeps(){
-  const date=document.getElementById('pgk-tab-date')?.value;if(!date){showToast('Select date first',true);return;}
-  if(!S.pgkBanks||!S.pgkBanks.length){showToast('Add PGK banks in Setup first',true);return;}
-  const deps=S.pgkBanks.map((b,i)=>({bank:b.name,amount:n(document.getElementById('pgk-bankdep-'+i)?.value)})).filter(d=>d.amount>0);
-  const idx=S.dayEntries.findIndex(e=>e.date===date);
-  if(idx>=0){S.dayEntries[idx].pgkBankDeps=deps;}
-  else{S.dayEntries.push({date,exchanges:[],myrBanks:[],funderTxns:[],expenses:[],totalExp:0,pgkBankDeps:deps});S.dayEntries.sort((a,b)=>a.date.localeCompare(b.date));}
-  persist();updBankDepSummary();
-  showToast('Bank deposits saved for '+fD(date)+' ✓');
-}
 function savePlat2(){
   const date=document.getElementById('pgk-tab-date')?.value;if(!date){showToast('Select date first',true);return;}
   const platform=document.getElementById('pgk-tab-platform')?.value;
@@ -3219,7 +3203,8 @@ function savePlat2(){
   const ex=pgkExchForPlatDate(platform,date);
   const expected=open+dep-with_-charges-ex.out+ex.in+adjNet;
   const validXfers=xferRows2.filter(x=>x.fromBank&&x.toBank&&x.amount>0&&x.fromBank!==x.toBank);
-  const entry={date,platform,dep,with:with_,winLose:dep-with_,bonus:n(document.getElementById('pgk-tab-bonus')?.value),active:n(document.getElementById('pgk-tab-active')?.value),reg:n(document.getElementById('pgk-tab-reg')?.value),txnCount:n(document.getElementById('pgk-tab-txn')?.value),newDep:n(document.getElementById('pgk-tab-newdep')?.value),rebate:n(document.getElementById('pgk-tab-rebate')?.value),bankCharges:charges,exchOut:ex.out,exchIn:ex.in,pgkOpen:open,pgkClose:close,pgkExpected:expected,pgkDiff:close-expected,adjustments:[...adjRows2],transfers:validXfers,rem:document.getElementById('pgk-tab-rem')?.value||''};
+  const perBank=collectPerBank();
+  const entry={date,platform,dep,with:with_,winLose:dep-with_,bonus:n(document.getElementById('pgk-tab-bonus')?.value),active:n(document.getElementById('pgk-tab-active')?.value),reg:n(document.getElementById('pgk-tab-reg')?.value),txnCount:n(document.getElementById('pgk-tab-txn')?.value),newDep:n(document.getElementById('pgk-tab-newdep')?.value),rebate:n(document.getElementById('pgk-tab-rebate')?.value),bankCharges:charges,exchOut:ex.out,exchIn:ex.in,pgkOpen:open,pgkClose:close,perBank,pgkExpected:expected,pgkDiff:close-expected,adjustments:[...adjRows2],transfers:validXfers,rem:document.getElementById('pgk-tab-rem')?.value||''};
   const idx=S.platEntries.findIndex(e=>e.date===date&&e.platform===platform);
   if(idx>=0)S.platEntries[idx]=entry;else S.platEntries.push(entry);
   S.platEntries.sort((a,b)=>a.date.localeCompare(b.date)||a.platform.localeCompare(b.platform));
@@ -3228,8 +3213,9 @@ function savePlat2(){
   renderPGKTabSaved();
   ['pgk-tab-dep','pgk-tab-with','pgk-tab-bonus','pgk-tab-active','pgk-tab-reg','pgk-tab-txn','pgk-tab-newdep','pgk-tab-rebate','pgk-tab-charges','pgk-tab-open','pgk-tab-close','pgk-tab-rem'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   adjRows2=[];renderAdj2();
-  xferRows2=[];renderPgkXfer();renderPgkXferList();updBankDepSummary();renderPGKRecon();autoFillPgkOpen();
+  xferRows2=[];renderPgkXfer();renderPgkXferList();renderPGKRecon();
   const wl=document.getElementById('pgk-tab-wl');if(wl){wl.textContent='0.00';wl.style.color='';}
+  renderPlatBanks();
   renderPGKListing();
   showToast(platform+' saved ✓');
 }
@@ -3310,7 +3296,6 @@ function editPlatEntry(entry){
   setSel('pgk-tab-platform',platOpts);
   setTimeout(()=>{
     const ps=document.getElementById('pgk-tab-platform');if(ps)ps.value=entry.platform;
-    document.getElementById('pgk-tab-open').value=entry.pgkOpen||'';
     document.getElementById('pgk-tab-dep').value=entry.dep||'';
     document.getElementById('pgk-tab-with').value=entry.with||'';
     document.getElementById('pgk-tab-bonus').value=entry.bonus||'';
@@ -3319,11 +3304,27 @@ function editPlatEntry(entry){
     const _sf=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
     _sf('pgk-tab-txn',entry.txnCount);_sf('pgk-tab-newdep',entry.newDep);_sf('pgk-tab-rebate',entry.rebate);_sf('pgk-tab-charges',entry.bankCharges);
     const od=document.getElementById('pgk-opt-details');if(od)od.open=!!(entry.bonus||entry.active||entry.reg||entry.txnCount||entry.newDep||entry.rebate);
-    document.getElementById('pgk-tab-close').value=entry.pgkClose||'';
     document.getElementById('pgk-tab-rem').value=entry.rem||'';
+    // Render per-bank fields then populate from saved perBank (or totals fallback)
+    renderPlatBanks();
+    const p=S.platforms.find(x=>x.name===entry.platform);
+    const banks=(p&&p.banks)||[];
+    if(banks.length&&(entry.perBank||[]).length){
+      banks.forEach((bn,i)=>{
+        const rec=(entry.perBank||[]).find(b=>b.bank===bn);
+        const bo=document.getElementById('pgk-bo-'+i),bc=document.getElementById('pgk-bc-'+i);
+        if(bo)bo.value=rec?rec.open:'';
+        if(bc)bc.value=rec?rec.close:'';
+      });
+    }else{
+      const boAll=document.getElementById('pgk-bo-all'),bcAll=document.getElementById('pgk-bc-all');
+      if(boAll)boAll.value=entry.pgkOpen||'';
+      if(bcAll)bcAll.value=entry.pgkClose||'';
+    }
+    recomputePlatBalances();
     adjRows2=[...(entry.adjustments||[])];renderAdj2();
     xferRows2=[...(entry.transfers||[])];renderPgkXfer();
-    chkOpenDiff();calcWL2();
+    calcWL2();
   },50);
   showToast('Loaded for editing — update and save');
   window.scrollTo(0,0);
