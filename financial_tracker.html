@@ -327,9 +327,13 @@ details.collapse-card[open]>summary:before{content:'▾'}
 
 <!-- RECONCILIATION -->
 <div id="pg-recon" class="pg">
+  <div class="card">
+    <div class="ct">📑 MYR Bank Reconciliation — summary (click a row to open detail)</div>
+    <div id="recon-summary"><div class="empty">No data yet</div></div>
+  </div>
   <div class="filter-row">
-    <select id="rc-month" onchange="renderRecon();renderPGKRecon()"></select>
-    <select id="rc-bank" onchange="renderRecon()"><option value="">All MYR banks</option></select>
+    <select id="rc-month" onchange="rcDetailOpen=true;renderRecon();renderPGKRecon()"></select>
+    <select id="rc-bank" onchange="rcDetailOpen=true;renderRecon()"><option value="">All MYR banks</option></select>
     <button class="btn-sec" onclick="exportPDF('recon')">⬇ PDF</button>
   </div>
   <div id="recon-content"><div class="empty" data-i18n="no_data">No data yet</div></div>
@@ -1293,7 +1297,7 @@ function renderPage(p){
   }
   if(p==='fnd-tab'){initFndTab();return;}
   if(p==='exp-tab'){initExpTab();return;}
-  if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);setSel('rc-pgk-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);renderRecon();renderPGKRecon();}
+  if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);setSel('rc-pgk-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);rcDetailOpen=false;renderRecon();renderPGKRecon();}
   if(p==='cashflow'){toggleCFCustom();setSel('cf-plat',[{v:'',l:'All platforms'},...S.platforms.map(q=>({v:q.name,l:q.name}))]);renderCF();}
   if(p==='weekly'){setSel('wk-month',mopts());renderWeekly();}
   if(p==='pl'){togglePLCustom();renderPL();}
@@ -2207,10 +2211,52 @@ function getStmtBalance(bankName,month){
   const key=bankName+'||'+month;
   return(S.stmtBalances&&S.stmtBalances[key]!=null)?S.stmtBalances[key]:null;
 }
+let rcDetailOpen=false;
+function renderReconSummary(){
+  const el=document.getElementById('recon-summary');if(!el)return;
+  const months=aMo();
+  let rows='';
+  months.forEach(m=>{
+    const dayRows=S.dayEntries.filter(e=>mk(e.date)===m).sort((a,b)=>a.date.localeCompare(b.date));
+    if(!dayRows.length)return;
+    S.myrBanks.forEach(b=>{
+      let close=null,has=false;
+      dayRows.forEach(d=>{(d.myrBanks||[]).forEach(x=>{if(x.name===b.name){has=true;if(x.close||x.close===0)close=x.close;}});});
+      const stmt=getStmtBalance(b.name,m);
+      if(!has&&stmt===null)return;
+      const ok=stmt!==null&&close!==null&&Math.abs(stmt-close)<0.01;
+      const status=stmt===null
+        ?`<span style="color:var(--txt2)">— statement not entered</span>`
+        :ok?`<span style="color:var(--gr);font-weight:700">✓ Reconciled</span>`
+        :`<span style="color:var(--rd);font-weight:700">⚠ Out by RM ${fmt(Math.abs(stmt-(close||0)))}</span>`;
+      const bKey=b.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      rows+=`<tr style="cursor:pointer" onclick="openReconDetail('${m}','${bKey}')">
+        <td>${ml(m)}</td>
+        <td><span class="bdot" style="background:${b.color}"></span> ${b.name}</td>
+        <td style="text-align:right">${close!==null?'RM '+fmt(close):'-'}</td>
+        <td style="text-align:right;font-weight:700">${stmt!==null?'RM '+fmt(stmt):'-'}</td>
+        <td>${status}</td>
+        <td><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();openReconDetail('${m}','${bKey}')">Open ▸</button></td>
+      </tr>`;
+    });
+  });
+  el.innerHTML=rows?`<div class="tw"><table>
+    <thead><tr><th>Statement month</th><th>Bank</th><th style="text-align:right">Book closing</th><th style="text-align:right">Statement closing</th><th>Status</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`:`<div class="empty">No daily entries yet — reconciliation rows appear once MYR bank data is entered</div>`;
+}
+function openReconDetail(month,bank){
+  const ms=document.getElementById('rc-month');if(ms)ms.value=month;
+  const bs=document.getElementById('rc-bank');if(bs)bs.value=bank;
+  rcDetailOpen=true;
+  renderRecon();
+  document.getElementById('recon-content')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
 function renderRecon(){
+  renderReconSummary();
   const month=document.getElementById('rc-month')?.value||'';
   const selBank=document.getElementById('rc-bank')?.value||'';
   const cont=document.getElementById('recon-content');if(!cont)return;
+  if(!rcDetailOpen){cont.innerHTML=`<div class="empty">👆 Click a row in the summary above to open the fill-in reconciliation detail</div>`;return;}
   if(!month){cont.innerHTML=`<div class="empty">${tr('no_data')}</div>`;return;}
   const dayRows=S.dayEntries.filter(e=>mk(e.date)===month);
   if(!dayRows.length){cont.innerHTML=`<div class="empty">No entries for ${ml(month)}.</div>`;return;}
