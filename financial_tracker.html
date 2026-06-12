@@ -87,6 +87,10 @@ tr:hover td{background:var(--bg3)}
 .adj-row select,.adj-row input{padding:6px 9px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--txt)}
 .info-box{background:#E6F1FB;border:1px solid #B5D4F4;border-radius:var(--r);padding:9px 14px;font-size:11px;color:#0C447C;margin-bottom:14px;line-height:1.5}
 .divider{border:none;border-top:1px solid var(--bdr);margin:12px 0}
+details.collapse-card>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px}
+details.collapse-card>summary::-webkit-details-marker{display:none}
+details.collapse-card>summary:before{content:'▸';font-size:11px;color:var(--txt2);flex-shrink:0}
+details.collapse-card[open]>summary:before{content:'▾'}
 
 /* ── EXPENSE ROW with detail expand ── */
 .exp-row{border:1px solid var(--bdr);border-radius:var(--r);margin-bottom:6px;overflow:hidden}
@@ -474,22 +478,25 @@ tr:hover td{background:var(--bg3)}
         <div style="background:var(--bg3);border-radius:var(--r);padding:8px 12px;font-size:12px;width:100%;border:1px solid var(--bdr)">Win / Lose: <span id="pgk-tab-wl" style="font-weight:700">0.00</span></div>
       </div>
     </div>
-    <div class="g3" style="margin-bottom:10px">
+    <div class="g4" style="margin-bottom:10px">
       <div class="f"><label data-i18n="pgk_dep">Total deposit (PGK)</label><input type="number" id="pgk-tab-dep" placeholder="0.00" step="0.01" oninput="calcWL2()"></div>
       <div class="f"><label data-i18n="pgk_with">Total withdraw (PGK)</label><input type="number" id="pgk-tab-with" placeholder="0.00" step="0.01" oninput="calcWL2()"></div>
-      <div class="f"><label data-i18n="pgk_bonus">Total bonus (PGK)</label><input type="number" id="pgk-tab-bonus" placeholder="0.00" step="0.01"></div>
-    </div>
-    <div class="g3" style="margin-bottom:10px">
-      <div class="f"><label data-i18n="pgk_active">Active players</label><input type="number" id="pgk-tab-active" placeholder="0"></div>
-      <div class="f"><label data-i18n="pgk_reg">New registrations</label><input type="number" id="pgk-tab-reg" placeholder="0"></div>
+      <div class="f"><label>Bank charges (PGK)</label><input type="number" id="pgk-tab-charges" placeholder="0.00" step="0.01" oninput="updPGK2()"></div>
       <div class="f"><label data-i18n="pgk_close">PGK bank closing (actual)</label><input type="number" id="pgk-tab-close" placeholder="0.00" step="0.01" oninput="updPGK2()"></div>
     </div>
-    <div class="g4" style="margin-bottom:10px">
-      <div class="f"><label>Txn count (optional)</label><input type="number" id="pgk-tab-txn" placeholder="0"></div>
-      <div class="f"><label>New depositors (optional)</label><input type="number" id="pgk-tab-newdep" placeholder="0"></div>
-      <div class="f"><label>Rebate PGK (optional)</label><input type="number" id="pgk-tab-rebate" placeholder="0.00" step="0.01"></div>
-      <div class="f"><label>Bank charges PGK (optional)</label><input type="number" id="pgk-tab-charges" placeholder="0.00" step="0.01" oninput="updPGK2()"></div>
-    </div>
+    <details class="collapse-card" id="pgk-opt-details" style="margin-bottom:10px">
+      <summary style="font-size:11px;font-weight:600;color:var(--txt2);padding:4px 0">More fields — bonus, players, registrations, rebate (optional)</summary>
+      <div class="g3" style="margin:8px 0">
+        <div class="f"><label data-i18n="pgk_bonus">Total bonus (PGK)</label><input type="number" id="pgk-tab-bonus" placeholder="0.00" step="0.01"></div>
+        <div class="f"><label data-i18n="pgk_active">Active players</label><input type="number" id="pgk-tab-active" placeholder="0"></div>
+        <div class="f"><label data-i18n="pgk_reg">New registrations</label><input type="number" id="pgk-tab-reg" placeholder="0"></div>
+      </div>
+      <div class="g3">
+        <div class="f"><label>Txn count</label><input type="number" id="pgk-tab-txn" placeholder="0"></div>
+        <div class="f"><label>New depositors</label><input type="number" id="pgk-tab-newdep" placeholder="0"></div>
+        <div class="f"><label>Rebate (PGK)</label><input type="number" id="pgk-tab-rebate" placeholder="0.00" step="0.01"></div>
+      </div>
+    </details>
     <div style="margin-bottom:10px">
       <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em">Adjustments</div>
       <div id="pgk-tab-adj-list"></div>
@@ -528,30 +535,38 @@ tr:hover td{background:var(--bg3)}
   </div>
 
   <div class="card">
-    <div class="ct" data-i18n="pgk_listing">PGK platform entries — full listing</div>
-    <div class="filter-row">
-      <select id="pgk-list-month" onchange="renderPGKListing()"></select>
-      <select id="pgk-list-plat" onchange="renderPGKListing()"><option value="">All platforms</option></select>
-      <button class="btn-sec" onclick="exportPGKCSV()">⬇ CSV</button>
-      <button class="btn-sec" onclick="exportPGKPDF()">⬇ PDF</button>
-    </div>
-    <div class="tw"><table>
-      <thead><tr><th data-i18n="date">Date</th><th data-i18n="pgk_platform">Platform</th><th data-i18n="col_deposit">Deposit</th><th data-i18n="col_withdraw">Withdraw</th><th data-i18n="win_lose">Win / Lose</th><th data-i18n="col_bonus">Bonus</th><th data-i18n="col_players">Players</th><th data-i18n="col_open">PGK Open</th><th data-i18n="col_close">PGK Close</th><th data-i18n="col_diff">Diff</th><th data-i18n="col_recon">Recon</th><th data-i18n="col_action">Action</th></tr></thead>
-      <tbody id="pgk-list-body"><tr><td colspan="12" class="empty">No entries yet</td></tr></tbody>
-    </table></div>
+    <details class="collapse-card">
+      <summary><span class="ct" style="margin-bottom:0" data-i18n="pgk_listing">PGK platform entries — full listing</span></summary>
+      <div style="margin-top:12px">
+        <div class="filter-row">
+          <select id="pgk-list-month" onchange="renderPGKListing()"></select>
+          <select id="pgk-list-plat" onchange="renderPGKListing()"><option value="">All platforms</option></select>
+          <button class="btn-sec" onclick="exportPGKCSV()">⬇ CSV</button>
+          <button class="btn-sec" onclick="exportPGKPDF()">⬇ PDF</button>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th data-i18n="date">Date</th><th data-i18n="pgk_platform">Platform</th><th data-i18n="col_deposit">Deposit</th><th data-i18n="col_withdraw">Withdraw</th><th data-i18n="win_lose">Win / Lose</th><th data-i18n="col_bonus">Bonus</th><th data-i18n="col_players">Players</th><th data-i18n="col_open">PGK Open</th><th data-i18n="col_close">PGK Close</th><th data-i18n="col_diff">Diff</th><th data-i18n="col_recon">Recon</th><th data-i18n="col_action">Action</th></tr></thead>
+          <tbody id="pgk-list-body"><tr><td colspan="12" class="empty">No entries yet</td></tr></tbody>
+        </table></div>
+      </div>
+    </details>
   </div>
   <div class="card">
-    <div class="ct">🔄 Internal Bank Transfers — listing</div>
-    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">All PGK bank-to-bank transfers across platforms. Edit by opening the parent platform entry above.</div>
-    <div class="filter-row">
-      <select id="pgk-xfer-month" onchange="renderPgkXferList()"><option value="">All months</option></select>
-      <select id="pgk-xfer-plat" onchange="renderPgkXferList()"><option value="">All platforms</option></select>
-      <select id="pgk-xfer-bank" onchange="renderPgkXferList()"><option value="">All banks</option></select>
-    </div>
-    <div class="tw"><table>
-      <thead><tr><th>Date</th><th>Platform</th><th>From</th><th>To</th><th>Amount (PGK)</th><th>Note</th></tr></thead>
-      <tbody id="pgk-xfer-list-body"><tr><td colspan="6" class="empty">No transfers yet</td></tr></tbody>
-    </table></div>
+    <details class="collapse-card">
+      <summary><span class="ct" style="margin-bottom:0">🔄 Internal Bank Transfers — listing</span></summary>
+      <div style="margin-top:12px">
+        <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">All PGK bank-to-bank transfers across platforms. Edit by opening the parent platform entry above.</div>
+        <div class="filter-row">
+          <select id="pgk-xfer-month" onchange="renderPgkXferList()"><option value="">All months</option></select>
+          <select id="pgk-xfer-plat" onchange="renderPgkXferList()"><option value="">All platforms</option></select>
+          <select id="pgk-xfer-bank" onchange="renderPgkXferList()"><option value="">All banks</option></select>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Date</th><th>Platform</th><th>From</th><th>To</th><th>Amount (PGK)</th><th>Note</th></tr></thead>
+          <tbody id="pgk-xfer-list-body"><tr><td colspan="6" class="empty">No transfers yet</td></tr></tbody>
+        </table></div>
+      </div>
+    </details>
   </div>
 </div>
 
@@ -2122,11 +2137,11 @@ function renderPGKRecon(){
     if(!ledger.length)return;
     const totDiff=ledger.reduce((s,r)=>s+r.diff,0);
     const allOk=ledger.every(r=>Math.abs(r.diff)<0.01);
-    html+=`<div class="plat-recon">
-      <div class="plat-recon-hdr">
-        <span>🎰 ${pn} <span style="font-weight:400;color:var(--txt2)">(${ledger.length} day${ledger.length>1?'s':''})</span></span>
+    html+=`<details class="plat-recon collapse-card" ${allOk?'':'open'}>
+      <summary class="plat-recon-hdr">
+        <span style="flex:1">🎰 ${pn} <span style="font-weight:400;color:var(--txt2)">(${ledger.length} day${ledger.length>1?'s':''})</span></span>
         <span style="color:${allOk?'#0F6E56':'#A32D2D'}">${allOk?'✓ All reconciled':'⚠ Out by '+fmt(totDiff)+' PGK total'}</span>
-      </div>
+      </summary>
       <div style="padding:10px 14px">`;
     ledger.forEach(r=>{
       const ok=Math.abs(r.diff)<0.01;
@@ -2149,7 +2164,7 @@ function renderPGKRecon(){
         </div>
       </div>`;
     });
-    html+=`</div></div>`;
+    html+=`</div></details>`;
   });
   cont.innerHTML=html||`<div class="empty">No PGK platform entries${month?' for '+ml(month):''}</div>`;
 }
@@ -3120,6 +3135,7 @@ function editPlatEntry(entry){
     document.getElementById('pgk-tab-reg').value=entry.reg||'';
     const _sf=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
     _sf('pgk-tab-txn',entry.txnCount);_sf('pgk-tab-newdep',entry.newDep);_sf('pgk-tab-rebate',entry.rebate);_sf('pgk-tab-charges',entry.bankCharges);
+    const od=document.getElementById('pgk-opt-details');if(od)od.open=!!(entry.bonus||entry.active||entry.reg||entry.txnCount||entry.newDep||entry.rebate);
     document.getElementById('pgk-tab-close').value=entry.pgkClose||'';
     document.getElementById('pgk-tab-rem').value=entry.rem||'';
     adjRows2=[...(entry.adjustments||[])];renderAdj2();
