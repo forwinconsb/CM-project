@@ -177,7 +177,7 @@ tr:hover td{background:var(--bg3)}
   <div class="info-box">💡 <b>Daily workflow:</b> PGK → PGK Platforms tab. Exchanges → Exchanges tab. Funder Movements → Funder Movements tab. Expenses → Expenses tab. Here: save MYR Bank Balances only.</div>
   <div class="card">
     <div class="ct" data-i18n="date">Entry date</div>
-    <div style="max-width:200px"><div class="f"><label data-i18n="date">Date</label><input type="date" id="e-date"></div></div>
+    <div style="max-width:200px"><div class="f"><label data-i18n="date">Date</label><input type="date" id="e-date" onchange="autoFillMyrOpens()"></div></div>
   </div>
   <div class="card">
     <div class="step-lbl gr" data-i18n="myr_bank_step">① MYR Bank Balances — opening & closing once per day</div>
@@ -463,13 +463,13 @@ tr:hover td{background:var(--bg3)}
   <div class="info-box">🎮 <b>PGK Platform Entry</b> — Enter each platform's daily figures here. This can be done by a separate user. Save each platform individually.</div>
   <div class="card">
     <div class="ct">Entry date</div>
-    <div style="max-width:200px"><div class="f"><label data-i18n="date">Date</label><input type="date" id="pgk-tab-date" onchange="renderBankDeps();updPGK2()"></div></div>
+    <div style="max-width:200px"><div class="f"><label data-i18n="date">Date</label><input type="date" id="pgk-tab-date" onchange="renderBankDeps();autoFillPgkOpen()"></div></div>
   </div>
   <div class="card">
     <div class="step-lbl">① PGK Platform Entry — save each platform separately</div>
     <div class="g3" style="margin-bottom:10px">
-      <div class="f"><label data-i18n="pgk_platform">Platform</label><select id="pgk-tab-platform" onchange="updPGK2()"></select></div>
-      <div class="f"><label data-i18n="pgk_open">PGK bank opening</label><input type="number" id="pgk-tab-open" placeholder="0.00" step="0.01" oninput="updPGK2()"></div>
+      <div class="f"><label data-i18n="pgk_platform">Platform</label><select id="pgk-tab-platform" onchange="autoFillPgkOpen()"></select></div>
+      <div class="f"><label data-i18n="pgk_open">PGK bank opening</label><input type="number" id="pgk-tab-open" placeholder="0.00" step="0.01" oninput="chkOpenDiff();updPGK2()"><div id="pgk-tab-open-note" style="font-size:10px;color:var(--txt2);margin-top:3px"></div></div>
       <div style="display:flex;align-items:flex-end;padding-bottom:2px">
         <div style="background:var(--bg3);border-radius:var(--r);padding:8px 12px;font-size:12px;width:100%;border:1px solid var(--bdr)">Win / Lose: <span id="pgk-tab-wl" style="font-weight:700">0.00</span></div>
       </div>
@@ -1244,7 +1244,7 @@ function renderPage(p){
     setSel('pgk-xfer-month',[{v:'',l:'All months'},...mopts()]);
     setSel('pgk-xfer-plat',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);
     setSel('pgk-xfer-bank',[{v:'',l:'All banks'},...(S.pgkBanks||[]).map(b=>({v:b.name,l:b.name}))]);
-    renderPgkXfer();renderBankDeps();renderPGKListing();renderPgkXferList();return;
+    renderPgkXfer();renderBankDeps();renderPGKListing();renderPgkXferList();autoFillPgkOpen();return;
   }
   if(p==='exchange-tab'){
     setSel('exch-tab-month',[{v:'',l:'All months'},...mopts()]);
@@ -1824,12 +1824,35 @@ function initForms(){
     <div style="margin-bottom:${i<S.myrBanks.length-1?'12px':'0'}">
       <div style="font-size:12px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:7px"><span class="bdot" style="background:${b.color}"></span>${b.name}</div>
       <div class="g3">
-        <div class="f"><label>Opening (MYR)</label><input type="number" id="mb-o-${i}" placeholder="0.00" step="0.01"></div>
+        <div class="f"><label>Opening (MYR)</label><input type="number" id="mb-o-${i}" placeholder="0.00" step="0.01"><div id="mb-on-${i}" style="font-size:10px;color:var(--txt2);margin-top:3px"></div></div>
         <div class="f"><label>Closing (MYR)</label><input type="number" id="mb-c-${i}" placeholder="0.00" step="0.01"></div>
         <div class="f"><label>Remark</label><input type="text" id="mb-r-${i}" placeholder="optional"></div>
       </div>
       ${i<S.myrBanks.length-1?'<hr class="divider">':''}</div>`).join('');
+  autoFillMyrOpens();
   renderFunders_entry();renderExch();renderAdj();
+}
+function autoFillMyrOpens(){
+  const date=document.getElementById('e-date')?.value||'';
+  if(!date)return;
+  S.myrBanks.forEach((b,i)=>{
+    const oEl=document.getElementById('mb-o-'+i),note=document.getElementById('mb-on-'+i);
+    if(!oEl)return;
+    const today=S.dayEntries.find(d=>d.date===date);
+    const saved=(today?.myrBanks||[]).find(x=>x.name===b.name);
+    if(saved&&(saved.open||saved.open===0)&&saved.open!==''){
+      oEl.value=saved.open;
+      if(note)note.textContent='Loaded saved entry for this date';
+      return;
+    }
+    const prior=S.dayEntries.filter(d=>d.date<date&&(d.myrBanks||[]).some(x=>x.name===b.name&&x.close))
+      .sort((a,c)=>c.date.localeCompare(a.date))[0];
+    const pb=prior?prior.myrBanks.find(x=>x.name===b.name):null;
+    if(pb&&pb.close){
+      oEl.value=pb.close;
+      if(note)note.innerHTML=`Auto-filled from ${fD(prior.date)} closing: <b>${fmt(pb.close)}</b>`;
+    }else if(note)note.textContent='No previous closing — enter manually';
+  });
 }
 function updExpCats(){const tid=document.getElementById('e-exp-type')?.value;const t=S.expTypes.find(t=>t.id===tid);setSel('e-exp-cat',(t?.cats||[]).map(c=>({v:c,l:c})));}
 
@@ -2877,6 +2900,44 @@ function renderPgkXfer(){
   </div>`).join('');
 }
 function calcWL2(){const wl=n(document.getElementById('pgk-tab-dep')?.value)-n(document.getElementById('pgk-tab-with')?.value);const el=document.getElementById('pgk-tab-wl');if(el){el.textContent=fmt(wl);el.style.color=wl>=0?'#0F6E56':'#A32D2D';}updPGK2();}
+// ── OPENING BALANCE AUTO-FILL ──
+function prevPgkClose(platform,date){
+  const prior=S.platEntries.filter(e=>e.platform===platform&&e.date<date)
+    .sort((a,b)=>b.date.localeCompare(a.date))[0];
+  return prior?{date:prior.date,close:prior.pgkClose||0}:null;
+}
+function autoFillPgkOpen(){
+  const platform=document.getElementById('pgk-tab-platform')?.value||'';
+  const date=document.getElementById('pgk-tab-date')?.value||'';
+  const openEl=document.getElementById('pgk-tab-open');
+  const note=document.getElementById('pgk-tab-open-note');
+  if(!openEl)return;
+  const p=platform&&date?prevPgkClose(platform,date):null;
+  if(p){
+    openEl.value=p.close;
+    if(note){note.innerHTML=`Auto-filled from ${fD(p.date)} closing: <b>${fmt(p.close)}</b> PGK`;note.style.color='var(--txt2)';}
+  }else{
+    if(note){note.textContent='No previous entry — enter opening manually';note.style.color='var(--txt2)';}
+  }
+  updPGK2();
+}
+function chkOpenDiff(){
+  const platform=document.getElementById('pgk-tab-platform')?.value||'';
+  const date=document.getElementById('pgk-tab-date')?.value||'';
+  const note=document.getElementById('pgk-tab-open-note');
+  if(!note)return;
+  const p=platform&&date?prevPgkClose(platform,date):null;
+  if(!p)return;
+  const open=n(document.getElementById('pgk-tab-open')?.value);
+  const diff=open-p.close;
+  if(Math.abs(diff)>0.009){
+    note.innerHTML=`⚠ Differs from ${fD(p.date)} closing (${fmt(p.close)}) by <b>${fmt(diff)}</b> PGK`;
+    note.style.color='var(--am)';
+  }else{
+    note.innerHTML=`Matches ${fD(p.date)} closing: <b>${fmt(p.close)}</b> PGK ✓`;
+    note.style.color='var(--txt2)';
+  }
+}
 function pgkExchForPlatDate(platform,date){
   // PGK out = pgk field on 'out' rows; PGK in = converted equiv (myr field) on 'in' rows
   const day=S.dayEntries.find(d=>d.date===date);
@@ -2980,7 +3041,7 @@ function savePlat2(){
   renderPGKTabSaved();
   ['pgk-tab-dep','pgk-tab-with','pgk-tab-bonus','pgk-tab-active','pgk-tab-reg','pgk-tab-txn','pgk-tab-newdep','pgk-tab-rebate','pgk-tab-charges','pgk-tab-open','pgk-tab-close','pgk-tab-rem'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   adjRows2=[];renderAdj2();
-  xferRows2=[];renderPgkXfer();renderPgkXferList();updBankDepSummary();renderPGKRecon();
+  xferRows2=[];renderPgkXfer();renderPgkXferList();updBankDepSummary();renderPGKRecon();autoFillPgkOpen();
   const wl=document.getElementById('pgk-tab-wl');if(wl){wl.textContent='0.00';wl.style.color='';}
   renderPGKListing();
   showToast(platform+' saved ✓');
@@ -3060,7 +3121,7 @@ function editPlatEntry(entry){
     document.getElementById('pgk-tab-rem').value=entry.rem||'';
     adjRows2=[...(entry.adjustments||[])];renderAdj2();
     xferRows2=[...(entry.transfers||[])];renderPgkXfer();
-    calcWL2();
+    chkOpenDiff();calcWL2();
   },50);
   showToast('Loaded for editing — update and save');
   window.scrollTo(0,0);
