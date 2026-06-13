@@ -167,6 +167,19 @@ details.collapse-card[open]>summary:before{content:'▾'}
 .login-acct.sel{border-color:var(--bl);background:#E6F1FB;color:#0C447C}
 .app-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:.75rem}
 .user-badge{font-size:11px;color:var(--txt2);display:flex;align-items:center;gap:8px}
+.setup-layout{display:flex;gap:14px;align-items:flex-start}
+.setup-rail{display:flex;flex-direction:column;gap:4px;flex:0 0 175px;position:sticky;top:8px}
+.setup-rail button{text-align:left;padding:9px 12px;border:1px solid var(--bdr);background:var(--bg2);border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:600;color:var(--txt2)}
+.setup-rail button:hover{background:var(--bg3)}
+.setup-rail button.on{background:#E6F1FB;border-color:var(--bl);color:#0C447C}
+.setup-body{flex:1;min-width:0}
+.setup-body>.card[data-setupcat]{display:none}
+.setup-body>.card[data-setupcat].show{display:block}
+@media(max-width:640px){
+  .setup-layout{flex-direction:column}
+  .setup-rail{flex-direction:row;overflow-x:auto;width:100%;flex:none;position:static;padding-bottom:4px}
+  .setup-rail button{white-space:nowrap;flex:0 0 auto}
+}
 .print-only{display:none}
 @media print{
   @page{margin:1cm}
@@ -687,6 +700,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
 
 <!-- SETTINGS -->
 <div id="pg-settings" class="pg">
+  <div class="setup-layout"><div class="setup-rail" id="setup-rail"></div><div class="setup-body">
   <div class="card" id="s-accounts-card">
     <div class="ct">👥 Users &amp; Access</div>
     <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">Create accounts and choose which tabs each can see. Operators see only their entry tabs; managers see reports; admins see everything. <b>Note:</b> this controls visibility/role separation — for a single HTML file it is not bulletproof security against a technical user (real security comes with the cloud version).</div>
@@ -803,6 +817,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
       ⚠️ Large attachments use more storage. Compress images before attaching.
     </div>
   </div>
+  </div></div>
 </div>
 </div>
 
@@ -1569,7 +1584,7 @@ function renderPage(p){
   if(p==='weekly'){setSel('wk-month',mopts());renderWeekly();}
   if(p==='pl'){togglePLCustom();renderPL();}
   if(p==='funders'){toggleFNCustom();renderFundersTab();}
-  if(p==='settings'){renderSettings();renderExpTypeSetup();}
+  if(p==='settings'){renderSettings();renderExpTypeSetup();renderSetupRail();}
   if(p==='funder-review'){initFunderReview();renderFunderReview();}
 }
 
@@ -2991,6 +3006,31 @@ function renderStorageMeter(){
         <div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px;transition:width .4s"></div>
       </div>`;
   }catch(e){el.innerHTML='';}
+}
+// ── SETUP LEFT-RAIL NAVIGATION ──
+const SETUP_CATS=[
+  {id:'users',label:'Users & Access',adminOnly:true},
+  {id:'entities',label:'Banks & Platforms'},
+  {id:'exchange',label:'Exchange & Rates'},
+  {id:'funders',label:'Funders'},
+  {id:'expenses',label:'Expense Categories'},
+  {id:'general',label:'General & Data'},
+];
+let setupCat='entities';
+function renderSetupRail(){
+  // assign a category to each setup card by its position (cards are static & ordered)
+  const order=['users','general','expenses','entities','entities','entities','exchange','exchange','funders','general'];
+  document.querySelectorAll('.setup-body > .card').forEach((c,i)=>c.setAttribute('data-setupcat',order[i]||'general'));
+  const rail=document.getElementById('setup-rail');if(!rail)return;
+  const cats=SETUP_CATS.filter(c=>!c.adminOnly||isAdminCtx());
+  if(!cats.some(c=>c.id===setupCat))setupCat=cats[0].id;
+  rail.innerHTML=cats.map(c=>`<button class="${c.id===setupCat?'on':''}" onclick="setupNav('${c.id}')">${c.label}</button>`).join('');
+  setupNav(setupCat);
+}
+function setupNav(cat){
+  setupCat=cat;
+  document.querySelectorAll('.setup-body > .card').forEach(c=>c.classList.toggle('show',c.getAttribute('data-setupcat')===cat));
+  document.querySelectorAll('#setup-rail button').forEach(b=>b.classList.toggle('on',(b.getAttribute('onclick')||'').includes("'"+cat+"'")));
 }
 function renderSettings(){
   setHTML('s-platforms',S.platforms.map((p,i)=>{
