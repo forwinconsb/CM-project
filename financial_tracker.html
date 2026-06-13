@@ -308,7 +308,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
       </select>
       <select id="fnd-filter-month" onchange="renderFndListing()"><option value="" data-i18n="all_months">All months</option></select>
       <button class="btn-sec" onclick="exportFndCSV()">⬇ CSV</button>
-      <button class="btn-sec" onclick="exportFndPDF()">⬇ PDF</button>
     </div>
     <div id="fnd-listing-metrics" class="metrics" style="margin-bottom:10px"></div>
     <div class="tw"><table>
@@ -384,7 +383,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <select id="exp-filter-src" onchange="renderExpListing()"><option value="" data-i18n="all_sources">All sources</option><option value="bank" data-i18n="paid_from">Bank paid</option><option value="funder" data-i18n="paid_by_funder">Funder paid</option></select>
       <select id="exp-filter-month" onchange="renderExpListing()"><option value="" data-i18n="all_months">All months</option></select>
       <button class="btn-sec" onclick="exportExpCSV()">⬇ CSV</button>
-      <button class="btn-sec" onclick="exportExpPDF()">⬇ PDF</button>
     </div>
     <div id="exp-listing-metrics" class="metrics" style="margin-bottom:10px"></div>
     <div class="tw"><table>
@@ -403,7 +401,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
   <div class="filter-row">
     <select id="rc-month" onchange="rcDetailOpen=true;renderRecon();renderPGKRecon()"></select>
     <select id="rc-bank" onchange="rcDetailOpen=true;renderRecon()"><option value="">All MYR banks</option></select>
-    <button class="btn-sec" onclick="exportPDF('recon')">⬇ PDF</button>
   </div>
   <div id="recon-content"><div class="empty" data-i18n="no_data">No data yet</div></div>
   <hr class="divider" style="margin:20px 0">
@@ -439,7 +436,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
     </span>
     <select id="cf-plat" onchange="renderCF()"></select>
     <button class="btn-sec" onclick="exportCSV('cf')">⬇ CSV</button>
-    <button class="btn-sec" onclick="exportPDF('cf')">⬇ PDF</button>
   </div>
   <div id="cf-metrics" class="metrics"></div>
   <div class="card"><div class="ct" data-i18n="lbl_plat_perf">Platform performance (PGK)</div>
@@ -458,7 +454,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
   <div class="filter-row">
     <select id="wk-month" onchange="renderWeekly()"></select>
     <button class="btn-sec" onclick="exportCSV('wk')">⬇ CSV</button>
-    <button class="btn-sec" onclick="exportPDF('wk')">⬇ PDF</button>
   </div>
   <div id="wk-content"><div class="empty">No data yet</div></div>
 </div>
@@ -478,7 +473,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <input type="date" id="pl-to" onchange="renderPL()" style="padding:5px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--txt)">
     </span>
     <button class="btn-sec" onclick="exportCSV('pl')">⬇ CSV</button>
-    <button class="btn-sec" onclick="exportPDF('pl')">⬇ PDF</button>
   </div>
   <div id="pl-metrics" class="metrics"></div>
   <div class="card"><div id="pl-content"><div class="empty">No data yet</div></div></div>
@@ -506,7 +500,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <button class="ttb" id="fn-tab-c" onclick="setFnTab('cumul')" data-i18n="fn_cumulative">Cumulative</button>
     </div>
     <button class="btn-sec" onclick="exportCSV('funders')">⬇ CSV</button>
-    <button class="btn-sec" onclick="exportPDF('funders')">⬇ PDF</button>
   </div>
   <div id="fn-metrics" class="metrics"></div>
   <div class="card"><div class="ct" id="fn-pos-title">Funder position</div><div id="fn-pos-table"><div class="empty">No data yet</div></div></div>
@@ -536,7 +529,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <span style="font-size:11px;color:var(--txt2)">to</span>
       <input type="date" id="fr-to" onchange="renderFunderReview()" style="padding:5px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--txt)">
     </span>
-    <button class="btn-sec" onclick="exportFunderReviewPDF()">⬇ PDF</button>
   </div>
   <div id="fr-content"><div class="empty">Select a funder and date range above.</div></div>
 </div>
@@ -625,7 +617,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
           <input type="date" id="pgk-list-to" onchange="renderPGKListing()" style="padding:6px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r)">
           <button class="btn-add" onclick="document.getElementById('pgk-list-from').value='';document.getElementById('pgk-list-to').value='';renderPGKListing()">✕ Clear</button>
           <button class="btn-sec" onclick="exportPGKCSV()">⬇ CSV</button>
-          <button class="btn-sec" onclick="exportPGKPDF()">⬇ PDF</button>
         </div>
         <div class="tw"><table>
           <thead><tr><th data-i18n="date">Date</th><th data-i18n="pgk_platform">Platform</th><th data-i18n="col_deposit">Deposit</th><th data-i18n="col_withdraw">Withdraw</th><th data-i18n="win_lose">Win / Lose</th><th data-i18n="col_bonus">Bonus</th><th data-i18n="col_players">Players</th><th data-i18n="col_open">PGK Open</th><th data-i18n="col_close">PGK Close</th><th data-i18n="col_diff">Diff</th><th data-i18n="col_recon">Recon</th><th data-i18n="col_action">Action</th></tr></thead>
@@ -684,7 +675,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <select id="exch-tab-exchanger" onchange="renderExchTab()"><option value="">All exchangers</option></select>
       <select id="exch-tab-platform" onchange="renderExchTab()"><option value="">All platforms</option></select>
       <button class="btn-sec" onclick="exportExchCSV()">⬇ CSV</button>
-      <button class="btn-sec" onclick="exportExchPDF()">⬇ PDF</button>
     </div>
     <div id="exch-tab-metrics" class="metrics" style="margin-bottom:12px"></div>
     <div class="tw"><table>
