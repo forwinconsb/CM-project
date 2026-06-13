@@ -159,12 +159,36 @@ details.collapse-card[open]>summary:before{content:'▾'}
 .day-detail-panel.open{display:block}
 
 @media(max-width:600px){.g3,.g4{grid-template-columns:1fr 1fr}.exp-detail-grid{grid-template-columns:1fr}}
+.login-overlay{position:fixed;inset:0;background:var(--bg);z-index:11000;display:flex;align-items:center;justify-content:center;padding:1rem}
+.login-overlay.hidden{display:none}
+.login-box{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--rlg);padding:24px;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.login-box h2{font-size:18px;margin-bottom:4px}
+.login-acct{display:block;width:100%;text-align:left;padding:10px 12px;margin-bottom:6px;border:1.5px solid var(--bdr2);border-radius:var(--r);background:#fff;cursor:pointer;font-size:13px;font-weight:600}
+.login-acct.sel{border-color:var(--bl);background:#E6F1FB;color:#0C447C}
+.app-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:.75rem}
+.user-badge{font-size:11px;color:var(--txt2);display:flex;align-items:center;gap:8px}
 </style>
 </head>
 <body>
 <div class="app">
-<h1>📊 Financial Tracker</h1>
+<div class="app-header">
+  <h1 style="margin-bottom:0">📊 Financial Tracker</h1>
+  <span id="user-badge" class="user-badge"></span>
+</div>
 <div id="toast" class="toast"></div>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" class="login-overlay hidden">
+  <div class="login-box">
+    <h2>🔒 Sign in</h2>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:14px">Select your account and enter your PIN</div>
+    <div id="login-accounts"></div>
+    <input type="password" id="login-pin" inputmode="numeric" placeholder="Enter PIN" style="width:100%;padding:10px;font-size:14px;border:1px solid var(--bdr2);border-radius:var(--r);margin-top:10px" onkeydown="if(event.key==='Enter')attemptLogin()">
+    <button class="btn-pri" onclick="attemptLogin()" style="margin-top:10px">Sign in</button>
+    <div id="login-err" style="font-size:11px;color:var(--rd);margin-top:8px;min-height:14px"></div>
+    <div style="text-align:center;margin-top:10px"><a onclick="resetAccessPrompt()" style="font-size:10px;color:var(--txt2);cursor:pointer;text-decoration:underline">Forgot PIN? Reset access (keeps all data)</a></div>
+  </div>
+</div>
 
 <!-- MODAL for expense detail / attachment view -->
 <div id="modal-overlay" class="modal-overlay hidden" onclick="closeModalOnBg(event)">
@@ -649,6 +673,21 @@ details.collapse-card[open]>summary:before{content:'▾'}
 
 <!-- SETTINGS -->
 <div id="pg-settings" class="pg">
+  <div class="card" id="s-accounts-card">
+    <div class="ct">👥 Users &amp; Access</div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">Create accounts and choose which tabs each can see. Operators see only their entry tabs; managers see reports; admins see everything. <b>Note:</b> this controls visibility/role separation — for a single HTML file it is not bulletproof security against a technical user (real security comes with the cloud version).</div>
+    <div id="s-accounts"></div>
+    <hr class="divider">
+    <div class="sl" style="margin-top:0">Add / edit account</div>
+    <div class="g3" style="margin-bottom:9px">
+      <div class="f"><label>Name</label><input type="text" id="acct-name" placeholder="e.g. Operator 1"></div>
+      <div class="f"><label>PIN (4–6 digits)</label><input type="text" id="acct-pin" inputmode="numeric" placeholder="e.g. 1234"></div>
+      <div class="f"><label>Role</label><select id="acct-role" onchange="acctRolePreset()"><option value="operator">Operator (entry only)</option><option value="manager">Manager (entry + reports)</option><option value="admin">Admin (everything)</option><option value="custom">Custom</option></select></div>
+    </div>
+    <div style="font-size:10px;color:var(--txt2);margin-bottom:5px">Allowed tabs (role sets these; adjust for custom):</div>
+    <div id="acct-tabs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:5px;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px"><button class="btn-add" id="acct-save-btn" onclick="saveAccount()">+ Create account</button><button class="btn-sec" onclick="clearAcctForm()">Clear</button></div>
+  </div>
   <div class="card">
     <div class="ct" data-i18n="setup_lang">Language / 语言</div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -1107,6 +1146,7 @@ let S={
   exchSettlements:[],
   pgkFrozen:[],
   fxRates:{},
+  accounts:[],
   stmtBalances:{}
 };
 
@@ -1306,6 +1346,145 @@ function viewDayDetail(date){
     body+=`<div style="font-size:12px;color:var(--txt2)">No day-level attachment.</div>`;
   }
   openModal('Day Summary — '+fD(date),body);
+}
+
+// ── ACCOUNTS & ACCESS ──
+const ALL_TABS=[
+  {id:'entry',label:'✏️ Daily Entry'},
+  {id:'pgk-entry',label:'🎮 PGK Platforms'},
+  {id:'exchange-tab',label:'💱 Exchanges'},
+  {id:'fnd-tab',label:'💰 Funder Movements'},
+  {id:'exp-tab',label:'🧾 Expenses'},
+  {id:'recon',label:'🏦 Reconciliation'},
+  {id:'cashflow',label:'↔️ Cash Flow'},
+  {id:'weekly',label:'📅 Weekly'},
+  {id:'pl',label:'📊 P&L'},
+  {id:'funders',label:'👥 Funders'},
+  {id:'funder-review',label:'📊 Funder View'},
+  {id:'settings',label:'⚙️ Setup'},
+];
+const ROLE_PRESETS={
+  operator:['entry','pgk-entry','exchange-tab','exp-tab'],
+  manager:['entry','pgk-entry','exchange-tab','fnd-tab','exp-tab','recon','cashflow','weekly','pl','funders','funder-review'],
+  admin:ALL_TABS.map(t=>t.id)
+};
+let currentUser=null,loginSelId=null;
+function navTabOf(btn){const m=(btn.getAttribute('onclick')||'').match(/doNav\('([^']+)'/);return m?m[1]:null;}
+function allowedTabs(){
+  if(!S.accounts||!S.accounts.length)return ALL_TABS.map(t=>t.id);
+  if(!currentUser)return[];
+  return currentUser.role==='admin'?ALL_TABS.map(t=>t.id):(currentUser.tabs||[]);
+}
+function isAdminCtx(){return!S.accounts||!S.accounts.length||(currentUser&&currentUser.role==='admin');}
+function applyAccess(){
+  const allow=allowedTabs();
+  document.querySelectorAll('.nav .nb').forEach(btn=>{const t=navTabOf(btn);if(t)btn.style.display=allow.includes(t)?'':'none';});
+  const badge=document.getElementById('user-badge');
+  if(badge)badge.innerHTML=currentUser?`👤 <b>${currentUser.name}</b> <span style="opacity:.6">(${currentUser.role})</span> <button class="btn-sec" style="font-size:10px;padding:2px 8px" onclick="lockApp()">🔒 Lock</button>`:'';
+  const cur=document.querySelector('.nb.on');const curTab=cur?navTabOf(cur):null;
+  if(!curTab||!allow.includes(curTab)){
+    const first=allow[0];
+    if(first){const b=[...document.querySelectorAll('.nav .nb')].find(x=>navTabOf(x)===first);if(b)doNav(first,b);}
+  }
+}
+function showLogin(){
+  const ov=document.getElementById('login-overlay');if(!ov)return;
+  loginSelId=null;
+  const box=document.getElementById('login-accounts');
+  box.innerHTML=(S.accounts||[]).map(a=>`<button class="login-acct" id="la-${a.id}" onclick="selLoginAcct('${a.id}')">${a.name} <span style="font-size:10px;opacity:.6;font-weight:400">${a.role}</span></button>`).join('');
+  document.getElementById('login-pin').value='';
+  document.getElementById('login-err').textContent='';
+  ov.classList.remove('hidden');
+}
+function selLoginAcct(id){loginSelId=id;document.querySelectorAll('.login-acct').forEach(b=>b.classList.remove('sel'));document.getElementById('la-'+id)?.classList.add('sel');document.getElementById('login-pin').focus();}
+function attemptLogin(){
+  if(!loginSelId){document.getElementById('login-err').textContent='Select your account first';return;}
+  const a=(S.accounts||[]).find(x=>x.id===loginSelId);
+  const pin=document.getElementById('login-pin').value;
+  if(!a||String(a.pin)!==String(pin)){document.getElementById('login-err').textContent='Wrong PIN';return;}
+  currentUser=a;
+  document.getElementById('login-overlay').classList.add('hidden');
+  applyAccess();
+  showToast('Welcome, '+a.name+' ✓');
+}
+function lockApp(){currentUser=null;showLogin();}
+function resetAccessPrompt(){
+  if(!confirm('Reset access removes ALL user accounts so the app opens with no login.\nYour financial data is NOT touched.\n\nContinue?'))return;
+  S.accounts=[];persist();currentUser=null;
+  document.getElementById('login-overlay').classList.add('hidden');
+  applyAccess();showToast('Access reset — no login required');
+}
+function initAuth(){
+  if(S.accounts&&S.accounts.length){showLogin();}
+  else{currentUser=null;applyAccess();}
+}
+// ── ACCOUNT MANAGEMENT (Setup) ──
+let acctEditId=null;
+function acctRolePreset(){
+  const role=document.getElementById('acct-role')?.value;
+  if(role&&ROLE_PRESETS[role]){
+    ALL_TABS.forEach(t=>{const cb=document.getElementById('acct-tab-'+t.id);if(cb)cb.checked=ROLE_PRESETS[role].includes(t.id);});
+  }
+}
+function renderAccounts(){
+  const card=document.getElementById('s-accounts-card');
+  if(card)card.style.display=isAdminCtx()?'':'none';
+  const list=document.getElementById('s-accounts');if(!list)return;
+  list.innerHTML=(S.accounts||[]).length?S.accounts.map(a=>`<div class="setting-row">
+    <span><b>${a.name}</b> <span style="font-size:10px;color:var(--txt2)">${a.role} · ${a.role==='admin'?'all tabs':(a.tabs||[]).length+' tabs'}</span></span>
+    <span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="editAccount('${a.id}')">✏️</button><button class="del" onclick="deleteAccount('${a.id}')">🗑</button></span>
+  </div>`).join(''):`<div class="empty">No accounts yet — app opens with no login. Create an Admin account to enable sign-in.</div>`;
+  const tabBox=document.getElementById('acct-tabs');
+  if(tabBox&&!tabBox.dataset.built){
+    tabBox.innerHTML=ALL_TABS.map(t=>`<label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:400"><input type="checkbox" id="acct-tab-${t.id}">${t.label}</label>`).join('');
+    tabBox.dataset.built='1';
+  }
+}
+function clearAcctForm(){
+  acctEditId=null;
+  const n=document.getElementById('acct-name'),p=document.getElementById('acct-pin'),r=document.getElementById('acct-role');
+  if(n)n.value='';if(p)p.value='';if(r)r.value='operator';acctRolePreset();
+  const btn=document.getElementById('acct-save-btn');if(btn)btn.textContent='+ Create account';
+}
+function saveAccount(){
+  const name=document.getElementById('acct-name')?.value.trim();
+  const pin=document.getElementById('acct-pin')?.value.trim();
+  const role=document.getElementById('acct-role')?.value||'operator';
+  if(!name){showToast('Enter a name',true);return;}
+  if(!/^\d{4,6}$/.test(pin)){showToast('PIN must be 4–6 digits',true);return;}
+  const tabs=ALL_TABS.filter(t=>document.getElementById('acct-tab-'+t.id)?.checked).map(t=>t.id);
+  const others=(S.accounts||[]).filter(a=>a.id!==acctEditId);
+  if(others.some(a=>a.name.toLowerCase()===name.toLowerCase())){showToast('Name already exists',true);return;}
+  if(!acctEditId&&!others.length&&role!=='admin'){showToast('The first account must be Admin (so you can manage users)',true);return;}
+  if(acctEditId){
+    const a=S.accounts.find(x=>x.id===acctEditId);
+    // prevent removing the last admin
+    if(a.role==='admin'&&role!=='admin'&&S.accounts.filter(x=>x.role==='admin').length===1){showToast('Cannot demote the only Admin',true);return;}
+    Object.assign(a,{name,pin,role,tabs});
+  }else{
+    if(!S.accounts)S.accounts=[];
+    const uid='USR-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    S.accounts.push({id:uid,name,pin,role,tabs});
+  }
+  persist();clearAcctForm();renderAccounts();
+  showToast('Account saved ✓');
+}
+function editAccount(id){
+  const a=(S.accounts||[]).find(x=>x.id===id);if(!a)return;
+  acctEditId=id;
+  document.getElementById('acct-name').value=a.name;
+  document.getElementById('acct-pin').value=a.pin;
+  document.getElementById('acct-role').value=a.role;
+  ALL_TABS.forEach(t=>{const cb=document.getElementById('acct-tab-'+t.id);if(cb)cb.checked=(a.role==='admin'?true:(a.tabs||[]).includes(t.id));});
+  const btn=document.getElementById('acct-save-btn');if(btn)btn.textContent='💾 Update account';
+  document.getElementById('acct-name').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function deleteAccount(id){
+  const a=(S.accounts||[]).find(x=>x.id===id);if(!a)return;
+  if(a.role==='admin'&&S.accounts.filter(x=>x.role==='admin').length===1){showToast('Cannot delete the only Admin',true);return;}
+  if(!confirm('Delete account "'+a.name+'"?'))return;
+  S.accounts=S.accounts.filter(x=>x.id!==id);
+  persist();renderAccounts();showToast('Account deleted ✓');
 }
 
 // ── NAV ──
@@ -2775,6 +2954,7 @@ function renderSettings(){
     </span></div>`).join(''):`<div class="empty">No rates set — P&L falls back to actual average exchange rates (marked "auto")</div>`);
   setHTML('s-exchangers',S.exchangers.map((e,i)=>`<div class="setting-row"><span>${e}</span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('exchanger',${i})">✏️</button><button class="del" onclick="deleteEntity('exchanger',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No exchangers yet</div>`);
   setHTML('s-funders',S.funders.map((f,i)=>`<div class="setting-row"><span><b>${f.name}</b> — Commitment: RM ${fmt(f.commitment)}</span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('funder',${i})">✏️</button><button class="del" onclick="deleteEntity('funder',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No funders yet</div>`);
+  renderAccounts();
   renderStorageMeter();
 }
 function addPlatform(){const nm=document.getElementById('s-pname')?.value.trim();if(!nm){showToast('Enter name',true);return;}if(S.platforms.some(p=>p.name===nm)){showToast('Platform already exists',true);return;}S.platforms.push({name:nm,bank:'',banks:[]});persist();renderSettings();initForms();document.getElementById('s-pname').value='';showToast(nm+' added — now assign its banks above ✓');}
@@ -4425,6 +4605,7 @@ function exportPDF(type){
 document.getElementById('e-date').value=new Date().toISOString().slice(0,10);
 loadData();
 setTimeout(applyLang, 50);
+setTimeout(initAuth, 60);
 </script>
 </body>
 </html>
