@@ -618,6 +618,18 @@ details.collapse-card[open]>summary:before{content:'▾'}
     </details>
   </div>
   <div class="card">
+    <div class="ct">📜 Exchanger Statement — movement trace</div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">Every exchange and payment in date order with a running balance. Positive = exchanger owes us · negative = we owe the exchanger.</div>
+    <div class="filter-row">
+      <select id="stmt-exchanger" onchange="renderExchStatement()"></select>
+      <input type="date" id="stmt-from" onchange="renderExchStatement()" style="padding:6px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r)">
+      <span style="font-size:11px;color:var(--txt2)">to</span>
+      <input type="date" id="stmt-to" onchange="renderExchStatement()" style="padding:6px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r)">
+      <button class="btn-add" onclick="document.getElementById('stmt-from').value='';document.getElementById('stmt-to').value='';renderExchStatement()">✕ Clear dates</button>
+    </div>
+    <div id="exch-stmt-content"><div class="empty">Select an exchanger above</div></div>
+  </div>
+  <div class="card">
     <div class="ct">Exchange transactions — full listing</div>
     <div class="filter-row">
       <select id="exch-tab-month" onchange="renderExchTab()"></select>
@@ -1321,6 +1333,7 @@ function renderPage(p){
     const exSel=document.getElementById('exch-tab-exchanger');
     if(exSel){exSel.innerHTML='<option value="">All exchangers</option>'+S.exchangers.map(e=>`<option value="${e}">${e}</option>`).join('');}
     setSel('exch-tab-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);
+    setSel('stmt-exchanger',[{v:'',l:'Select exchanger…'},...S.exchangers.map(e=>({v:e,l:e}))]);
     renderExchTab();return;
   }
   if(p==='fnd-tab'){initFndTab();return;}
@@ -3676,6 +3689,68 @@ function deleteSettlement(id){
   S.exchSettlements=S.exchSettlements.filter(x=>x.id!==id);
   persist();renderExchTab();renderRecon();showToast('Payment record deleted ✓');
 }
+// ── EXCHANGER STATEMENT (movement trace) ──
+function exchStatementEvents(exchanger){
+  const ev=[];
+  S.dayEntries.forEach(d=>(d.exchanges||[]).forEach(x=>{
+    if((x.exchanger||'')!==exchanger)return;
+    if(x.dir==='out'){
+      // they received PGK, owe us MYR; unpaid part increases their debt
+      ev.push({date:d.date,type:'Exchange PGK→MYR',out:true,
+        detail:`${fmt(x.pgk||0)} PGK @ ${x.rate||'-'} = RM ${fmt(x.myr||0)} · paid RM ${fmt(x.paid||0)}${x.platform?' · '+x.platform:''}`,
+        delta:(x.myr||0)-(x.paid||0)});
+    }else{
+      // we received PGK, owe them MYR; unpaid part = we owe
+      ev.push({date:d.date,type:'Exchange MYR→PGK',out:false,
+        detail:`RM ${fmt(x.pgk||0)} for ${fmt(x.myr||0)} PGK · paid RM ${fmt(x.paid||0)}${x.platform?' · '+x.platform:''}`,
+        delta:-((x.pgk||0)-(x.paid||0))});
+    }
+  }));
+  (S.exchSettlements||[]).filter(s=>s.exchanger===exchanger).forEach(s=>{
+    ev.push({date:s.date,type:'Payment received',out:false,
+      detail:(s.myrBank?'into '+s.myrBank:'')+(s.note?' · '+s.note:''),
+      delta:-(s.amount||0)});
+  });
+  return ev.sort((a,b)=>a.date.localeCompare(b.date));
+}
+function renderExchStatement(){
+  const el=document.getElementById('exch-stmt-content');if(!el)return;
+  const ex=document.getElementById('stmt-exchanger')?.value||'';
+  const from=document.getElementById('stmt-from')?.value||'';
+  const to=document.getElementById('stmt-to')?.value||'';
+  if(!ex){el.innerHTML=`<div class="empty">Select an exchanger above</div>`;return;}
+  const all=exchStatementEvents(ex);
+  let bf=0;const rows=[];
+  all.forEach(e=>{
+    if(from&&e.date<from){bf+=e.delta;return;}
+    if(to&&e.date>to)return;
+    rows.push(e);
+  });
+  const lbl=v=>v>0.009?`<span style="color:var(--am);font-weight:700">owes us RM ${fmt(v)}</span>`
+    :v<-0.009?`<span style="color:var(--pu);font-weight:700">we owe RM ${fmt(-v)}</span>`
+    :`<span style="color:var(--gr);font-weight:700">✓ settled</span>`;
+  let bal=bf;
+  let html=`<div class="pr"><span style="color:var(--txt2)">B/F balance${from?' before '+fD(from):''}</span><span>${lbl(bf)}</span></div>`;
+  if(!rows.length){html+=`<div class="empty">No movements${from||to?' in this date range':''}</div>`;}
+  else{
+    html+=`<div class="tw"><table>
+      <thead><tr><th>Date</th><th>Type</th><th>Detail</th><th>+ Owes more</th><th>− Reduces</th><th>Running balance</th></tr></thead><tbody>`;
+    rows.forEach(e=>{
+      bal+=e.delta;
+      html+=`<tr>
+        <td>${fD(e.date)}</td>
+        <td><span class="tag ${e.type==='Payment received'?'tag-in':e.out?'tag-out':'tag-exch'}">${e.type}</span></td>
+        <td style="color:var(--txt2);font-size:11px">${e.detail}</td>
+        <td style="color:var(--am);font-weight:600">${e.delta>0.009?'RM '+fmt(e.delta):''}</td>
+        <td style="color:var(--gr);font-weight:600">${e.delta<-0.009?'RM '+fmt(-e.delta):''}</td>
+        <td>${lbl(bal)}</td>
+      </tr>`;
+    });
+    html+=`</tbody></table></div>`;
+  }
+  html+=`<div class="pr ptot"><span>Closing balance${to?' at '+fD(to):''}</span><span>${lbl(bal)}</span></div>`;
+  el.innerHTML=html;
+}
 function renderExchTab(){
   const month=document.getElementById('exch-tab-month')?.value||'';
   const dir=document.getElementById('exch-tab-dir')?.value||'';
@@ -3683,7 +3758,7 @@ function renderExchTab(){
   const platF=document.getElementById('exch-tab-platform')?.value||'';
   const allExch=S.dayEntries.filter(e=>!month||mk(e.date)===month).flatMap(d=>(d.exchanges||[]).map(x=>({...x,date:d.date})));
   const filtered=allExch.filter(x=>(!dir||x.dir===dir)&&(!exName||x.exchanger===exName)&&(!platF||x.platform===platF));
-  renderExchDues();
+  renderExchDues();renderExchStatement();
   const tbody=document.getElementById('exch-tab-body');if(!tbody)return;
   if(!filtered.length){tbody.innerHTML=`<tr><td colspan="11" class="empty">No exchange transactions${month?' for '+ml(month):''}</td></tr>`;setHTML('exch-tab-metrics','');return;}
   const{owedByKey}=exchDuesData();
