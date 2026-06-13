@@ -167,14 +167,37 @@ details.collapse-card[open]>summary:before{content:'▾'}
 .login-acct.sel{border-color:var(--bl);background:#E6F1FB;color:#0C447C}
 .app-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:.75rem}
 .user-badge{font-size:11px;color:var(--txt2);display:flex;align-items:center;gap:8px}
+.print-only{display:none}
+@media print{
+  @page{margin:1cm}
+  body{background:#fff!important;font-size:11px;color:#000}
+  .no-print,.nav,.toast,#login-overlay,#user-badge,.info-box,.step-lbl,
+  .btn-pri,.btn-sec,.btn-add,.btn-plat,.btn-danger,.del,.attach-btn,.modal-close,.lang-btn,
+  input[type=file]{display:none!important}
+  .print-only{display:block!important;font-size:15px;font-weight:700;margin-bottom:12px;border-bottom:2px solid #000;padding-bottom:6px}
+  .app{max-width:none!important;padding:0!important}
+  .card{break-inside:avoid;box-shadow:none!important;border:1px solid #ccc!important;margin-bottom:8px}
+  .mc,.pr,tr,.plat-row,.recon-row,.pos-row,.setting-row{break-inside:avoid}
+  details>*{display:block!important}
+  details.collapse-card>summary:before{content:''!important}
+  details>summary{font-weight:700}
+  .pg:not(.on){display:none!important}
+  .tw{overflow:visible!important}
+  table{font-size:10px}
+  a{text-decoration:none;color:#000}
+}
 </style>
 </head>
 <body>
 <div class="app">
 <div class="app-header">
   <h1 style="margin-bottom:0">📊 Financial Tracker</h1>
-  <span id="user-badge" class="user-badge"></span>
+  <span style="display:flex;align-items:center;gap:10px">
+    <button class="btn-sec no-print" onclick="doPrint()" style="font-size:11px">🖨 Print / Save PDF</button>
+    <span id="user-badge" class="user-badge"></span>
+  </span>
 </div>
+<div id="print-header" class="print-only"></div>
 <div id="toast" class="toast"></div>
 
 <!-- LOGIN OVERLAY -->
@@ -1486,6 +1509,24 @@ function deleteAccount(id){
   S.accounts=S.accounts.filter(x=>x.id!==id);
   persist();renderAccounts();showToast('Account deleted ✓');
 }
+
+// ── PRINT / SAVE AS PDF (matches current view) ──
+function currentTabLabel(){
+  const cur=document.querySelector('.nb.on');const t=cur?navTabOf(cur):null;
+  const meta=ALL_TABS.find(x=>x.id===t);
+  return meta?meta.label.replace(/^[^\sA-Za-z]+\s*/,''):'Report';
+}
+function doPrint(){
+  const ph=document.getElementById('print-header');
+  if(ph)ph.textContent='Financial Tracker — '+currentTabLabel()+'  ·  '+new Date().toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'});
+  const dets=[...document.querySelectorAll('details')];
+  window._printRestore=dets.map(d=>d.open);
+  dets.forEach(d=>d.open=true);
+  setTimeout(()=>window.print(),60);
+}
+window.addEventListener('afterprint',()=>{
+  if(window._printRestore){const dets=[...document.querySelectorAll('details')];dets.forEach((d,i)=>{if(i<window._printRestore.length)d.open=window._printRestore[i];});window._printRestore=null;}
+});
 
 // ── NAV ──
 function doNav(p,btn){
