@@ -50,3 +50,23 @@ then graduate to full tables + row-level security + realtime if the team grows.
 ## Repo
 - GitHub: https://github.com/forwinconsb/CM-project
 - Commit + push when the owner asks; keep commit messages descriptive.
+
+## Deploying updates safely
+Code and data are separate — a code update never changes saved data; only `migrateData()`
+touches data shape, and it upgrades old data automatically on load. Users receive an update
+only when they reopen/refresh — it is never pushed onto an in-progress session.
+
+Before pushing any update (especially a major/data-restructure one):
+1. **Backup data first** — Setup → Export full backup (.json). (Online later: Supabase keeps backups.)
+2. **Test the new version against a COPY of real data** — confirm zero console errors and that
+   existing entries still read correctly.
+3. **Deploy off-hours** — after the operator has finished end-of-day entry.
+4. **Keep rollback ready** — git history is the rollback for code; the .json export restores data.
+5. **Tell users to refresh / reopen** to pick up the new version.
+
+Minor updates (new field/feature) are essentially invisible — merge-on-load handles old data.
+
+**Offline gotcha (current setup):** `localStorage` is tied to the file's location. When replacing
+the HTML, put it in the SAME folder/path, or the browser won't find the old data (it's not lost —
+it's under the old location; Import the .json backup to recover). Going online (Method 2) removes
+this risk entirely — same URL always.
