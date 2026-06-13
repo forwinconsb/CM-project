@@ -699,6 +699,16 @@ details.collapse-card[open]>summary:before{content:'▾'}
     <button class="btn-add" onclick="addPGKBank()" style="margin-top:9px">+ Add PGK bank</button>
   </div>
   <div class="card">
+    <div class="ct">💱 PGK → MYR monthly rates (P&L translation)</div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">Fixed rate used to translate PGK revenue and costs in the P&L. One rate per month — changing one month never affects other months. Months without a rate carry forward the latest earlier rate.</div>
+    <div id="s-fxrates"></div>
+    <div class="g2" style="margin-top:10px">
+      <div class="f"><label>Month</label><input type="month" id="s-fxmonth"></div>
+      <div class="f"><label>Rate (1 PGK = ? MYR)</label><input type="number" id="s-fxrate" placeholder="e.g. 0.8850" step="0.0001"></div>
+    </div>
+    <button class="btn-add" onclick="saveFxRate()" style="margin-top:9px">+ Set monthly rate</button>
+  </div>
+  <div class="card">
     <div class="ct">3rd party exchangers</div>
     <div id="s-exchangers"></div>
     <div class="f" style="margin-top:10px"><label>Exchanger name</label><input type="text" id="s-ename" placeholder="e.g. 换钱 / Ali"></div>
@@ -1084,6 +1094,7 @@ let S={
   platEntries:[],dayEntries:[],
   exchSettlements:[],
   pgkFrozen:[],
+  fxRates:{},
   stmtBalances:{}
 };
 
@@ -2499,15 +2510,19 @@ function renderPL(){
   const ordSec=S.expTypes.map(t=>({id:t.plSection,name:t.name,color:t.color})).filter((v,i,a)=>a.findIndex(x=>x.id===v.id)===i);
   const sumSec=id=>Object.values(secMap[id]?.cats||{}).reduce((s,arr)=>s+arr.reduce((ss,e)=>ss+e.amt,0),0);
   const totalCost=Object.values(secMap).reduce((s,sec)=>s+Object.values(sec.cats).reduce((ss,arr)=>ss+arr.reduce((sss,e)=>sss+e.amt,0),0),0);
-  const rev=myrIn,gross=rev-sumSec('direct'),net=rev-totalCost,totWL=platRows.reduce((s,e)=>s+e.winLose,0);
+  const totWL=platRows.reduce((s,e)=>s+e.winLose,0);
+  // ── Fixed-rate translation per month (S.fxRates) ──
+  const{revMYR,fxGL,pgkChargesPGK,pgkLossPGK,pgkRecPGK,pgkChargesMYR,pgkLossMYR,pgkRecMYR,pgkCostMYR,rateNotes,noRateMonths,fxRows}=plFixedStats(from,to);
+  const rev=revMYR,gross=rev-sumSec('direct'),net=rev-pgkCostMYR-totalCost+fxGL;
   const pct=v=>rev?((v/rev)*100).toFixed(1)+'%':'—';
-  setHTML('pl-metrics',`<div class="mc"><div class="ml">${tr('lbl_period')}</div><div class="mv" style="font-size:11px">${rangeLabel}</div></div><div class="mc"><div class="ml">${tr('pl_revenue')}</div><div class="mv pos">RM ${fmt(rev)}</div></div><div class="mc"><div class="ml" >${tr('lbl_myr_out')}</div><div class="mv neg">${myrOut?'-RM '+fmt(myrOut):'-'}</div></div><div class="mc"><div class="ml" >${tr('lbl_total_exp')}</div><div class="mv neg">-RM ${fmt(totalCost)}</div></div><div class="mc"><div class="ml">${tr('pl_net')}</div><div class="mv ${net>=0?'pos':'neg'}">${net>=0?'':'('}RM ${fmt(Math.abs(net))}${net>=0?'':')'}</div></div><div class="mc"><div class="ml">${tr('pl_margin')}</div><div class="mv ${net>=0?'pos':'neg'}">${pct(net)}</div></div>`);
+  setHTML('pl-metrics',`<div class="mc"><div class="ml">${tr('lbl_period')}</div><div class="mv" style="font-size:11px">${rangeLabel}</div></div><div class="mc"><div class="ml">${tr('pl_revenue')} (PGK @ rate)</div><div class="mv pos">RM ${fmt(rev)}</div></div><div class="mc"><div class="ml">FX gain/loss</div><div class="mv ${fxGL>=0?'pos':'neg'}">${fxGL>=0?'+':'-'}RM ${fmt(Math.abs(fxGL))}</div></div><div class="mc"><div class="ml" >${tr('lbl_total_exp')}</div><div class="mv neg">-RM ${fmt(totalCost+pgkCostMYR)}</div></div><div class="mc"><div class="ml">${tr('pl_net')}</div><div class="mv ${net>=0?'pos':'neg'}">${net>=0?'':'('}RM ${fmt(Math.abs(net))}${net>=0?'':')'}</div></div><div class="mc"><div class="ml">${tr('pl_margin')}</div><div class="mv ${net>=0?'pos':'neg'}">${pct(net)}</div></div>`);
   let plHtml=`<div class="sl">P&L — ${rangeLabel}</div>
-  <div class="pr" style="cursor:pointer;border-radius:var(--r);padding:5px 8px;margin:-2px -8px;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''" onclick="showPLTxnModal('revenue','Revenue',${JSON.stringify(allExch.filter(x=>x.dir==='out'))})">
-    <span style="font-weight:700">${tr("lbl_revenue")} <span style="font-size:10px;color:var(--bl)">▶ click to view</span></span>
-    <span style="font-weight:700;color:var(--gr)">RM ${fmt(rev)}</span>
+  <div class="pr">
+    <span style="font-weight:700">${tr("lbl_revenue")} — net win/lose ${fmt(totWL)} PGK @ monthly rate</span>
+    <span style="font-weight:700;color:${rev>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(rev)}</span>
   </div>
-  ${myrOut?`<div class="pr pi"><span>${tr("lbl_myr_topup")}</span><span style="color:var(--rd)">-RM ${fmt(myrOut)}</span></div>`:''}`;
+  <div style="font-size:10px;color:var(--txt2);margin:2px 0 4px">Rates: ${rateNotes.join(' · ')||'—'}</div>
+  ${noRateMonths.length?`<div style="font-size:11px;color:var(--am);background:#FFF3E0;border:1px solid #F0D49A;border-radius:var(--r);padding:6px 10px;margin-bottom:6px">⚠ No rate available for ${noRateMonths.join(', ')} — these months' PGK figures are excluded. Set rates in Setup → Monthly rates.</div>`:''}`;
   ordSec.forEach(sec=>{
     if(!secMap[sec.id])return;
     const tot=sumSec(sec.id);
@@ -2523,24 +2538,37 @@ function renderPL(){
     plHtml+=`<div class="pr ptot" style="cursor:pointer" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''" onclick="showPLTxnModal('exp',${JSON.stringify(sec.name+' — all')},${JSON.stringify(secTxns)})"><span>Total ${sec.name.toLowerCase()} <span style="font-size:10px;color:var(--bl)">▶ view all</span></span><span style="color:var(--rd)">-RM ${fmt(tot)}</span></div>`;
     if(sec.id==='direct')plHtml+=`<div class="pr" style="font-weight:700"><span>${tr("lbl_gross_profit")}</span><span style="color:${gross>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(gross)}</span></div>`;
   });
-  plHtml+=`<div style="border-top:2px solid #999;margin-top:12px;padding-top:12px"><div class="pr" style="font-weight:700;font-size:14px;color:${net>=0?'var(--gr)':'var(--rd)'}"><span>${tr("lbl_net_profit")}</span><span>${net>=0?'':'('}RM ${fmt(Math.abs(net))}${net>=0?'':')'}</span></div></div>`;
-  // PGK Losses & Charges (memo section, estimated MYR)
-  const pgkCost=pgkCostStats(from,to);
-  if(pgkCost.charges||pgkCost.losses||pgkCost.recoveries){
-    const cv=v=>pgkCost.rate!=null?'≈ -RM '+fmt(v*pgkCost.rate):fmt(v)+' PGK';
-    const cvPos=v=>pgkCost.rate!=null?'≈ +RM '+fmt(v*pgkCost.rate):fmt(v)+' PGK';
-    plHtml+=`<div class="sl" style="margin-top:16px;display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:2px;background:#0C447C;display:inline-block"></span>PGK Losses &amp; Charges <span style="font-weight:400;text-transform:none;letter-spacing:0">(estimated MYR @ rate ${pgkCost.rate!=null?pgkCost.rate.toFixed(4):'n/a'})</span></div>`;
-    if(pgkCost.charges)plHtml+=`<div class="pr pi"><span>PGK bank charges (${fmt(pgkCost.charges)} PGK)</span><span style="color:var(--rd)">${cv(pgkCost.charges)}</span></div>`;
-    if(pgkCost.losses)plHtml+=`<div class="pr pi"><span>Frozen-fund write-offs (${fmt(pgkCost.losses)} PGK)</span><span style="color:var(--rd)">${cv(pgkCost.losses)}</span></div>`;
-    if(pgkCost.recoveries)plHtml+=`<div class="pr pi"><span>Frozen-fund recoveries (${fmt(pgkCost.recoveries)} PGK)</span><span style="color:var(--gr)">${cvPos(pgkCost.recoveries)}</span></div>`;
-    const netPgkMyr=pgkCost.rate!=null?pgkCost.netPGK*pgkCost.rate:null;
-    plHtml+=`<div class="pr ptot"><span>Net PGK costs (${fmt(pgkCost.netPGK)} PGK)</span><span style="color:${pgkCost.netPGK>0?'var(--rd)':'var(--gr)'}">${netPgkMyr!=null?(pgkCost.netPGK>0?'≈ -RM ':'≈ +RM ')+fmt(Math.abs(netPgkMyr)):'rate n/a'}</span></div>`;
-    if(netPgkMyr!=null){
-      const adjNet2=net-netPgkMyr;
-      plHtml+=`<div class="pr" style="font-weight:700;font-size:13px;color:${adjNet2>=0?'var(--gr)':'var(--rd)'}"><span>Adjusted net (incl. PGK costs, estimate)</span><span>${adjNet2>=0?'':'('}RM ${fmt(Math.abs(adjNet2))}${adjNet2>=0?'':')'}</span></div>`;
-    }
-    plHtml+=`<div style="font-size:10px;color:var(--txt2);margin-top:4px">MYR figures in this section are estimates converted at your average PGK→MYR exchange rate for the period. The net profit above remains pure MYR.</div>`;
+  // PGK costs (translated at the same monthly rates, INCLUDED in net)
+  if(pgkChargesPGK||pgkLossPGK||pgkRecPGK){
+    plHtml+=`<div class="sl" style="margin-top:14px;display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:2px;background:#0C447C;display:inline-block"></span>PGK Costs (@ monthly rate)</div>`;
+    if(pgkChargesPGK)plHtml+=`<div class="pr pi"><span>PGK bank charges (${fmt(pgkChargesPGK)} PGK)</span><span style="color:var(--rd)">-RM ${fmt(pgkChargesMYR)}</span></div>`;
+    if(pgkLossPGK)plHtml+=`<div class="pr pi"><span>Frozen-fund write-offs (${fmt(pgkLossPGK)} PGK)</span><span style="color:var(--rd)">-RM ${fmt(pgkLossMYR)}</span></div>`;
+    if(pgkRecPGK)plHtml+=`<div class="pr pi"><span>Frozen-fund recoveries (${fmt(pgkRecPGK)} PGK)</span><span style="color:var(--gr)">+RM ${fmt(pgkRecMYR)}</span></div>`;
+    plHtml+=`<div class="pr ptot"><span>Total PGK costs (${fmt(pgkChargesPGK+pgkLossPGK-pgkRecPGK)} PGK)</span><span style="color:${pgkCostMYR>0?'var(--rd)':'var(--gr)'}">${pgkCostMYR>0?'-':'+'}RM ${fmt(Math.abs(pgkCostMYR))}</span></div>`;
   }
+  // FX gain/loss — click to expand per-exchange detail
+  if(fxRows.length){
+    plHtml+=`<details class="collapse-card" style="margin-top:12px">
+      <summary><span class="pr" style="flex:1;border-bottom:none;font-weight:700"><span>FX gain/loss on actual conversions <span style="font-size:10px;color:var(--bl)">(${fxRows.length} txns — click for detail)</span></span><span style="color:${fxGL>=0?'var(--gr)':'var(--rd)'}">${fxGL>=0?'+':'-'}RM ${fmt(Math.abs(fxGL))}</span></span></summary>
+      <div class="tw" style="margin-top:8px"><table>
+        <thead><tr><th>Date</th><th>Dir</th><th>Exchanger</th><th>PGK</th><th>Real MYR</th><th>@ Fixed rate</th><th>Gain/Loss</th></tr></thead>
+        <tbody>${fxRows.map(f=>`<tr><td>${fD(f.date)}</td><td>${f.dir==='out'?'PGK→MYR':'MYR→PGK'}</td><td>${f.exchanger}</td><td>${fmt(f.pgk)}</td><td>RM ${fmt(f.myr)}</td><td>RM ${fmt(f.dir==='out'?f.pgk*f.rate:f.myr*f.rate)}</td><td style="font-weight:700;color:${f.gl>=0?'var(--gr)':'var(--rd)'}">${f.gl>=0?'+':'-'}RM ${fmt(Math.abs(f.gl))}</td></tr>`).join('')}</tbody>
+      </table></div>
+      <div style="font-size:10px;color:var(--txt2);margin-top:4px">Positive = your exchanger gave a better rate than the fixed monthly rate. Negative = worse.</div>
+    </details>`;
+  }
+  plHtml+=`<div style="border-top:2px solid #999;margin-top:12px;padding-top:12px"><div class="pr" style="font-weight:700;font-size:14px;color:${net>=0?'var(--gr)':'var(--rd)'}"><span>${tr("lbl_net_profit")}</span><span>${net>=0?'':'('}RM ${fmt(Math.abs(net))}${net>=0?'':')'}</span></div></div>`;
+  // Cash view — collapsed memo
+  plHtml+=`<details class="collapse-card" style="margin-top:10px">
+    <summary style="font-size:11px;font-weight:600;color:var(--txt2);padding:4px 0">Cash view — MYR actually moved this period (memo)</summary>
+    <div style="margin-top:6px">
+      <div class="pr pi"><span>MYR received from exchangers (cash)</span><span style="color:var(--gr)">RM ${fmt(myrIn)}</span></div>
+      ${myrOut?`<div class="pr pi"><span>${tr("lbl_myr_topup")}</span><span style="color:var(--rd)">-RM ${fmt(myrOut)}</span></div>`:''}
+      <div class="pr pi"><span>MYR expenses paid</span><span style="color:var(--rd)">-RM ${fmt(totalCost)}</span></div>
+      <div class="pr ptot"><span>Net MYR cash movement</span><span style="font-weight:700;color:${(myrIn-myrOut-totalCost)>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(myrIn-myrOut-totalCost)}</span></div>
+      <div style="font-size:10px;color:var(--txt2);margin-top:4px">Cash timing only — the net profit above measures business performance at fixed monthly rates. Conversion timing differences appear here, not in profit.</div>
+    </div>
+  </details>`;
   setHTML('pl-content',plHtml);
   const exchMap={};allExch.forEach(x=>{const k=x.exchanger||'Unknown';if(!exchMap[k])exchMap[k]={pgkSent:0,myrDue:0,myrRcvd:0,myrSent:0};if(x.dir==='out'){exchMap[k].pgkSent+=x.pgk;exchMap[k].myrDue+=x.myr||0;exchMap[k].myrRcvd+=x.paid||0;}else exchMap[k].myrSent+=x.paid||0;});
   setHTML('pl-exch',!Object.keys(exchMap).length?`<div class="empty">${tr("lbl_no_exch")}</div>`:Object.entries(exchMap).map(([name,e])=>{const owed=e.myrDue-e.myrRcvd;return`<div class="sbox"><div style="font-weight:700;font-size:13px;margin-bottom:9px">${name}</div><div class="g4"><div><div class="ml">${tr("lbl_pkgsent")}</div><div style="font-size:15px;font-weight:600">${fmt(e.pgkSent)}</div></div><div><div class="ml">${tr("lbl_myr_due")}</div><div style="font-size:15px;font-weight:600">RM ${fmt(e.myrDue)}</div></div><div><div class="ml">${tr('lbl_myr_rcvd')}</div><div style="font-size:15px;font-weight:600;color:var(--gr)">RM ${fmt(e.myrRcvd)}</div></div><div><div class="ml">${tr("lbl_balance_owed")}</div><div style="font-size:15px;font-weight:600;color:${owed>0.01?'var(--am)':'var(--gr)'}">RM ${fmt(owed)}</div></div></div></div>`;}).join(''));
@@ -2725,6 +2753,13 @@ function renderSettings(){
   setHTML('s-pgkbanks',
     (pgkActive.map(x=>pgkRow(x.b,x.i)).join('')||`<div class="empty">No active PGK banks</div>`)+
     (pgkInactive.length?`<details class="collapse-card" style="margin-top:8px"><summary style="font-size:11px;font-weight:600;color:var(--txt2);padding:4px 0">Inactive banks (${pgkInactive.length})</summary>${pgkInactive.map(x=>pgkRow(x.b,x.i)).join('')}</details>`:''));
+  const fxMonths=Object.keys(S.fxRates||{}).sort().reverse();
+  setHTML('s-fxrates',fxMonths.length?fxMonths.map(m=>`<div class="setting-row">
+    <span><b>${ml(m)}</b></span>
+    <span style="display:flex;align-items:center;gap:6px">
+      <input type="number" value="${S.fxRates[m]}" step="0.0001" style="width:100px;padding:5px 8px;font-size:12px;border:1px solid var(--bdr2);border-radius:var(--r)" onchange="updateFxRate('${m}',this.value)">
+      <button class="del" onclick="deleteFxRate('${m}')">🗑</button>
+    </span></div>`).join(''):`<div class="empty">No rates set — P&L falls back to actual average exchange rates (marked "auto")</div>`);
   setHTML('s-exchangers',S.exchangers.map((e,i)=>`<div class="setting-row"><span>${e}</span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('exchanger',${i})">✏️</button><button class="del" onclick="deleteEntity('exchanger',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No exchangers yet</div>`);
   setHTML('s-funders',S.funders.map((f,i)=>`<div class="setting-row"><span><b>${f.name}</b> — Commitment: RM ${fmt(f.commitment)}</span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('funder',${i})">✏️</button><button class="del" onclick="deleteEntity('funder',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No funders yet</div>`);
   renderStorageMeter();
@@ -2841,6 +2876,68 @@ function recoverFrozen(id){
   persist();renderFrozen();
   const remain=f.amount-f.recoveredAmount;
   showToast('Recovery recorded ✓'+(remain>0.009?' — remaining '+fmt(remain)+' PGK stays as loss':' — fully recovered'));
+}
+// ── FX MONTHLY RATES ──
+function fxRateFor(month){
+  const fx=S.fxRates||{};
+  if(fx[month])return{rate:fx[month],src:'set'};
+  const earlier=Object.keys(fx).filter(k=>k<month).sort();
+  if(earlier.length)return{rate:fx[earlier[earlier.length-1]],src:'carried'};
+  // fallback: actual average from that month's PGK→MYR exchanges, else all-time
+  const avg=arr=>{const p=arr.reduce((s,x)=>s+(x.pgk||0),0),m=arr.reduce((s,x)=>s+(x.myr||0),0);return p>0?m/p:null;};
+  let r=avg(S.dayEntries.filter(d=>mk(d.date)===month).flatMap(d=>(d.exchanges||[]).filter(x=>x.dir==='out')));
+  if(r==null)r=avg(S.dayEntries.flatMap(d=>(d.exchanges||[]).filter(x=>x.dir==='out')));
+  return r!=null?{rate:r,src:'auto'}:{rate:null,src:null};
+}
+function plFixedStats(from,to){
+  const platRows=S.platEntries.filter(e=>e.date>=from&&e.date<=to);
+  const dayRows=S.dayEntries.filter(e=>e.date>=from&&e.date<=to);
+  const months=[...new Set([...platRows.map(e=>mk(e.date)),...dayRows.map(d=>mk(d.date)),
+    ...(S.pgkFrozen||[]).filter(f=>f.dateResolved&&f.dateResolved>=from&&f.dateResolved<=to).map(f=>mk(f.dateResolved)),
+    ...(S.pgkFrozen||[]).filter(f=>f.dateRecovered&&f.dateRecovered>=from&&f.dateRecovered<=to).map(f=>mk(f.dateRecovered))])].sort();
+  const o={revPGK:platRows.reduce((s,e)=>s+e.winLose,0),revMYR:0,fxGL:0,
+    pgkChargesPGK:0,pgkLossPGK:0,pgkRecPGK:0,pgkChargesMYR:0,pgkLossMYR:0,pgkRecMYR:0,pgkCostMYR:0,
+    rateNotes:[],noRateMonths:[],fxRows:[]};
+  months.forEach(m=>{
+    const{rate,src}=fxRateFor(m);
+    if(rate==null){o.noRateMonths.push(ml(m));return;}
+    o.rateNotes.push(`${ml(m)} @ ${rate.toFixed(4)}${src==='set'?'':src==='carried'?' (carried fwd)':' (auto: actual avg)'}`);
+    const wl=platRows.filter(e=>mk(e.date)===m).reduce((s,e)=>s+e.winLose,0);
+    o.revMYR+=wl*rate;
+    const ch=platRows.filter(e=>mk(e.date)===m).reduce((s,e)=>s+(e.bankCharges||0),0);
+    const lo=(S.pgkFrozen||[]).filter(f=>f.dateResolved&&f.dateResolved>=from&&f.dateResolved<=to&&mk(f.dateResolved)===m).reduce((s,f)=>s+f.amount,0);
+    const re=(S.pgkFrozen||[]).filter(f=>f.dateRecovered&&f.dateRecovered>=from&&f.dateRecovered<=to&&mk(f.dateRecovered)===m).reduce((s,f)=>s+(f.recoveredAmount||0),0);
+    o.pgkChargesPGK+=ch;o.pgkLossPGK+=lo;o.pgkRecPGK+=re;
+    o.pgkChargesMYR+=ch*rate;o.pgkLossMYR+=lo*rate;o.pgkRecMYR+=re*rate;
+    o.pgkCostMYR+=(ch+lo-re)*rate;
+    dayRows.filter(d=>mk(d.date)===m).forEach(d=>(d.exchanges||[]).forEach(x=>{
+      const gl=x.dir==='out'?(x.myr||0)-(x.pgk||0)*rate:((x.myr||0)*rate)-(x.pgk||0);
+      o.fxGL+=gl;
+      o.fxRows.push({date:d.date,dir:x.dir,exchanger:x.exchanger||'-',pgk:x.pgk||0,myr:x.myr||0,rate,gl});
+    }));
+  });
+  return o;
+}
+function saveFxRate(){
+  const m=document.getElementById('s-fxmonth')?.value;
+  const r=parseFloat(document.getElementById('s-fxrate')?.value)||0;
+  if(!m){showToast('Pick a month',true);return;}
+  if(r<=0){showToast('Enter a rate above 0',true);return;}
+  if(!S.fxRates)S.fxRates={};
+  S.fxRates[m]=r;
+  persist();renderSettings();
+  document.getElementById('s-fxrate').value='';
+  showToast('Rate for '+ml(m)+' set to '+r+' ✓ (other months unchanged)');
+}
+function updateFxRate(m,val){
+  const r=parseFloat(val)||0;
+  if(r<=0){showToast('Rate must be above 0',true);renderSettings();return;}
+  S.fxRates[m]=r;persist();
+  showToast(ml(m)+' rate updated to '+r+' ✓ (only this month affected)');
+}
+function deleteFxRate(m){
+  if(!confirm('Remove the rate for '+ml(m)+'?\nThat month will then carry forward the latest earlier rate.'))return;
+  delete S.fxRates[m];persist();renderSettings();showToast('Rate removed ✓');
 }
 function pgkCostStats(from,to){
   const charges=S.platEntries.filter(e=>e.date>=from&&e.date<=to).reduce((s,e)=>s+(e.bankCharges||0),0);
@@ -4023,9 +4120,11 @@ function exportPDF(type){
     const ordSec=S.expTypes.map(t=>({id:t.plSection,name:t.name})).filter((v,i,a)=>a.findIndex(x=>x.id===v.id)===i);
     const sumSec=id=>Object.values(secMap[id]?.cats||{}).reduce((s,v)=>s+v,0);
     const totalCost=Object.values(secMap).reduce((s,sec)=>s+Object.values(sec.cats).reduce((ss,v)=>ss+v,0),0);
-    const gross=myrIn-sumSec('direct');
-    const net=myrIn-totalCost;
-    const pct=v=>myrIn?((v/myrIn)*100).toFixed(1)+'%':'--';
+    const FX=plFixedStats(plFrom,plTo);
+    const rev=FX.revMYR;
+    const gross=rev-sumSec('direct');
+    const net=rev-FX.pgkCostMYR-totalCost+FX.fxGL;
+    const pct=v=>rev?((v/rev)*100).toFixed(1)+'%':'--';
     // funder stats for period
     const{stats:fnStats}=gFStats(plFrom,plTo);
     const fnNames=Object.keys(fnStats);
@@ -4036,15 +4135,15 @@ function exportPDF(type){
       {type:'report_title',text:'P&L Report',sub:rangeLabel},
       {type:'metric_row',metrics:[
         {label:'PERIOD',value:rangeLabel},
-        {label:'REVENUE (MYR)',value:'RM '+fmt(myrIn)},
-        {label:'MYR SENT OUT',value:myrOut?'-RM '+fmt(myrOut):'-'},
-        {label:'TOTAL EXPENSES',value:'-RM '+fmt(totalCost)},
+        {label:'REVENUE (PGK @ RATE)',value:'RM '+fmt(rev)},
+        {label:'FX GAIN/LOSS',value:(FX.fxGL>=0?'+':'-')+'RM '+fmt(Math.abs(FX.fxGL))},
+        {label:'TOTAL EXPENSES',value:'-RM '+fmt(totalCost+FX.pgkCostMYR)},
         {label:'NET PROFIT / (LOSS)',value:(net<0?'(':'')+'RM '+fmt(Math.abs(net))+(net<0?')':'')},
         {label:'MARGIN',value:pct(net)},
       ]},
       {type:'section_label',text:'Revenue'},
-      {type:'key_value',label:'Revenue - MYR received via exchange',value:'RM '+fmt(myrIn),color:'green'},
-      ...(myrOut?[{type:'key_value',label:'MYR sent out to top up PGK',value:'-RM '+fmt(myrOut),color:'red',indent:1}]:[]),
+      {type:'key_value',label:'Net win/lose '+fmt(FX.revPGK)+' PGK @ monthly fixed rate',value:'RM '+fmt(rev),color:'green'},
+      {type:'key_value',label:'Rates used: '+(FX.rateNotes.join(' / ')||'-'),value:'',indent:1},
     ];
     // expense sections
     ordSec.forEach(sec=>{
@@ -4057,8 +4156,18 @@ function exportPDF(type){
       secs.push({type:'key_value',bold:true,label:'Total '+sec.name,value:'-RM '+fmt(tot),color:'red'});
       if(sec.id==='direct')secs.push({type:'key_value',bold:true,label:'Gross Profit',value:(gross<0?'(':'')+'RM '+fmt(Math.abs(gross))+(gross<0?')':''),color:gross>=0?'green':'red'});
     });
+    if(FX.pgkChargesPGK||FX.pgkLossPGK||FX.pgkRecPGK){
+      secs.push({type:'section_label',text:'PGK Costs (@ monthly rate)'});
+      if(FX.pgkChargesPGK)secs.push({type:'key_value',label:'PGK bank charges ('+fmt(FX.pgkChargesPGK)+' PGK)',value:'-RM '+fmt(FX.pgkChargesMYR),color:'red',indent:1});
+      if(FX.pgkLossPGK)secs.push({type:'key_value',label:'Frozen-fund write-offs ('+fmt(FX.pgkLossPGK)+' PGK)',value:'-RM '+fmt(FX.pgkLossMYR),color:'red',indent:1});
+      if(FX.pgkRecPGK)secs.push({type:'key_value',label:'Frozen-fund recoveries ('+fmt(FX.pgkRecPGK)+' PGK)',value:'+RM '+fmt(FX.pgkRecMYR),color:'green',indent:1});
+      secs.push({type:'key_value',bold:true,label:'Total PGK costs',value:(FX.pgkCostMYR>0?'-':'+')+'RM '+fmt(Math.abs(FX.pgkCostMYR)),color:FX.pgkCostMYR>0?'red':'green'});
+    }
+    secs.push({type:'key_value',bold:true,label:'FX gain/loss on actual conversions',value:(FX.fxGL>=0?'+':'-')+'RM '+fmt(Math.abs(FX.fxGL)),color:FX.fxGL>=0?'green':'red'});
     secs.push({type:'divider'});
     secs.push({type:'key_value',bold:true,label:'Net Profit / (Loss)',value:(net<0?'(':'')+'RM '+fmt(Math.abs(net))+(net<0?')':''),color:net>=0?'green':'red'});
+    secs.push({type:'key_value',label:'Memo — MYR cash received this period',value:'RM '+fmt(myrIn)});
+    if(myrOut)secs.push({type:'key_value',label:'Memo — MYR sent out to top up PGK',value:'-RM '+fmt(myrOut)});
     // exchanger summary
     if(Object.keys(exchMap).length){
       secs.push({type:'section_label',text:'Exchanger Balance Summary'});
