@@ -1161,8 +1161,23 @@ let S={
   pgkFrozen:[],
   fxRates:{},
   accounts:[],
-  stmtBalances:{}
+  stmtBalances:{},
+  schemaVersion:1
 };
+
+// ── SCHEMA MIGRATIONS ──
+// Current data shape version. Bump this by 1 whenever you RENAME or RESTRUCTURE an
+// existing field (adding brand-new fields needs NO migration — defaults merge in safely).
+// To add one: increase SCHEMA_VERSION, then add an `if(v<N){ ...transform p...; v=N; }`
+// block below in order. Old saved data upgrades itself automatically on load.
+const SCHEMA_VERSION=1;
+function migrateData(p){
+  let v=p.schemaVersion||0;
+  // Example for the future:
+  // if(v<2){ (p.platEntries||[]).forEach(e=>{ e.newField = e.oldField; delete e.oldField; }); v=2; }
+  p.schemaVersion=SCHEMA_VERSION;
+  return p;
+}
 
 let fnTab='month';
 let adjRows=[],exchRows=[],funderRows=[],pendingExp=[],todayPlats=[];
@@ -1200,7 +1215,7 @@ function applyLang(){
 
 // ── STORAGE ──
 function persist(){try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){showToast('Storage full! Export backup now.',true);}}
-function loadData(){try{const d=localStorage.getItem(SK);if(d){const p=JSON.parse(d);S={...S,...p};}}catch(e){}initForms();}
+function loadData(){try{const d=localStorage.getItem(SK);if(d){let p=JSON.parse(d);p=migrateData(p);S={...S,...p};persist();}}catch(e){}initForms();}
 
 // ── HELPERS ──
 function n(v){return parseFloat(v)||0;}
