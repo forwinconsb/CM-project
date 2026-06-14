@@ -1303,11 +1303,18 @@ let S={
 // existing field (adding brand-new fields needs NO migration — defaults merge in safely).
 // To add one: increase SCHEMA_VERSION, then add an `if(v<N){ ...transform p...; v=N; }`
 // block below in order. Old saved data upgrades itself automatically on load.
-const SCHEMA_VERSION=1;
+const SCHEMA_VERSION=2;
 function migrateData(p){
   let v=p.schemaVersion||0;
-  // Example for the future:
-  // if(v<2){ (p.platEntries||[]).forEach(e=>{ e.newField = e.oldField; delete e.oldField; }); v=2; }
+  // v2: genRef previously did not scan pgkFrozen / exchSettlements, so historical FRZ and SET
+  // ids collided (every record got -0001). Renumber them uniquely, in date order.
+  if(v<2){
+    (p.pgkFrozen||[]).slice().sort((a,b)=>(a.dateFrozen||'').localeCompare(b.dateFrozen||''))
+      .forEach((f,i)=>{f.id='FRZ-'+(i+1).toString().padStart(4,'0');});
+    (p.exchSettlements||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''))
+      .forEach((s,i)=>{s.id='SET-'+(i+1).toString().padStart(4,'0');});
+    v=2;
+  }
   p.schemaVersion=SCHEMA_VERSION;
   return p;
 }
@@ -1781,15 +1788,18 @@ function deletePlatEntry(date,platform){
 // ── REFERENCE NUMBER GENERATOR ──
 // ══════════════════════════════════════════════════
 function genRef(prefix){
-  // Find max existing ref for this prefix
-  const allRefs=[];
-  S.dayEntries.forEach(d=>{
-    (d.funderTxns||[]).forEach(t=>{if(t.ref&&t.ref.startsWith(prefix))allRefs.push(t.ref);});
-    (d.expenses||[]).forEach(e=>{if(e.ref&&e.ref.startsWith(prefix))allRefs.push(e.ref);});
-    (d.exchanges||[]).forEach(x=>{if(x.ref&&x.ref.startsWith(prefix))allRefs.push(x.ref);});
-  });
+  // Find the highest existing number for this prefix across EVERY place a ref/id can live,
+  // matching strictly on PREFIX-#### so unrelated refs (e.g. AUTO-…) never throw off the count.
+  const rx=new RegExp('^'+prefix+'-(\\d+)$');
   let max=0;
-  allRefs.forEach(r=>{const n=parseInt(r.split('-').pop())||0;if(n>max)max=n;});
+  const check=r=>{const m=rx.exec(r||'');if(m){const num=+m[1];if(num>max)max=num;}};
+  S.dayEntries.forEach(d=>{
+    (d.funderTxns||[]).forEach(t=>check(t.ref));
+    (d.expenses||[]).forEach(e=>check(e.ref));
+    (d.exchanges||[]).forEach(x=>check(x.ref));
+  });
+  (S.pgkFrozen||[]).forEach(f=>check(f.id));        // FRZ ids live here, not in dayEntries
+  (S.exchSettlements||[]).forEach(s=>check(s.id));  // SET ids live here, not in dayEntries
   return prefix+'-'+(max+1).toString().padStart(4,'0');
 }
 
