@@ -23,6 +23,15 @@ opening the HTML file in a browser. All data persists in browser `localStorage`.
   PGK→MYR; an FX gain/loss line bridges fixed vs actual exchange rates. Cash figures are a memo only.
 - **Accounts/roles** (`S.accounts`): Operator/Manager/Admin/custom tab access via `applyAccess()`.
   This is role separation, NOT real security (client-side). Real security = the cloud migration.
+  - **View-only accounts** (`account.viewOnly`, e.g. the Funder role): `applyAccess()` adds a
+    `body.readonly` class; CSS hides all add/edit/delete actions and entry forms (`.op-only`).
+- **Period lock / month-end close** (`S.lockedMonths`, array of `'YYYY-MM'`): once a month is
+  locked (Admin only, button in Reconciliation), every transaction *dated in that month* is frozen.
+  **Invariant — any function that creates, edits, or deletes a dated record MUST call
+  `lockBlocked(date)` and bail if it returns true** (see existing guards in `saveDay`, `saveFndTxn`,
+  `saveExpTxn`, `savePlat2`, `saveExchDay`, `saveDueReceipt`, all the `delete*`/`*Edit` fns).
+  Frozen-fund write-off/recovery and due settlements key off their OWN (current) date, so collecting
+  old debts after a past month is locked still works — do not key the check off the record's age.
 
 ## Conventions — follow these
 1. **Mobile check is mandatory.** After ANY UI change, verify at 375px width: no horizontal

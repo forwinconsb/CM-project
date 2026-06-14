@@ -410,8 +410,9 @@ details.collapse-card[open]>summary:before{content:'▾'}
 
 <!-- RECONCILIATION -->
 <div id="pg-recon" class="pg">
-  <div class="filter-row">
-    <select id="rc-month" onchange="rcDetailOpen=true;renderRecon();renderPGKRecon()"></select>
+  <div class="filter-row" style="align-items:center">
+    <select id="rc-month" onchange="rcDetailOpen=true;renderRecon();renderPGKRecon();renderLockBtn()"></select>
+    <span id="rc-lock-ctrl" style="display:inline-flex;align-items:center;gap:6px"></span>
   </div>
   <div style="display:flex;gap:14px;align-items:flex-start">
     <div style="display:flex;flex-direction:column;gap:8px;min-width:88px;flex-shrink:0">
@@ -892,6 +893,9 @@ const LANG = {
     pl_net_cash:'Net MYR cash movement', pl_total_prefix:'Total',
     pl_cash_note:'Cash timing only — net profit above uses fixed monthly rates.',
     rc_cur:'Currency',
+    lk_lock:'Lock month', lk_unlock:'Unlock', lk_closed:'closed', lk_locked_toast:'is now locked ✓', lk_unlocked_toast:'unlocked — editing allowed again',
+    lk_confirm_lock:'Lock {m}?\n\nTransactions dated in this month will be protected — no adding, editing or deleting until you unlock it.', lk_confirm_unlock:'Unlock {m}?\n\nThis allows transactions in that month to be edited again.',
+    lk_blocked:'🔒 {m} is locked — unlock it in Reconciliation to make changes', lk_admin_only:'Only an Admin can lock or unlock months',
     rc_myr_title:'MYR Bank Reconciliation — summary (click a row for detail)',
     rc_pgk_title:'PGK Platform Reconciliation', rc_pgk_desc:'Computed book closing vs entered closing per platform. Exchanges auto-linked by platform + date.',
     rc_frozen_title:'Frozen Funds — PGK stuck in frozen banks', rc_frozen_desc:'Created when a bank with balance is deactivated. Write off = loss in P&L. Recovery (full or partial) credits back. Written-off funds can still be marked recovered later.',
@@ -1117,6 +1121,9 @@ const LANG = {
     pl_net_cash:'MYR净现金流动', pl_total_prefix:'合计',
     pl_cash_note:'仅为现金时点 — 上方净利润采用固定月度汇率。',
     rc_cur:'货币',
+    lk_lock:'锁定本月', lk_unlock:'解锁', lk_closed:'已锁定', lk_locked_toast:'已锁定 ✓', lk_unlocked_toast:'已解锁 — 可再次编辑',
+    lk_confirm_lock:'锁定 {m}？\n\n该月的交易将被保护 — 在解锁前无法新增、编辑或删除。', lk_confirm_unlock:'解锁 {m}？\n\n将允许再次编辑该月的交易。',
+    lk_blocked:'🔒 {m} 已锁定 — 请在对账页解锁后再修改', lk_admin_only:'只有管理员可以锁定或解锁月份',
     rc_myr_title:'MYR银行对账 — 汇总（点击行查看明细）',
     rc_pgk_title:'PGK平台对账', rc_pgk_desc:'各平台账面计算余额 vs 录入余额。兑换按平台+日期自动关联。',
     rc_frozen_title:'冻结资金 — 卡在冻结银行的PGK', rc_frozen_desc:'当有余额的银行被停用时生成。核销=计入损益表的亏损。收回（全部或部分）可冲回。已核销资金日后仍可标记为已收回。',
@@ -1291,6 +1298,7 @@ let S={
   platEntries:[],dayEntries:[],
   exchSettlements:[],
   pgkFrozen:[],
+  lockedMonths:[],
   fxRates:{},
   accounts:[],
   stmtBalances:{},
@@ -1711,7 +1719,7 @@ function renderPage(p){
   }
   if(p==='fnd-tab'){initFndTab();return;}
   if(p==='exp-tab'){initExpTab();return;}
-  if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);setSel('rc-pgk-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);rcDetailOpen=false;renderRecon();renderPGKRecon();renderFrozen();setReconCur(rcCur);}
+  if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);setSel('rc-pgk-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);rcDetailOpen=false;renderRecon();renderPGKRecon();renderFrozen();setReconCur(rcCur);renderLockBtn();}
   if(p==='cashflow'){toggleCFCustom();setSel('cf-plat',[{v:'',l:'All platforms'},...S.platforms.map(q=>({v:q.name,l:q.name}))]);renderCF();}
   if(p==='weekly'){setSel('wk-month',mopts());renderWeekly();}
   if(p==='pl'){togglePLCustom();renderPL();}
@@ -1750,6 +1758,7 @@ function renderExch2(){
 function aMYR2(i){const r=exchRows2[i];if(r.pgk&&r.rate)r.myr=Math.round(r.pgk*r.rate*100)/100;renderExch2();}
 function saveExchDay(){
   const date=document.getElementById('pgk-tab-date')?.value;if(!date){showToast('Select date first',true);return;}
+  if(lockBlocked(date))return;
   if(!exchRows2.length){showToast('No exchange transactions to save',true);return;}
   // Assign EXC refs to any without one
   exchRows2.forEach(x=>{if(!x.ref)x.ref=genRef('EXC');});
@@ -1761,12 +1770,14 @@ function saveExchDay(){
 
 // ── WEEKLY — add edit/delete links ──
 function deleteDayEntry(date){
+  if(lockBlocked(date))return;
   if(!confirm(`Delete ALL day data for ${fD(date)}? (banks, funder txns, expenses, exchanges)\nThis cannot be undone.`))return;
   const idx=S.dayEntries.findIndex(e=>e.date===date);
   if(idx>=0){S.dayEntries.splice(idx,1);persist();renderWeekly();showToast('Day entry deleted ✓');}
 }
 function deleteExpFromDay(date,expIdx){
   // Note: called from weekly view with pre-computed index — always prompt here
+  if(lockBlocked(date))return;
   if(!confirm(tr('confirm_delete_exp')))return;
   const idx=S.dayEntries.findIndex(e=>e.date===date);if(idx<0)return;
   if(expIdx>=0&&expIdx<S.dayEntries[idx].expenses.length){
@@ -1776,6 +1787,7 @@ function deleteExpFromDay(date,expIdx){
   persist();renderWeekly();showToast(tr('toast_deleted'));
 }
 function deletePlExpAndRefresh(dayIdx,expIdx){
+  if(dayIdx>=0&&dayIdx<S.dayEntries.length&&lockBlocked(S.dayEntries[dayIdx].date))return;
   if(!confirm(tr('confirm_delete_exp')))return;
   if(dayIdx<0||dayIdx>=S.dayEntries.length)return;
   if(expIdx<0||expIdx>=S.dayEntries[dayIdx].expenses.length)return;
@@ -1784,6 +1796,7 @@ function deletePlExpAndRefresh(dayIdx,expIdx){
   persist();closeModal();renderPL();showToast(tr('toast_deleted'));
 }
 function deletePlatEntry(date,platform){
+  if(lockBlocked(date))return;
   if(!confirm(`Delete ${platform||'(blank platform)'} entry for ${fD(date)}?`))return;
   const idx=S.platEntries.findIndex(e=>e.date===date&&e.platform===platform);
   if(idx<0)return;
@@ -1811,6 +1824,45 @@ function genRef(prefix){
 }
 
 // ══════════════════════════════════════════════════
+// ── PERIOD LOCK (month-end close) ──
+// A locked month freezes every transaction dated in it: no add, edit or delete.
+// Frozen-fund write-off/recovery and due settlements key off their OWN (current)
+// date, so collecting old debts after a past month is locked still works.
+// ══════════════════════════════════════════════════
+function isLocked(date){return !!(S.lockedMonths&&S.lockedMonths.includes(mk(date)));}
+function lockBlocked(date){
+  if(isLocked(date)){showToast(tr('lk_blocked').replace('{m}',ml(mk(date))),true);return true;}
+  return false;
+}
+function renderLockBtn(){
+  const el=document.getElementById('rc-lock-ctrl');if(!el)return;
+  const m=document.getElementById('rc-month')?.value||'';
+  if(!m){el.innerHTML='';return;}
+  const locked=(S.lockedMonths||[]).includes(m);
+  const admin=isAdminCtx();
+  if(locked){
+    el.innerHTML=`<span style="font-size:12px;color:var(--rd);font-weight:700">🔒 ${ml(m)} — ${tr('lk_closed')}</span>`+(admin?` <button class="btn-sec" style="font-size:11px;padding:4px 10px" onclick="unlockMonth()">🔓 ${tr('lk_unlock')}</button>`:'');
+  }else{
+    el.innerHTML=admin?`<button class="btn-sec" style="font-size:11px;padding:4px 10px" onclick="lockMonth()">🔒 ${tr('lk_lock')}</button>`:'';
+  }
+}
+function lockMonth(){
+  const m=document.getElementById('rc-month')?.value||'';if(!m){showToast('Select a month first',true);return;}
+  if(!isAdminCtx()){showToast(tr('lk_admin_only'),true);return;}
+  if(!confirm(tr('lk_confirm_lock').replace('{m}',ml(m))))return;
+  if(!S.lockedMonths)S.lockedMonths=[];
+  if(!S.lockedMonths.includes(m))S.lockedMonths.push(m);
+  persist();renderLockBtn();showToast('🔒 '+ml(m)+' '+tr('lk_locked_toast'));
+}
+function unlockMonth(){
+  const m=document.getElementById('rc-month')?.value||'';if(!m)return;
+  if(!isAdminCtx()){showToast(tr('lk_admin_only'),true);return;}
+  if(!confirm(tr('lk_confirm_unlock').replace('{m}',ml(m))))return;
+  S.lockedMonths=(S.lockedMonths||[]).filter(x=>x!==m);
+  persist();renderLockBtn();showToast('🔓 '+ml(m)+' '+tr('lk_unlocked_toast'));
+}
+
+// ══════════════════════════════════════════════════
 // ── FUNDER MOVEMENTS TAB ──
 // ══════════════════════════════════════════════════
 
@@ -1833,6 +1885,7 @@ function toggleFndType(){
 }
 function saveFndTxn(){
   const date=document.getElementById('fnd-date')?.value;if(!date){showToast('Select date',true);return;}
+  if(lockBlocked(date))return;
   const funder=document.getElementById('fnd-funder')?.value;if(!funder){showToast('Select funder',true);return;}
   const type=document.getElementById('fnd-type')?.value||'injection';
   const amt=n(document.getElementById('fnd-amt')?.value);if(!amt){showToast('Enter amount',true);return;}
@@ -1937,6 +1990,8 @@ function openFndEditModal(t){
 function saveFndEdit(orig){
   const origDate=orig.date;
   const newDate=document.getElementById('edit-fnd-date')?.value||origDate;
+  if(lockBlocked(origDate))return;
+  if(newDate!==origDate&&lockBlocked(newDate))return;
   // If date changed, move to new day entry
   if(origDate!==newDate){
     deleteFndTxnSilent(origDate,orig.ref||'');
@@ -1973,6 +2028,7 @@ function deleteFndTxnSilent(date,ref){
   persist();
 }
 function deleteFndTxn(dayIdx,fndIdx){
+  if(dayIdx>=0&&dayIdx<S.dayEntries.length&&lockBlocked(S.dayEntries[dayIdx].date))return;
   if(!confirm(tr('confirm_delete_fnd')))return;
   deleteFndTxnByIdx(dayIdx,fndIdx);
   renderFndListing();
@@ -2063,6 +2119,7 @@ function saveExpTxn(){
   const isFunder=expTabSrc==='funder';
   const dateId=isFunder?'exp-tab-date-f':'exp-tab-date';
   const date=document.getElementById(dateId)?.value;if(!date){showToast('Select date',true);return;}
+  if(lockBlocked(date))return;
   const ref=document.getElementById(isFunder?'exp-tab-ref-f':'exp-tab-ref')?.value||genRef('EXP');
   let exp;
   if(!isFunder){
@@ -2181,6 +2238,8 @@ function saveExpEdit(orig){
   const dIdx=S.dayEntries.findIndex(e=>e.date===orig.date);if(dIdx<0){closeModal();return;}
   const eIdx=S.dayEntries[dIdx].expenses.findIndex(e=>e.ref===orig.ref);if(eIdx<0){closeModal();return;}
   const newDate=document.getElementById('edit-exp-date')?.value||orig.date;
+  if(lockBlocked(orig.date)){closeModal();return;}
+  if(newDate!==orig.date&&lockBlocked(newDate))return;
   const updated={...S.dayEntries[dIdx].expenses[eIdx],
     cat:document.getElementById('edit-exp-cat')?.value||orig.cat,
     amt:n(document.getElementById('edit-exp-amt')?.value),
@@ -2211,6 +2270,7 @@ async function reattachExpTab(input,ref,date){
   persist();closeModal();renderExpListing();showToast('Attachment updated ✓');
 }
 function deleteExpTxn(dayIdx,expIdx){
+  if(dayIdx>=0&&dayIdx<S.dayEntries.length&&lockBlocked(S.dayEntries[dayIdx].date))return;
   if(!confirm(tr('confirm_delete_exp')))return;
   if(dayIdx<0||dayIdx>=S.dayEntries.length)return;
   if(expIdx<0||expIdx>=S.dayEntries[dayIdx].expenses.length)return;
@@ -2254,6 +2314,7 @@ function exportExpPDF(){
 }
 
 function deleteExpTxnAndRefresh(dayIdx,expIdx){
+  if(dayIdx>=0&&dayIdx<S.dayEntries.length&&lockBlocked(S.dayEntries[dayIdx].date))return;
   if(!confirm(tr('confirm_delete_exp')))return;
   if(dayIdx<0||dayIdx>=S.dayEntries.length)return;
   if(expIdx<0||expIdx>=S.dayEntries[dayIdx].expenses.length)return;
@@ -2518,6 +2579,7 @@ function renderSavedPlats(){
 // ── SAVE FULL DAY (MYR bank balances only) ──
 function saveDay(){
   const date=document.getElementById('e-date').value;if(!date){showToast('Select date first',true);return;}
+  if(lockBlocked(date))return;
   const myrBanks=S.myrBanks.map((b,i)=>({name:b.name,open:n(document.getElementById('mb-o-'+i)?.value),close:n(document.getElementById('mb-c-'+i)?.value),remark:document.getElementById('mb-r-'+i)?.value||''}));
   const idx=S.dayEntries.findIndex(e=>e.date===date);
   if(idx>=0){
@@ -3305,6 +3367,7 @@ function renderFrozen(){
 }
 function writeOffFrozen(id){
   const f=(S.pgkFrozen||[]).find(x=>x.id===id);if(!f)return;
+  if(lockBlocked(new Date().toISOString().slice(0,10)))return;
   if(!confirm('Write off '+fmt(f.amount)+' PGK from '+f.bank+' as a loss?\nIt will appear in P&L under PGK Losses & Charges.'))return;
   f.status='writtenOff';
   f.dateResolved=new Date().toISOString().slice(0,10);
@@ -3313,6 +3376,7 @@ function writeOffFrozen(id){
 }
 function recoverFrozen(id){
   const f=(S.pgkFrozen||[]).find(x=>x.id===id);if(!f)return;
+  if(lockBlocked(new Date().toISOString().slice(0,10)))return;
   const already=f.recoveredAmount||0;
   const max=f.amount-already;
   const inp=prompt('How much PGK was recovered from '+f.bank+'?\n(outstanding: '+fmt(max)+' PGK — enter less for partial recovery)',max);
@@ -3900,6 +3964,7 @@ function renderAdj2(){
 }
 function savePlat2(){
   const date=document.getElementById('pgk-tab-date')?.value;if(!date){showToast('Select date first',true);return;}
+  if(lockBlocked(date))return;
   const platform=document.getElementById('pgk-tab-platform')?.value;
   if(!platform){showToast('Select platform first',true);return;}
   const dep=n(document.getElementById('pgk-tab-dep')?.value),with_=n(document.getElementById('pgk-tab-with')?.value);
@@ -4117,6 +4182,7 @@ function saveDueReceipt(exchanger){
   const amt=parseFloat(document.getElementById('due-amt')?.value)||0;
   const bank=document.getElementById('due-bank')?.value||'';
   if(!date){showToast('Select date',true);return;}
+  if(lockBlocked(date))return;
   if(amt<=0){showToast('Enter amount',true);return;}
   const{byEx}=exchDuesData();
   const owed=byEx[exchanger]?.owed||0;
@@ -4128,6 +4194,7 @@ function saveDueReceipt(exchanger){
 }
 function deleteSettlement(id){
   const s=(S.exchSettlements||[]).find(x=>x.id===id);if(!s)return;
+  if(lockBlocked(s.date))return;
   if(!confirm(`Delete received payment of RM ${fmt(s.amount)} from ${s.exchanger} on ${fD(s.date)}?\nThe due will become outstanding again.`))return;
   S.exchSettlements=S.exchSettlements.filter(x=>x.id!==id);
   persist();renderExchTab();renderRecon();showToast('Payment record deleted ✓');
@@ -4261,6 +4328,7 @@ function exchEditCalcMYR(){
   if(myrEl)myrEl.value=(Math.round(pgk*rate*100)/100).toFixed(2);
 }
 function saveExchEdit(orig){
+  if(lockBlocked(orig.date)){closeModal();return;}
   const dIdx=S.dayEntries.findIndex(e=>e.date===orig.date);
   if(dIdx<0){showToast('Day entry not found',true);closeModal();return;}
   const xIdx=S.dayEntries[dIdx].exchanges.findIndex(x=>
@@ -4283,6 +4351,7 @@ function saveExchEdit(orig){
   persist();closeModal();renderExchTab();renderPGKRecon();showToast('Exchange updated ✓');
 }
 function deleteExchEntry(orig){
+  if(lockBlocked(orig.date))return;
   if(!confirm(`Delete this exchange entry (${fD(orig.date)}, ${fmt(orig.pgk)} PGK)? Cannot be undone.`))return;
   const dIdx=S.dayEntries.findIndex(e=>e.date===orig.date);
   if(dIdx<0){showToast('Day entry not found',true);closeModal();return;}
