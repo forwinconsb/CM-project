@@ -549,70 +549,70 @@ details.collapse-card[open]>summary:before{content:'▾'}
 
 <!-- PGK PLATFORM ENTRY TAB -->
 <div id="pg-pgk-entry" class="pg">
-  <div class="info-box">🎮 <b>PGK Platform Entry</b> — Enter each platform's daily figures here. This can be done by a separate user. Save each platform individually.</div>
+  <div class="info-box">🎮 <span data-i18n="pe_info">PGK Platform Entry — Enter each platform's daily figures here. Save each platform individually.</span></div>
   <div class="card">
-    <div class="ct">Entry date</div>
+    <div class="ct" data-i18n="pe_entry_date">Entry date</div>
     <div style="max-width:200px"><div class="f"><label data-i18n="date">Date</label><input type="date" id="pgk-tab-date" onchange="renderPlatBanks()"></div></div>
   </div>
   <div class="card">
-    <div class="step-lbl">① PGK Platform Entry — save each platform separately</div>
+    <div class="step-lbl" data-i18n="pe_step1">① PGK Platform Entry — save each platform separately</div>
     <div class="g2" style="margin-bottom:10px">
       <div class="f"><label data-i18n="pgk_platform">Platform</label><select id="pgk-tab-platform" onchange="renderPlatBanks()"></select></div>
       <div style="display:flex;align-items:flex-end;padding-bottom:2px">
-        <div style="background:var(--bg3);border-radius:var(--r);padding:8px 12px;font-size:12px;width:100%;border:1px solid var(--bdr)">Win / Lose: <span id="pgk-tab-wl" style="font-weight:700">0.00</span></div>
+        <div style="background:var(--bg3);border-radius:var(--r);padding:8px 12px;font-size:12px;width:100%;border:1px solid var(--bdr)"><span data-i18n="win_lose">Win / Lose</span>: <span id="pgk-tab-wl" style="font-weight:700">0.00</span></div>
       </div>
     </div>
     <input type="hidden" id="pgk-tab-open"><input type="hidden" id="pgk-tab-close">
     <div class="g3" style="margin-bottom:10px">
       <div class="f"><label data-i18n="pgk_dep">Total deposit (PGK)</label><input type="number" id="pgk-tab-dep" placeholder="0.00" step="0.01" oninput="calcWL2()"></div>
       <div class="f"><label data-i18n="pgk_with">Total withdraw (PGK)</label><input type="number" id="pgk-tab-with" placeholder="0.00" step="0.01" oninput="calcWL2()"></div>
-      <div class="f"><label>Bank charges (PGK)</label><input type="number" id="pgk-tab-charges" placeholder="0.00" step="0.01" oninput="updPGK2()"></div>
+      <div class="f"><label data-i18n="pe_bank_charges">Bank charges (PGK)</label><input type="number" id="pgk-tab-charges" placeholder="0.00" step="0.01" oninput="updPGK2()"></div>
     </div>
     <div style="border:1px solid var(--bdr);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;background:var(--bg2)">
       <div id="pgk-tab-banks"></div>
     </div>
     <details class="collapse-card" id="pgk-opt-details" style="margin-bottom:10px">
-      <summary style="font-size:11px;font-weight:600;color:var(--txt2);padding:4px 0">More fields — bonus, players, registrations, rebate (optional)</summary>
+      <summary style="font-size:11px;font-weight:600;color:var(--txt2);padding:4px 0" data-i18n="pe_more_fields">More fields — bonus, players, registrations, rebate (optional)</summary>
       <div class="g3" style="margin:8px 0">
         <div class="f"><label data-i18n="pgk_bonus">Total bonus (PGK)</label><input type="number" id="pgk-tab-bonus" placeholder="0.00" step="0.01"></div>
         <div class="f"><label data-i18n="pgk_active">Active players</label><input type="number" id="pgk-tab-active" placeholder="0"></div>
         <div class="f"><label data-i18n="pgk_reg">New registrations</label><input type="number" id="pgk-tab-reg" placeholder="0"></div>
       </div>
       <div class="g3">
-        <div class="f"><label>Txn count</label><input type="number" id="pgk-tab-txn" placeholder="0"></div>
-        <div class="f"><label>New depositors</label><input type="number" id="pgk-tab-newdep" placeholder="0"></div>
-        <div class="f"><label>Rebate (PGK)</label><input type="number" id="pgk-tab-rebate" placeholder="0.00" step="0.01"></div>
+        <div class="f"><label data-i18n="pe_txn_count">Txn count</label><input type="number" id="pgk-tab-txn" placeholder="0"></div>
+        <div class="f"><label data-i18n="pe_new_depositors">New depositors</label><input type="number" id="pgk-tab-newdep" placeholder="0"></div>
+        <div class="f"><label data-i18n="pe_rebate">Rebate (PGK)</label><input type="number" id="pgk-tab-rebate" placeholder="0.00" step="0.01"></div>
       </div>
     </details>
     <div style="margin-bottom:10px">
-      <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em">Adjustments</div>
+      <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em" data-i18n="pe_adjustments">Adjustments</div>
       <div id="pgk-tab-adj-list"></div>
       <button class="btn-add" onclick="addAdj2()" data-i18n="pgk_add_adj">+ Add adjustment</button>
     </div>
     <div style="margin-bottom:10px">
-      <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">🔄 Internal Bank Transfers</div>
-      <div style="font-size:11px;color:var(--txt2);margin-bottom:7px;font-style:italic">Zero-sum within platform — does NOT affect reconciliation. For audit trail only.</div>
+      <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">🔄 <span data-i18n="pe_transfers">Internal Bank Transfers</span></div>
+      <div style="font-size:11px;color:var(--txt2);margin-bottom:7px;font-style:italic" data-i18n="pe_transfers_desc">Zero-sum within platform — does NOT affect reconciliation. For audit trail only.</div>
       <div id="pgk-tab-xfer-list"></div>
-      <button class="btn-add" onclick="addPgkXfer()">+ Add transfer</button>
+      <button class="btn-add" onclick="addPgkXfer()" data-i18n="pe_add_transfer">+ Add transfer</button>
     </div>
     <div style="background:var(--bg3);border-radius:var(--r);padding:10px 14px;margin-bottom:10px;font-size:12px;border:1px solid var(--bdr)">
       <div id="pgk-tab-exch-info" style="font-size:11px;color:var(--txt2);margin-bottom:6px"></div>
       <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--txt2)" data-i18n="rc_exp_close">Expected Closing</span><span id="pgk-tab-exp" style="font-weight:700">—</span></div>
-      <div style="display:flex;justify-content:space-between"><span style="color:var(--txt2)">Difference (actual − expected)</span><span id="pgk-tab-diff" style="font-weight:700">—</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--txt2)" data-i18n="pe_difference">Difference (actual − expected)</span><span id="pgk-tab-diff" style="font-weight:700">—</span></div>
     </div>
     <div class="f" style="margin-bottom:10px"><label data-i18n="remark">Remark</label><input type="text" id="pgk-tab-rem" placeholder="optional"></div>
     <div style="display:flex;align-items:center;gap:10px">
       <button class="btn-plat" onclick="savePlat2()" data-i18n="pgk_save">💾 Save this platform</button>
-      <span style="font-size:11px;color:var(--txt2)">Switch platform &amp; save again for each one</span>
+      <span style="font-size:11px;color:var(--txt2)" data-i18n="pe_switch_note">Switch platform &amp; save again for each one</span>
     </div>
     <div id="pgk-tab-saved" style="margin-top:12px"></div>
   </div>
   <div class="card">
     <details class="collapse-card">
-      <summary><span class="step-lbl" style="margin-bottom:0">② Exchange Transactions — for this date, tag MYR bank</span></summary>
+      <summary><span class="step-lbl" style="margin-bottom:0" data-i18n="pe_step2">② Exchange Transactions — for this date, tag MYR bank</span></summary>
       <div style="margin-top:11px">
         <div id="pgk-tab-exch-list"></div>
-        <button class="btn-add" onclick="addExch2()" style="margin-top:7px">+ Add exchange transaction</button>
+        <button class="btn-add" onclick="addExch2()" style="margin-top:7px" data-i18n="pe_add_exch">+ Add exchange transaction</button>
         <button class="btn-pri" onclick="saveExchDay()" style="margin-top:10px" data-i18n="pgk_save_exch">💾 Save exchanges for this date</button>
       </div>
     </details>
@@ -625,11 +625,11 @@ details.collapse-card[open]>summary:before{content:'▾'}
         <div class="filter-row">
           <select id="pgk-list-month" onchange="renderPGKListing()"></select>
           <select id="pgk-list-plat" onchange="renderPGKListing()"><option value="">All platforms</option></select>
-          <span style="font-size:11px;color:var(--txt2)">or custom:</span>
+          <span style="font-size:11px;color:var(--txt2)" data-i18n="pe_or_custom">or custom:</span>
           <input type="date" id="pgk-list-from" onchange="renderPGKListing()" style="padding:6px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r)">
-          <span style="font-size:11px;color:var(--txt2)">to</span>
+          <span style="font-size:11px;color:var(--txt2)" data-i18n="pe_to">to</span>
           <input type="date" id="pgk-list-to" onchange="renderPGKListing()" style="padding:6px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r)">
-          <button class="btn-add" onclick="document.getElementById('pgk-list-from').value='';document.getElementById('pgk-list-to').value='';renderPGKListing()">✕ Clear</button>
+          <button class="btn-add" onclick="document.getElementById('pgk-list-from').value='';document.getElementById('pgk-list-to').value='';renderPGKListing()">✕ <span data-i18n="pe_clear">Clear</span></button>
           <button class="btn-sec" onclick="exportPGKCSV()">⬇ CSV</button>
         </div>
         <div class="tw"><table>
@@ -641,16 +641,16 @@ details.collapse-card[open]>summary:before{content:'▾'}
   </div>
   <div class="card">
     <details class="collapse-card">
-      <summary><span class="ct" style="margin-bottom:0">🔄 Internal Bank Transfers — listing</span></summary>
+      <summary><span class="ct" style="margin-bottom:0">🔄 <span data-i18n="pe_xfer_listing">Internal Bank Transfers — listing</span></span></summary>
       <div style="margin-top:12px">
-        <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">All PGK bank-to-bank transfers across platforms. Edit by opening the parent platform entry above.</div>
+        <div style="font-size:11px;color:var(--txt2);margin-bottom:8px" data-i18n="pe_xfer_listing_desc">All PGK bank-to-bank transfers across platforms. Edit by opening the parent platform entry above.</div>
         <div class="filter-row">
           <select id="pgk-xfer-month" onchange="renderPgkXferList()"><option value="">All months</option></select>
           <select id="pgk-xfer-plat" onchange="renderPgkXferList()"><option value="">All platforms</option></select>
           <select id="pgk-xfer-bank" onchange="renderPgkXferList()"><option value="">All banks</option></select>
         </div>
         <div class="tw"><table>
-          <thead><tr><th>Date</th><th>Platform</th><th>From</th><th>To</th><th>Amount (PGK)</th><th>Note</th></tr></thead>
+          <thead><tr><th data-i18n="date">Date</th><th data-i18n="pgk_platform">Platform</th><th data-i18n="pe_from">From</th><th data-i18n="pe_to_col">To</th><th data-i18n="pe_amount_pgk">Amount (PGK)</th><th data-i18n="note">Note</th></tr></thead>
           <tbody id="pgk-xfer-list-body"><tr><td colspan="6" class="empty">No transfers yet</td></tr></tbody>
         </table></div>
       </div>
@@ -936,6 +936,13 @@ const LANG = {
     st_platform_name:'Platform name', st_banks_lbl:'Banks:', st_add_bank_dd:'+ Add bank...', st_add_platform:'+ Add platform', st_assign_note:'After adding, assign its PGK banks with the "+ Add bank..." dropdown on the platform row above.',
     st_bank_label:'Bank label', st_add_bank:'+ Add bank', st_exch_name:'Exchanger name', st_add_exch:'+ Add exchanger',
     st_funder_name:'Funder name', st_commitment:'Approved commitment (MYR)', st_add_funder:'+ Add funder', st_data_mgmt:'Data management', st_none_assigned:'none assigned',
+    pe_info:'PGK Platform Entry — enter each platform daily figures here. Can be done by a separate user. Save each platform individually.',
+    pe_entry_date:'Entry date', pe_step1:'① PGK Platform Entry — save each platform separately', pe_bank_charges:'Bank charges (PGK)',
+    pe_more_fields:'More fields — bonus, players, registrations, rebate (optional)', pe_txn_count:'Txn count', pe_new_depositors:'New depositors', pe_rebate:'Rebate (PGK)',
+    pe_adjustments:'Adjustments', pe_transfers:'Internal Bank Transfers', pe_transfers_desc:'Zero-sum within platform — does NOT affect reconciliation. For audit trail only.', pe_add_transfer:'+ Add transfer',
+    pe_difference:'Difference (actual − expected)', pe_switch_note:'Switch platform & save again for each one',
+    pe_step2:'② Exchange Transactions — for this date, tag MYR bank', pe_add_exch:'+ Add exchange transaction', pe_or_custom:'or custom:', pe_clear:'Clear', pe_to:'to',
+    pe_xfer_listing:'Internal Bank Transfers — listing', pe_xfer_listing_desc:'All PGK bank-to-bank transfers across platforms. Edit by opening the parent platform entry above.', pe_from:'From', pe_to_col:'To', pe_amount_pgk:'Amount (PGK)',
     pl_view:'▶ click to view', pl_exch_summary:'Exchanger Balance Summary', pl_funder_summary:'Funder Position',
     // Funders
     fn_title:'Funders', fn_commitment:'Commitment', fn_injected:'Capital Injected',
@@ -1151,6 +1158,13 @@ const LANG = {
     st_platform_name:'平台名称', st_banks_lbl:'银行：', st_add_bank_dd:'+ 添加银行...', st_add_platform:'+ 添加平台', st_assign_note:'添加后，用上方平台行的「+ 添加银行...」下拉菜单分配其PGK银行。',
     st_bank_label:'银行名称', st_add_bank:'+ 添加银行', st_exch_name:'兑换商名称', st_add_exch:'+ 添加兑换商',
     st_funder_name:'资金方名称', st_commitment:'核准承诺金额（MYR）', st_add_funder:'+ 添加资金方', st_data_mgmt:'数据管理', st_none_assigned:'未分配',
+    pe_info:'PGK平台录入 — 在此录入每个平台的每日数据。可由另一名用户操作。逐个平台分别保存。',
+    pe_entry_date:'录入日期', pe_step1:'① PGK平台录入 — 逐个平台分别保存', pe_bank_charges:'银行手续费（PGK）',
+    pe_more_fields:'更多字段 — 红利、玩家、注册、回扣（可选）', pe_txn_count:'交易笔数', pe_new_depositors:'新存款人', pe_rebate:'回扣（PGK）',
+    pe_adjustments:'调整', pe_transfers:'内部银行转账', pe_transfers_desc:'平台内部零和 — 不影响对账。仅供审计追踪。', pe_add_transfer:'+ 添加转账',
+    pe_difference:'差额（实际 − 预期）', pe_switch_note:'切换平台并为每个平台再次保存',
+    pe_step2:'② 兑换交易 — 为此日期标记MYR银行', pe_add_exch:'+ 添加兑换交易', pe_or_custom:'或自定义：', pe_clear:'清除', pe_to:'至',
+    pe_xfer_listing:'内部银行转账 — 列表', pe_xfer_listing_desc:'所有平台的PGK银行间转账。可通过打开上方对应平台记录进行编辑。', pe_from:'从', pe_to_col:'至', pe_amount_pgk:'金额（PGK）',
     pl_view:'▶ 点击查看', pl_exch_summary:'兑换商汇总', pl_funder_summary:'资金方汇总',
     // Funders
     fn_title:'资金方', fn_commitment:'承诺资金', fn_injected:'已注入资本',
