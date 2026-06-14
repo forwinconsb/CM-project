@@ -527,24 +527,24 @@ details.collapse-card[open]>summary:before{content:'▾'}
 <!-- FUNDER REVIEW -->
 <div id="pg-funder-review" class="pg">
   <div style="background:#EEEDFE;border:1px solid #AFA9EC;border-radius:var(--rlg);padding:10px 14px;margin-bottom:14px;font-size:11px;color:#3C3489">
-    <span data-i18n="fv_info">Funder view — read-only summary.</span> 👤 <b>Funder review view</b> — read-only report for sharing with funders. Select a funder and date range to filter.
+    👤 <span data-i18n="fr_info">Funder review — read-only report for sharing with funders. Select a funder and date range to filter.</span>
   </div>
   <div class="filter-row">
     <select id="fr-funder" onchange="renderFunderReview()"></select>
     <select id="fr-range" onchange="toggleFRCustom();renderFunderReview()">
-      <option value="today">Today</option>
-      <option value="yesterday">Yesterday</option>
-      <option value="week">This week</option>
-      <option value="month" selected>This month</option>
-      <option value="custom">Custom range</option>
+      <option value="today" data-i18n="fv_today">Today</option>
+      <option value="yesterday" data-i18n="fv_yesterday">Yesterday</option>
+      <option value="week" data-i18n="fv_this_week">This week</option>
+      <option value="month" selected data-i18n="fv_this_month">This month</option>
+      <option value="custom" data-i18n="fv_custom">Custom range</option>
     </select>
     <span id="fr-custom-wrap" style="display:none;gap:5px;align-items:center">
       <input type="date" id="fr-from" onchange="renderFunderReview()" style="padding:5px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--txt)">
-      <span style="font-size:11px;color:var(--txt2)">to</span>
+      <span style="font-size:11px;color:var(--txt2)" data-i18n="pe_to">to</span>
       <input type="date" id="fr-to" onchange="renderFunderReview()" style="padding:5px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--txt)">
     </span>
   </div>
-  <div id="fr-content"><div class="empty">Select a funder and date range above.</div></div>
+  <div id="fr-content"><div class="empty" data-i18n="fr_select">Select a funder and date range above.</div></div>
 </div>
 
 <!-- PGK PLATFORM ENTRY TAB -->
@@ -943,6 +943,7 @@ const LANG = {
     pe_difference:'Difference (actual − expected)', pe_switch_note:'Switch platform & save again for each one',
     pe_step2:'② Exchange Transactions — for this date, tag MYR bank', pe_add_exch:'+ Add exchange transaction', pe_or_custom:'or custom:', pe_clear:'Clear', pe_to:'to',
     pe_xfer_listing:'Internal Bank Transfers — listing', pe_xfer_listing_desc:'All PGK bank-to-bank transfers across platforms. Edit by opening the parent platform entry above.', pe_from:'From', pe_to_col:'To', pe_amount_pgk:'Amount (PGK)',
+    fr_info:'Funder review — read-only report for sharing with funders. Select a funder and date range to filter.', fr_select:'Select a funder and date range above.',
     pl_view:'▶ click to view', pl_exch_summary:'Exchanger Balance Summary', pl_funder_summary:'Funder Position',
     // Funders
     fn_title:'Funders', fn_commitment:'Commitment', fn_injected:'Capital Injected',
@@ -1165,6 +1166,7 @@ const LANG = {
     pe_difference:'差额（实际 − 预期）', pe_switch_note:'切换平台并为每个平台再次保存',
     pe_step2:'② 兑换交易 — 为此日期标记MYR银行', pe_add_exch:'+ 添加兑换交易', pe_or_custom:'或自定义：', pe_clear:'清除', pe_to:'至',
     pe_xfer_listing:'内部银行转账 — 列表', pe_xfer_listing_desc:'所有平台的PGK银行间转账。可通过打开上方对应平台记录进行编辑。', pe_from:'从', pe_to_col:'至', pe_amount_pgk:'金额（PGK）',
+    fr_info:'资金方报告 — 供与资金方分享的只读报告。选择资金方与日期范围进行筛选。', fr_select:'请在上方选择资金方与日期范围。',
     pl_view:'▶ 点击查看', pl_exch_summary:'兑换商汇总', pl_funder_summary:'资金方汇总',
     // Funders
     fn_title:'资金方', fn_commitment:'承诺资金', fn_injected:'已注入资本',
@@ -3550,10 +3552,10 @@ function renderFunderReview(){
   const totalExp=dayRows.reduce((s,d)=>s+d.totalExp,0);
   const fdirExp=dayRows.flatMap(d=>(d.expenses||[]).filter(e=>e.paySource==='funder'&&(!funderName||e.funderName===funderName))).reduce((s,e)=>s+e.amt,0);
   const net=myrIn-totalExp-myrOut;
-  let html=`<div style="font-size:12px;color:var(--txt2);margin-bottom:12px">${tr('lbl_period')}: <b>${fD(from)}</b> to <b>${fD(to)}</b>${funderName?' &nbsp;|&nbsp; Funder: <b>'+funderName+'</b>':''}</div>`;
+  let html=`<div style="font-size:12px;color:var(--txt2);margin-bottom:12px">${tr('lbl_period')}: <b>${fD(from)}</b> ${tr('pe_to')} <b>${fD(to)}</b>${funderName?' &nbsp;|&nbsp; '+tr('fnd_funder')+': <b>'+funderName+'</b>':''}</div>`;
   html+=`<div class="metrics" style="margin-bottom:14px">
-    <div class="mc"><div class="ml" data-i18n="lbl_total_dep">Total deposit (PGK)</div><div class="mv">${fmt(totDep)}</div></div>
-    <div class="mc"><div class="ml" data-i18n="lbl_net_wl">Net win/lose (PGK)</div><div class="mv ${totWL>=0?'pos':'neg'}">${fmt(totWL)}</div></div>
+    <div class="mc"><div class="ml">${tr('lbl_total_dep')}</div><div class="mv">${fmt(totDep)}</div></div>
+    <div class="mc"><div class="ml">${tr('lbl_net_wl')}</div><div class="mv ${totWL>=0?'pos':'neg'}">${fmt(totWL)}</div></div>
     <div class="mc"><div class="ml">${tr('lbl_myr_rcvd')}</div><div class="mv pos">RM ${fmt(myrIn)}</div></div>
     <div class="mc"><div class="ml">${tr('lbl_total_exp')}</div><div class="mv neg">-RM ${fmt(totalExp)}</div></div>
     <div class="mc"><div class="ml">${tr('pl_net')}</div><div class="mv ${net>=0?'pos':'neg'}">${net>=0?'':'('}RM ${fmt(Math.abs(net))}${net>=0?'':')'}</div></div>
@@ -3566,7 +3568,7 @@ function renderFunderReview(){
   html+=`</tbody></table></div></div>`;
   // PGK daily detail
   html+=`<div class="card"><div class="ct">${tr("lbl_pgk_daily")} — ${fD(from)} to ${fD(to)}</div><div class="tw"><table>
-    <thead><tr><th>Date</th><th>${tr("pgk_platform")}</th><th>Deposit</th><th>Withdraw</th><th>${tr('win_lose')}</th><th>${tr('col_bonus')}</th><th>${tr('col_players')}</th><th>${tr('col_open')}</th><th>${tr('col_close')}</th><th>${tr('col_diff')}</th></tr></thead><tbody>`;
+    <thead><tr><th>${tr('date')}</th><th>${tr("pgk_platform")}</th><th>${tr('col_deposit')}</th><th>${tr('col_withdraw')}</th><th>${tr('win_lose')}</th><th>${tr('col_bonus')}</th><th>${tr('col_players')}</th><th>${tr('col_open')}</th><th>${tr('col_close')}</th><th>${tr('col_diff')}</th></tr></thead><tbody>`;
   if(!platRows.length){html+=`<tr><td colspan="10" class="empty">${tr("lbl_no_platform")}</td></tr>`;}
   else platRows.forEach(e=>{const ok=Math.abs(e.pgkDiff||0)<0.01;html+=`<tr><td>${fD(e.date)}</td><td style="font-weight:500">${e.platform}</td><td>${fmt(e.dep)}</td><td>${fmt(e.with)}</td><td style="color:${e.winLose>=0?'#0F6E56':'#A32D2D'};font-weight:500">${fmt(e.winLose)}</td><td>${e.bonus?fmt(e.bonus):'-'}</td><td>${e.active||'-'}</td><td>${fmt(e.pgkOpen||0)}</td><td>${fmt(e.pgkClose)}</td><td style="color:${ok?'#0F6E56':'#854F0B'}">${ok?'✓':fmt(e.pgkDiff||0)}</td></tr>`;});
   html+=`</tbody></table></div></div>`;
@@ -3616,7 +3618,7 @@ function renderFunderReview(){
   // Exchange summary
   if(allExch.length){
     html+=`<div class="card"><div class="ct">${tr("lbl_exch_txns")}</div><div class="tw"><table>
-      <thead><tr><th>Date</th><th>Direction</th><th>Exchanger</th><th>PGK</th><th>Rate</th><th>MYR</th><th>MYR bank</th></tr></thead><tbody>`;
+      <thead><tr><th>${tr('date')}</th><th>${tr('exch_dir')}</th><th>${tr('exch_exchanger')}</th><th>PGK</th><th>${tr('exch_rate')}</th><th>MYR</th><th>${tr('bank')}</th></tr></thead><tbody>`;
     allExch.forEach(x=>{html+=`<tr><td>${fD(x.date)}</td><td><span class="tag ${x.dir==='out'?'tag-out':'tag-in'}">${x.dir==='out'?'PGK&#8594;MYR':'MYR&#8594;PGK'}</span></td><td>${x.exchanger||'-'}</td><td>${fmt(x.pgk)}</td><td>${x.rate}</td><td style="color:${x.dir==='out'?'#0F6E56':'#A32D2D'}">RM ${fmt(x.myr)}</td><td>${bDot(x.myrBank||'')} ${x.myrBank||'-'}</td></tr>`;});
     html+=`</tbody></table></div></div>`;
   }
