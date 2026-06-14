@@ -660,29 +660,29 @@ details.collapse-card[open]>summary:before{content:'▾'}
 
 <!-- EXCHANGE TAB -->
 <div id="pg-exchange-tab" class="pg">
-  <div class="info-box">💱 <b>Exchange Transactions</b> — Full listing. Click any row to <b>edit or delete</b> that transaction.</div>
+  <div class="info-box">💱 <span data-i18n="ex_info">Exchange Transactions — full listing. Click a row to edit or delete.</span></div>
   <div class="card">
-    <div class="ct">💰 Outstanding Dues — exchangers who still owe us (MYR)</div>
+    <div class="ct">💰 <span data-i18n="ex_dues_title">Outstanding Dues — exchangers who still owe us (MYR)</span></div>
     <div id="exch-dues"><div class="empty">No outstanding dues</div></div>
     <details class="collapse-card" style="margin-top:12px">
-      <summary style="font-size:11px;font-weight:600;color:var(--txt2)">Received payments history</summary>
+      <summary style="font-size:11px;font-weight:600;color:var(--txt2)" data-i18n="ex_pay_history">Received payments history</summary>
       <div id="exch-settlements" style="margin-top:8px"></div>
     </details>
   </div>
   <div class="card">
-    <div class="ct">📜 Exchanger Statement — movement trace</div>
-    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">Every exchange and payment in date order with a running balance. Positive = exchanger owes us · negative = we owe the exchanger.</div>
+    <div class="ct">📜 <span data-i18n="ex_stmt_title">Exchanger Statement — movement trace</span></div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px" data-i18n="ex_stmt_desc">Every exchange and payment in date order with a running balance. Positive = exchanger owes us · negative = we owe the exchanger.</div>
     <div class="filter-row">
       <select id="stmt-exchanger" onchange="renderExchStatement()"></select>
       <input type="date" id="stmt-from" onchange="renderExchStatement()" style="padding:6px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r)">
       <span style="font-size:11px;color:var(--txt2)">to</span>
       <input type="date" id="stmt-to" onchange="renderExchStatement()" style="padding:6px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r)">
-      <button class="btn-add" onclick="document.getElementById('stmt-from').value='';document.getElementById('stmt-to').value='';renderExchStatement()">✕ Clear dates</button>
+      <button class="btn-add" onclick="document.getElementById('stmt-from').value='';document.getElementById('stmt-to').value='';renderExchStatement()">✕ <span data-i18n="ex_clear_dates">Clear dates</span></button>
     </div>
     <div id="exch-stmt-content"><div class="empty">Select an exchanger above</div></div>
   </div>
   <div class="card">
-    <div class="ct">Exchange transactions — full listing</div>
+    <div class="ct" data-i18n="ex_listing_title">Exchange transactions — full listing</div>
     <div class="filter-row">
       <select id="exch-tab-month" onchange="renderExchTab()"></select>
       <select id="exch-tab-dir" onchange="renderExchTab()"><option value="">All directions</option><option value="out">PGK→MYR</option><option value="in">MYR→PGK</option></select>
@@ -913,6 +913,17 @@ const LANG = {
     rc_frozen_tag:'Frozen', rc_recovered_tag:'Recovered', rc_partial:'partial', rc_writtenoff_tag:'Written off', rc_writeoff_btn:'Write off', rc_recovered_btn:'Recovered', rc_recovered_afterall:'Recovered after all', rc_no_frozen:'No frozen funds — all banks healthy',
     cf_chart_title:'Daily trend - deposit (bars) & win/lose (line)', cf_dep_legend:'Deposit (PGK)', cf_wl_legend:'Win / Lose (PGK)',
     cf_paid_rcvd:'Paid/Rcvd', cf_due:'Due', cf_in:'In (MYR)', cf_out:'Out (MYR)', cf_balance:'Balance',
+    ex_info:'Exchange Transactions — full listing. Click a row to edit or delete.',
+    ex_dues_title:'Outstanding Dues — exchangers who still owe us (MYR)', ex_no_dues:'No outstanding dues — all exchangers settled',
+    ex_pay_history:'Received payments history', ex_stmt_title:'Exchanger Statement — movement trace',
+    ex_stmt_desc:'Every exchange and payment in date order with a running balance. Positive = exchanger owes us; negative = we owe the exchanger.',
+    ex_clear_dates:'Clear dates', ex_select_exchanger:'Select an exchanger above', ex_listing_title:'Exchange transactions — full listing',
+    ex_owes:'owes RM', ex_oldest:'oldest', ex_receive_payment:'Receive payment',
+    ex_date_received:'Date received', ex_amount_rm:'Amount (RM)', ex_into_bank:'Into MYR bank', ex_no_payments:'No payments received yet',
+    ex_receive_from:'Receive payment from', ex_currently_owes:'currently owes', ex_amount_received:'Amount received (RM)', ex_note_optional:'Note (optional)', ex_save_payment:'Save payment received', ex_modal_title:'Receive Due Payment',
+    ex_owes_us:'owes us RM', ex_we_owe:'we owe RM', ex_settled:'settled', ex_bf:'B/F balance', ex_before:'before',
+    ex_no_movements:'No movements', ex_in_range:'in this date range', ex_detail:'Detail', ex_owes_more:'+ Owes more', ex_reduces:'− Reduces', ex_running_bal:'Running balance', ex_closing_bal:'Closing balance', ex_at:'at',
+    ex_pgk_myr:'Exchange PGK→MYR', ex_myr_pgk:'Exchange MYR→PGK', ex_pay_received:'Payment received',
     pl_view:'▶ click to view', pl_exch_summary:'Exchanger Balance Summary', pl_funder_summary:'Funder Position',
     // Funders
     fn_title:'Funders', fn_commitment:'Commitment', fn_injected:'Capital Injected',
@@ -1105,6 +1116,17 @@ const LANG = {
     rc_frozen_tag:'冻结', rc_recovered_tag:'已收回', rc_partial:'部分', rc_writtenoff_tag:'已核销', rc_writeoff_btn:'核销', rc_recovered_btn:'已收回', rc_recovered_afterall:'最终已收回', rc_no_frozen:'无冻结资金 — 所有银行正常',
     cf_chart_title:'每日趋势 - 存款（柱）& 输赢（线）', cf_dep_legend:'存款 (PGK)', cf_wl_legend:'输赢 (PGK)',
     cf_paid_rcvd:'已付/已收', cf_due:'欠款', cf_in:'收入 (MYR)', cf_out:'支出 (MYR)', cf_balance:'余额',
+    ex_info:'兑换交易 — 完整列表。点击行可编辑或删除。',
+    ex_dues_title:'未收欠款 — 仍欠我们的兑换商（MYR）', ex_no_dues:'无未收欠款 — 所有兑换商已结清',
+    ex_pay_history:'收款历史', ex_stmt_title:'兑换商对账单 — 流水追踪',
+    ex_stmt_desc:'按日期排列的所有兑换与收款及滚动余额。正数=兑换商欠我们；负数=我们欠兑换商。',
+    ex_clear_dates:'清除日期', ex_select_exchanger:'请在上方选择兑换商', ex_listing_title:'兑换交易 — 完整列表',
+    ex_owes:'欠 RM', ex_oldest:'最早', ex_receive_payment:'登记收款',
+    ex_date_received:'收款日期', ex_amount_rm:'金额 (RM)', ex_into_bank:'存入MYR银行', ex_no_payments:'暂无收款记录',
+    ex_receive_from:'登记收款 — 来自', ex_currently_owes:'当前欠款', ex_amount_received:'收到金额 (RM)', ex_note_optional:'备注（可选）', ex_save_payment:'保存收款', ex_modal_title:'登记欠款收款',
+    ex_owes_us:'欠我们 RM', ex_we_owe:'我们欠 RM', ex_settled:'已结清', ex_bf:'承前余额', ex_before:'截至',
+    ex_no_movements:'无流水', ex_in_range:'在此日期范围内', ex_detail:'明细', ex_owes_more:'+ 增加欠款', ex_reduces:'− 减少', ex_running_bal:'滚动余额', ex_closing_bal:'期末余额', ex_at:'截至',
+    ex_pgk_myr:'兑换 PGK→MYR', ex_myr_pgk:'兑换 MYR→PGK', ex_pay_received:'已收款',
     pl_view:'▶ 点击查看', pl_exch_summary:'兑换商汇总', pl_funder_summary:'资金方汇总',
     // Funders
     fn_title:'资金方', fn_commitment:'承诺资金', fn_injected:'已注入资本',
@@ -3989,22 +4011,22 @@ function renderExchDues(){
   const el=document.getElementById('exch-dues');if(!el)return;
   const{byEx}=exchDuesData();
   const rows=Object.entries(byEx).filter(([,v])=>v.owed>0.009).sort((a,b)=>b[1].owed-a[1].owed);
-  if(!rows.length){el.innerHTML=`<div class="recon-ok">✓ No outstanding dues — all exchangers settled</div>`;}
+  if(!rows.length){el.innerHTML=`<div class="recon-ok">✓ ${tr('ex_no_dues')}</div>`;}
   else{
     el.innerHTML=rows.map(([ex,v])=>`<div class="plat-row">
       <span style="display:flex;align-items:center;gap:9px"><b>${ex}</b>
-        <span style="color:var(--am);font-weight:700">owes RM ${fmt(v.owed)}</span>
-        <span style="font-size:11px;color:var(--txt2)">(${v.txns} txn${v.txns>1?'s':''}, oldest ${fD(v.oldest)})</span></span>
-      <button class="btn-plat" style="padding:6px 14px;font-size:11px" onclick="openReceiveDue('${ex.replace(/'/g,"\\'")}')">💵 Receive payment</button>
+        <span style="color:var(--am);font-weight:700">${tr('ex_owes')} ${fmt(v.owed)}</span>
+        <span style="font-size:11px;color:var(--txt2)">(${v.txns} ${tr('rc_txn')}, ${tr('ex_oldest')} ${fD(v.oldest)})</span></span>
+      <button class="btn-plat" style="padding:6px 14px;font-size:11px" onclick="openReceiveDue('${ex.replace(/'/g,"\\'")}')">💵 ${tr('ex_receive_payment')}</button>
     </div>`).join('');
   }
   const sEl=document.getElementById('exch-settlements');
   if(sEl){
     const setts=[...(S.exchSettlements||[])].sort((a,b)=>b.date.localeCompare(a.date));
     sEl.innerHTML=setts.length?`<div class="tw"><table>
-      <thead><tr><th>Date received</th><th>Exchanger</th><th>Amount (RM)</th><th>Into MYR bank</th><th>Note</th><th></th></tr></thead>
+      <thead><tr><th>${tr('ex_date_received')}</th><th>${tr('exch_exchanger')}</th><th>${tr('ex_amount_rm')}</th><th>${tr('ex_into_bank')}</th><th>${tr('note')}</th><th></th></tr></thead>
       <tbody>${setts.map(s=>`<tr><td>${fD(s.date)}</td><td>${s.exchanger}</td><td style="font-weight:700;color:var(--gr)">${fmt(s.amount)}</td><td>${s.myrBank||'-'}</td><td style="color:var(--txt2)">${s.note||'-'}</td><td><button class="del" onclick="deleteSettlement('${s.id}')">🗑</button></td></tr>`).join('')}</tbody>
-    </table></div>`:`<div class="empty">No payments received yet</div>`;
+    </table></div>`:`<div class="empty">${tr('ex_no_payments')}</div>`;
   }
 }
 function openReceiveDue(exchanger){
@@ -4012,15 +4034,15 @@ function openReceiveDue(exchanger){
   const owed=byEx[exchanger]?.owed||0;
   const bankOpts=S.myrBanks.map(b=>`<option value="${b.name}">${b.name}</option>`).join('');
   const body=`
-    <div class="modal-section">Receive payment from ${exchanger} — currently owes RM ${fmt(owed)}</div>
+    <div class="modal-section">${tr('ex_receive_from')} ${exchanger} — ${tr('ex_currently_owes')} RM ${fmt(owed)}</div>
     <div class="g2" style="gap:8px;margin-bottom:10px">
-      <div class="f"><label>Date received</label><input type="date" id="due-date" value="${new Date().toISOString().slice(0,10)}"></div>
-      <div class="f"><label>Amount received (RM)</label><input type="number" id="due-amt" value="${fmt(owed).replace(/,/g,'')}" step="0.01"></div>
-      <div class="f"><label>Into MYR bank</label><select id="due-bank">${bankOpts}</select></div>
-      <div class="f"><label>Note (optional)</label><input type="text" id="due-note" placeholder="e.g. partial payment"></div>
+      <div class="f"><label>${tr('ex_date_received')}</label><input type="date" id="due-date" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="f"><label>${tr('ex_amount_received')}</label><input type="number" id="due-amt" value="${fmt(owed).replace(/,/g,'')}" step="0.01"></div>
+      <div class="f"><label>${tr('ex_into_bank')}</label><select id="due-bank">${bankOpts}</select></div>
+      <div class="f"><label>${tr('ex_note_optional')}</label><input type="text" id="due-note" placeholder=""></div>
     </div>
-    <button class="btn-pri" onclick="saveDueReceipt('${exchanger.replace(/'/g,"\\'")}')">💾 Save payment received</button>`;
-  openModal('Receive Due Payment',body);
+    <button class="btn-pri" onclick="saveDueReceipt('${exchanger.replace(/'/g,"\\'")}')">💾 ${tr('ex_save_payment')}</button>`;
+  openModal(tr('ex_modal_title'),body);
 }
 function saveDueReceipt(exchanger){
   const date=document.getElementById('due-date')?.value;
@@ -4071,7 +4093,7 @@ function renderExchStatement(){
   const ex=document.getElementById('stmt-exchanger')?.value||'';
   const from=document.getElementById('stmt-from')?.value||'';
   const to=document.getElementById('stmt-to')?.value||'';
-  if(!ex){el.innerHTML=`<div class="empty">Select an exchanger above</div>`;return;}
+  if(!ex){el.innerHTML=`<div class="empty">${tr('ex_select_exchanger')}</div>`;return;}
   const all=exchStatementEvents(ex);
   let bf=0;const rows=[];
   all.forEach(e=>{
@@ -4079,20 +4101,21 @@ function renderExchStatement(){
     if(to&&e.date>to)return;
     rows.push(e);
   });
-  const lbl=v=>v>0.009?`<span style="color:var(--am);font-weight:700">owes us RM ${fmt(v)}</span>`
-    :v<-0.009?`<span style="color:var(--pu);font-weight:700">we owe RM ${fmt(-v)}</span>`
-    :`<span style="color:var(--gr);font-weight:700">✓ settled</span>`;
+  const lbl=v=>v>0.009?`<span style="color:var(--am);font-weight:700">${tr('ex_owes_us')} ${fmt(v)}</span>`
+    :v<-0.009?`<span style="color:var(--pu);font-weight:700">${tr('ex_we_owe')} ${fmt(-v)}</span>`
+    :`<span style="color:var(--gr);font-weight:700">✓ ${tr('ex_settled')}</span>`;
+  const typeLbl=t=>t==='Payment received'?tr('ex_pay_received'):t==='Exchange PGK→MYR'?tr('ex_pgk_myr'):tr('ex_myr_pgk');
   let bal=bf;
-  let html=`<div class="pr"><span style="color:var(--txt2)">B/F balance${from?' before '+fD(from):''}</span><span>${lbl(bf)}</span></div>`;
-  if(!rows.length){html+=`<div class="empty">No movements${from||to?' in this date range':''}</div>`;}
+  let html=`<div class="pr"><span style="color:var(--txt2)">${tr('ex_bf')}${from?' '+tr('ex_before')+' '+fD(from):''}</span><span>${lbl(bf)}</span></div>`;
+  if(!rows.length){html+=`<div class="empty">${tr('ex_no_movements')}${from||to?' '+tr('ex_in_range'):''}</div>`;}
   else{
     html+=`<div class="tw"><table>
-      <thead><tr><th>Date</th><th>Type</th><th>Detail</th><th>+ Owes more</th><th>− Reduces</th><th>Running balance</th></tr></thead><tbody>`;
+      <thead><tr><th>${tr('date')}</th><th>${tr('type')}</th><th>${tr('ex_detail')}</th><th>${tr('ex_owes_more')}</th><th>${tr('ex_reduces')}</th><th>${tr('ex_running_bal')}</th></tr></thead><tbody>`;
     rows.forEach(e=>{
       bal+=e.delta;
       html+=`<tr>
         <td>${fD(e.date)}</td>
-        <td><span class="tag ${e.type==='Payment received'?'tag-in':e.out?'tag-out':'tag-exch'}">${e.type}</span></td>
+        <td><span class="tag ${e.type==='Payment received'?'tag-in':e.out?'tag-out':'tag-exch'}">${typeLbl(e.type)}</span></td>
         <td style="color:var(--txt2);font-size:11px">${e.detail}</td>
         <td style="color:var(--am);font-weight:600">${e.delta>0.009?'RM '+fmt(e.delta):''}</td>
         <td style="color:var(--gr);font-weight:600">${e.delta<-0.009?'RM '+fmt(-e.delta):''}</td>
@@ -4101,7 +4124,7 @@ function renderExchStatement(){
     });
     html+=`</tbody></table></div>`;
   }
-  html+=`<div class="pr ptot"><span>Closing balance${to?' at '+fD(to):''}</span><span>${lbl(bal)}</span></div>`;
+  html+=`<div class="pr ptot"><span>${tr('ex_closing_bal')}${to?' '+tr('ex_at')+' '+fD(to):''}</span><span>${lbl(bal)}</span></div>`;
   el.innerHTML=html;
 }
 function renderExchTab(){
