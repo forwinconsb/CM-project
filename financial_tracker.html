@@ -702,19 +702,19 @@ details.collapse-card[open]>summary:before{content:'▾'}
 <div id="pg-settings" class="pg">
   <div class="setup-layout"><div class="setup-rail" id="setup-rail"></div><div class="setup-body">
   <div class="card" id="s-accounts-card">
-    <div class="ct">👥 Users &amp; Access</div>
-    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">Create accounts and choose which tabs each can see. Operators see only their entry tabs; managers see reports; admins see everything. <b>Note:</b> this controls visibility/role separation — for a single HTML file it is not bulletproof security against a technical user (real security comes with the cloud version).</div>
+    <div class="ct">👥 <span data-i18n="st_users">Users & Access</span></div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px" data-i18n="st_users_desc">Create accounts and choose which tabs each can see. Operators see only their entry tabs; managers see reports; admins see everything.</div>
     <div id="s-accounts"></div>
     <hr class="divider">
-    <div class="sl" style="margin-top:0">Add / edit account</div>
+    <div class="sl" style="margin-top:0" data-i18n="st_add_edit_acct">Add / edit account</div>
     <div class="g3" style="margin-bottom:9px">
-      <div class="f"><label>Name</label><input type="text" id="acct-name" placeholder="e.g. Operator 1"></div>
-      <div class="f"><label>PIN (4–6 digits)</label><input type="text" id="acct-pin" inputmode="numeric" placeholder="e.g. 1234"></div>
-      <div class="f"><label>Role</label><select id="acct-role" onchange="acctRolePreset()"><option value="operator">Operator (entry only)</option><option value="manager">Manager (entry + reports)</option><option value="admin">Admin (everything)</option><option value="custom">Custom</option></select></div>
+      <div class="f"><label data-i18n="st_name">Name</label><input type="text" id="acct-name" placeholder="e.g. Operator 1"></div>
+      <div class="f"><label data-i18n="st_pin">PIN (4–6 digits)</label><input type="text" id="acct-pin" inputmode="numeric" placeholder="e.g. 1234"></div>
+      <div class="f"><label data-i18n="st_role">Role</label><select id="acct-role" onchange="acctRolePreset()"><option value="operator" data-i18n="st_role_op">Operator (entry only)</option><option value="manager" data-i18n="st_role_mgr">Manager (entry + reports)</option><option value="admin" data-i18n="st_role_admin">Admin (everything)</option><option value="custom" data-i18n="st_role_custom">Custom</option></select></div>
     </div>
-    <div style="font-size:10px;color:var(--txt2);margin-bottom:5px">Allowed tabs (role sets these; adjust for custom):</div>
+    <div style="font-size:10px;color:var(--txt2);margin-bottom:5px" data-i18n="st_allowed_tabs">Allowed tabs (role sets these; adjust for custom):</div>
     <div id="acct-tabs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:5px;margin-bottom:10px"></div>
-    <div style="display:flex;gap:8px"><button class="btn-add" id="acct-save-btn" onclick="saveAccount()">+ Create account</button><button class="btn-sec" onclick="clearAcctForm()">Clear</button></div>
+    <div style="display:flex;gap:8px"><button class="btn-add" id="acct-save-btn" onclick="saveAccount()" data-i18n="st_create_acct">+ Create account</button><button class="btn-sec" onclick="clearAcctForm()" data-i18n="st_clear">Clear</button></div>
   </div>
   <div class="card">
     <div class="ct" data-i18n="setup_lang">Language / 语言</div>
@@ -731,7 +731,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
     </div>
   </div>
   <div class="card">
-    <div class="ct">Expense categories</div>
+    <div class="ct" data-i18n="setup_exp_types">Expense categories</div>
     <div style="background:var(--bg3);border-radius:var(--r);padding:12px;margin-bottom:14px;border:1px solid var(--bdr)">
       <div class="sl" style="margin-top:0">Add new expense type</div>
       <div class="g4">
@@ -758,52 +758,52 @@ details.collapse-card[open]>summary:before{content:'▾'}
     <div id="s-exp-types"></div>
   </div>
   <div class="card">
-    <div class="ct">Platforms & PGK banks</div>
+    <div class="ct" data-i18n="setup_platforms">Platforms & PGK banks</div>
     <div id="s-platforms"></div>
-    <div class="f" style="margin-top:10px"><label>Platform name</label><input type="text" id="s-pname" placeholder="e.g. LUCKY888"></div>
-    <div style="font-size:10px;color:var(--txt2);margin-top:4px">After adding, assign its PGK banks with the "+ Add bank…" dropdown on the platform row above.</div>
-    <button class="btn-add" onclick="addPlatform()" style="margin-top:9px">+ Add platform</button>
+    <div class="f" style="margin-top:10px"><label data-i18n="st_platform_name">Platform name</label><input type="text" id="s-pname" placeholder="e.g. LUCKY888"></div>
+    <div style="font-size:10px;color:var(--txt2);margin-top:4px" data-i18n="st_assign_note">After adding, assign its PGK banks with the "+ Add bank…" dropdown on the platform row above.</div>
+    <button class="btn-add" onclick="addPlatform()" style="margin-top:9px" data-i18n="st_add_platform">+ Add platform</button>
   </div>
   <div class="card">
-    <div class="ct">MYR bank accounts</div>
+    <div class="ct" data-i18n="setup_banks">MYR bank accounts</div>
     <div id="s-myrbanks"></div>
-    <div class="f" style="margin-top:10px"><label>Bank label</label><input type="text" id="s-bname" placeholder="e.g. Maybank A"></div>
-    <button class="btn-add" onclick="addBank()" style="margin-top:9px">+ Add bank</button>
+    <div class="f" style="margin-top:10px"><label data-i18n="st_bank_label">Bank label</label><input type="text" id="s-bname" placeholder="e.g. Maybank A"></div>
+    <button class="btn-add" onclick="addBank()" style="margin-top:9px" data-i18n="st_add_bank">+ Add bank</button>
   </div>
   <div class="card">
-    <div class="ct">PGK bank accounts</div>
-    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">Used for internal bank-to-bank transfers (e.g. NASHON ↔ MAKUEL overflow)</div>
+    <div class="ct" data-i18n="st_pgk_banks">PGK bank accounts</div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px" data-i18n="st_pgk_banks_desc">Used for internal bank-to-bank transfers (e.g. NASHON ↔ MAKUEL overflow)</div>
     <div id="s-pgkbanks"></div>
-    <div class="f" style="margin-top:10px"><label>PGK bank label</label><input type="text" id="s-pgkbname" placeholder="e.g. BSP-MAKUEL"></div>
-    <button class="btn-add" onclick="addPGKBank()" style="margin-top:9px">+ Add PGK bank</button>
+    <div class="f" style="margin-top:10px"><label data-i18n="st_pgk_label">PGK bank label</label><input type="text" id="s-pgkbname" placeholder="e.g. BSP-MAKUEL"></div>
+    <button class="btn-add" onclick="addPGKBank()" style="margin-top:9px" data-i18n="st_add_pgk">+ Add PGK bank</button>
   </div>
   <div class="card">
-    <div class="ct">💱 PGK → MYR monthly rates (P&L translation)</div>
-    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">Fixed rate used to translate PGK revenue and costs in the P&L. One rate per month — changing one month never affects other months. Months without a rate carry forward the latest earlier rate.</div>
+    <div class="ct">💱 <span data-i18n="st_fx_title">PGK → MYR monthly rates (P&L translation)</span></div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px" data-i18n="st_fx_desc">Fixed rate used to translate PGK revenue and costs in the P&L. One rate per month — changing one month never affects other months. Months without a rate carry forward the latest earlier rate.</div>
     <div id="s-fxrates"></div>
     <div class="g2" style="margin-top:10px">
-      <div class="f"><label>Month</label><input type="month" id="s-fxmonth"></div>
-      <div class="f"><label>Rate (1 PGK = ? MYR)</label><input type="number" id="s-fxrate" placeholder="e.g. 0.8850" step="0.0001"></div>
+      <div class="f"><label data-i18n="st_month">Month</label><input type="month" id="s-fxmonth"></div>
+      <div class="f"><label data-i18n="st_rate_label">Rate (1 PGK = ? MYR)</label><input type="number" id="s-fxrate" placeholder="e.g. 0.8850" step="0.0001"></div>
     </div>
-    <button class="btn-add" onclick="saveFxRate()" style="margin-top:9px">+ Set monthly rate</button>
+    <button class="btn-add" onclick="saveFxRate()" style="margin-top:9px" data-i18n="st_set_rate">+ Set monthly rate</button>
   </div>
   <div class="card">
-    <div class="ct">3rd party exchangers</div>
+    <div class="ct" data-i18n="setup_exchangers">3rd party exchangers</div>
     <div id="s-exchangers"></div>
-    <div class="f" style="margin-top:10px"><label>Exchanger name</label><input type="text" id="s-ename" placeholder="e.g. 换钱 / Ali"></div>
-    <button class="btn-add" onclick="addExchanger()" style="margin-top:9px">+ Add exchanger</button>
+    <div class="f" style="margin-top:10px"><label data-i18n="st_exch_name">Exchanger name</label><input type="text" id="s-ename" placeholder="e.g. 换钱 / Ali"></div>
+    <button class="btn-add" onclick="addExchanger()" style="margin-top:9px" data-i18n="st_add_exch">+ Add exchanger</button>
   </div>
   <div class="card">
-    <div class="ct">Funders</div>
+    <div class="ct" data-i18n="setup_funders">Funders</div>
     <div id="s-funders"></div>
     <div class="g2" style="margin-top:10px">
-      <div class="f"><label>Funder name</label><input type="text" id="s-fname" placeholder="e.g. Funder A"></div>
-      <div class="f"><label>Approved commitment (MYR)</label><input type="number" id="s-fcommit" placeholder="0.00" step="0.01"></div>
+      <div class="f"><label data-i18n="st_funder_name">Funder name</label><input type="text" id="s-fname" placeholder="e.g. Funder A"></div>
+      <div class="f"><label data-i18n="st_commitment">Approved commitment (MYR)</label><input type="number" id="s-fcommit" placeholder="0.00" step="0.01"></div>
     </div>
-    <button class="btn-add" onclick="addFunderSetup()" style="margin-top:9px">+ Add funder</button>
+    <button class="btn-add" onclick="addFunderSetup()" style="margin-top:9px" data-i18n="st_add_funder">+ Add funder</button>
   </div>
   <div class="card">
-    <div class="ct">Data management</div>
+    <div class="ct" data-i18n="st_data_mgmt">Data management</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
       <button class="btn-sec" onclick="exportAllData()">⬇ Export full backup (.json)</button>
       <button class="btn-sec" onclick="document.getElementById('import-file').click()">⬆ Import backup (.json)</button>
@@ -924,6 +924,18 @@ const LANG = {
     ex_owes_us:'owes us RM', ex_we_owe:'we owe RM', ex_settled:'settled', ex_bf:'B/F balance', ex_before:'before',
     ex_no_movements:'No movements', ex_in_range:'in this date range', ex_detail:'Detail', ex_owes_more:'+ Owes more', ex_reduces:'− Reduces', ex_running_bal:'Running balance', ex_closing_bal:'Closing balance', ex_at:'at',
     ex_pgk_myr:'Exchange PGK→MYR', ex_myr_pgk:'Exchange MYR→PGK', ex_pay_received:'Payment received',
+    st_users:'Users & Access', st_banks_platforms:'Banks & Platforms', st_exch_rates:'Exchange & Rates', st_general:'General & Data',
+    st_users_desc:'Create accounts and choose which tabs each can see. Operators see only entry tabs; managers see reports; admins see everything. Note: role separation, not bulletproof security for a single HTML file.',
+    st_add_edit_acct:'Add / edit account', st_name:'Name', st_pin:'PIN (4-6 digits)', st_role:'Role',
+    st_role_op:'Operator (entry only)', st_role_mgr:'Manager (entry + reports)', st_role_admin:'Admin (everything)', st_role_custom:'Custom',
+    st_allowed_tabs:'Allowed tabs (role sets these; adjust for custom):', st_create_acct:'+ Create account', st_update_acct:'Update account', st_clear:'Clear',
+    st_pgk_banks:'PGK bank accounts', st_pgk_banks_desc:'Used for internal bank-to-bank transfers (e.g. NASHON / MAKUEL overflow)', st_pgk_label:'PGK bank label', st_add_pgk:'+ Add PGK bank',
+    st_inactive_banks:'Inactive banks', st_deactivate:'Deactivate', st_reactivate:'Reactivate', st_inactive_tag:'INACTIVE',
+    st_fx_title:'PGK to MYR monthly rates (P&L translation)', st_fx_desc:'Fixed rate to translate PGK revenue and costs in the P&L. One rate per month - changing one month never affects others. Months without a rate carry forward the latest earlier rate.',
+    st_month:'Month', st_rate_label:'Rate (1 PGK = ? MYR)', st_set_rate:'+ Set monthly rate',
+    st_platform_name:'Platform name', st_banks_lbl:'Banks:', st_add_bank_dd:'+ Add bank...', st_add_platform:'+ Add platform', st_assign_note:'After adding, assign its PGK banks with the "+ Add bank..." dropdown on the platform row above.',
+    st_bank_label:'Bank label', st_add_bank:'+ Add bank', st_exch_name:'Exchanger name', st_add_exch:'+ Add exchanger',
+    st_funder_name:'Funder name', st_commitment:'Approved commitment (MYR)', st_add_funder:'+ Add funder', st_data_mgmt:'Data management', st_none_assigned:'none assigned',
     pl_view:'▶ click to view', pl_exch_summary:'Exchanger Balance Summary', pl_funder_summary:'Funder Position',
     // Funders
     fn_title:'Funders', fn_commitment:'Commitment', fn_injected:'Capital Injected',
@@ -1127,6 +1139,18 @@ const LANG = {
     ex_owes_us:'欠我们 RM', ex_we_owe:'我们欠 RM', ex_settled:'已结清', ex_bf:'承前余额', ex_before:'截至',
     ex_no_movements:'无流水', ex_in_range:'在此日期范围内', ex_detail:'明细', ex_owes_more:'+ 增加欠款', ex_reduces:'− 减少', ex_running_bal:'滚动余额', ex_closing_bal:'期末余额', ex_at:'截至',
     ex_pgk_myr:'兑换 PGK→MYR', ex_myr_pgk:'兑换 MYR→PGK', ex_pay_received:'已收款',
+    st_users:'用户与权限', st_banks_platforms:'银行与平台', st_exch_rates:'兑换与汇率', st_general:'通用与数据',
+    st_users_desc:'创建账户并选择每个账户可见的标签页。操作员只见录入页；经理见报表；管理员见全部。注意：仅为权限分隔，单文件网页非绝对安全。',
+    st_add_edit_acct:'添加 / 编辑账户', st_name:'名称', st_pin:'PIN（4-6位数字）', st_role:'角色',
+    st_role_op:'操作员（仅录入）', st_role_mgr:'经理（录入+报表）', st_role_admin:'管理员（全部）', st_role_custom:'自定义',
+    st_allowed_tabs:'允许的标签页（角色已预设；自定义可调整）：', st_create_acct:'+ 创建账户', st_update_acct:'更新账户', st_clear:'清除',
+    st_pgk_banks:'PGK银行账户', st_pgk_banks_desc:'用于内部银行间转账（例如 NASHON / MAKUEL 溢出）', st_pgk_label:'PGK银行名称', st_add_pgk:'+ 添加PGK银行',
+    st_inactive_banks:'停用银行', st_deactivate:'停用', st_reactivate:'重新启用', st_inactive_tag:'已停用',
+    st_fx_title:'PGK 转 MYR 月度汇率（损益表换算）', st_fx_desc:'用于在损益表中换算PGK收入与成本的固定汇率。每月一个汇率 - 修改某月不影响其他月份。未设汇率的月份沿用最近的较早汇率。',
+    st_month:'月份', st_rate_label:'汇率（1 PGK = ? MYR）', st_set_rate:'+ 设定月度汇率',
+    st_platform_name:'平台名称', st_banks_lbl:'银行：', st_add_bank_dd:'+ 添加银行...', st_add_platform:'+ 添加平台', st_assign_note:'添加后，用上方平台行的「+ 添加银行...」下拉菜单分配其PGK银行。',
+    st_bank_label:'银行名称', st_add_bank:'+ 添加银行', st_exch_name:'兑换商名称', st_add_exch:'+ 添加兑换商',
+    st_funder_name:'资金方名称', st_commitment:'核准承诺金额（MYR）', st_add_funder:'+ 添加资金方', st_data_mgmt:'数据管理', st_none_assigned:'未分配',
     pl_view:'▶ 点击查看', pl_exch_summary:'兑换商汇总', pl_funder_summary:'资金方汇总',
     // Funders
     fn_title:'资金方', fn_commitment:'承诺资金', fn_injected:'已注入资本',
@@ -3087,12 +3111,12 @@ function renderStorageMeter(){
 }
 // ── SETUP LEFT-RAIL NAVIGATION ──
 const SETUP_CATS=[
-  {id:'users',label:'Users & Access',adminOnly:true},
-  {id:'entities',label:'Banks & Platforms'},
-  {id:'exchange',label:'Exchange & Rates'},
-  {id:'funders',label:'Funders'},
-  {id:'expenses',label:'Expense Categories'},
-  {id:'general',label:'General & Data'},
+  {id:'users',key:'st_users',adminOnly:true},
+  {id:'entities',key:'st_banks_platforms'},
+  {id:'exchange',key:'st_exch_rates'},
+  {id:'funders',key:'setup_funders'},
+  {id:'expenses',key:'setup_exp_types'},
+  {id:'general',key:'st_general'},
 ];
 let setupCat='entities';
 function renderSetupRail(){
@@ -3102,7 +3126,7 @@ function renderSetupRail(){
   const rail=document.getElementById('setup-rail');if(!rail)return;
   const cats=SETUP_CATS.filter(c=>!c.adminOnly||isAdminCtx());
   if(!cats.some(c=>c.id===setupCat))setupCat=cats[0].id;
-  rail.innerHTML=cats.map(c=>`<button class="${c.id===setupCat?'on':''}" onclick="setupNav('${c.id}')">${c.label}</button>`).join('');
+  rail.innerHTML=cats.map(c=>`<button class="${c.id===setupCat?'on':''}" onclick="setupNav('${c.id}')">${tr(c.key)}</button>`).join('');
   setupNav(setupCat);
 }
 function setupNav(cat){
@@ -3121,25 +3145,25 @@ function renderSettings(){
     }).join(' ');
     const avail=activePgkBanks().filter(b=>!assigned.includes(b.name));
     const adder=avail.length
-      ?`<select onchange="if(this.value)togglePlatBank(${i},this.value)" style="font-size:10px;padding:3px 7px;border:1px dashed var(--bdr2);border-radius:20px;background:#fff;color:var(--txt2);cursor:pointer"><option value="">+ Add bank…</option>${avail.map(b=>`<option value="${b.name}">${b.name}</option>`).join('')}</select>`
+      ?`<select onchange="if(this.value)togglePlatBank(${i},this.value)" style="font-size:10px;padding:3px 7px;border:1px dashed var(--bdr2);border-radius:20px;background:#fff;color:var(--txt2);cursor:pointer"><option value="">${tr('st_add_bank_dd')}</option>${avail.map(b=>`<option value="${b.name}">${b.name}</option>`).join('')}</select>`
       :(S.pgkBanks||[]).length?'':`<span style="font-size:10px;color:var(--am)">Add PGK banks below first</span>`;
     return`<div class="setting-row" style="flex-direction:column;align-items:stretch;gap:6px">
       <div style="display:flex;justify-content:space-between;align-items:center"><b>${p.name}</b><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('platform',${i})">✏️</button><button class="del" onclick="deleteEntity('platform',${i})">🗑</button></span></div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center"><span style="font-size:10px;color:var(--txt2)">Banks:</span>${tags||'<span style="font-size:10px;color:var(--txt2)">none assigned</span>'} ${adder}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center"><span style="font-size:10px;color:var(--txt2)">${tr('st_banks_lbl')}</span>${tags||'<span style="font-size:10px;color:var(--txt2)">'+tr('st_none_assigned')+'</span>'} ${adder}</div>
     </div>`;
   }).join('')||`<div class="empty">No platforms yet</div>`);
   setHTML('s-myrbanks',S.myrBanks.map((b,i)=>`<div class="setting-row"><span style="display:flex;align-items:center;gap:7px"><span class="bdot" style="background:${b.color}"></span><b>${b.name}</b></span><span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('myrBank',${i})">✏️</button><button class="del" onclick="deleteEntity('myrBank',${i})">🗑</button></span></div>`).join('')||`<div class="empty">No banks yet</div>`);
-  const pgkRow=(b,i)=>`<div class="setting-row"><span style="display:flex;align-items:center;gap:7px"><b style="${b.inactive?'color:var(--txt2)':''}">${b.name}</b>${b.inactive?'<span style="font-size:9px;background:var(--bg3);border:1px solid var(--bdr2);border-radius:20px;padding:1px 7px;color:var(--txt2)">INACTIVE</span>':''}</span><span style="white-space:nowrap">
+  const pgkRow=(b,i)=>`<div class="setting-row"><span style="display:flex;align-items:center;gap:7px"><b style="${b.inactive?'color:var(--txt2)':''}">${b.name}</b>${b.inactive?'<span style="font-size:9px;background:var(--bg3);border:1px solid var(--bdr2);border-radius:20px;padding:1px 7px;color:var(--txt2)">'+tr('st_inactive_tag')+'</span>':''}</span><span style="white-space:nowrap">
     ${b.inactive
-      ?`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="setPgkBankStatus(${i},false)">▶ Reactivate</button>`
-      :`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="setPgkBankStatus(${i},true)">⏸ Deactivate</button>`}
+      ?`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="setPgkBankStatus(${i},false)">▶ ${tr('st_reactivate')}</button>`
+      :`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="setPgkBankStatus(${i},true)">⏸ ${tr('st_deactivate')}</button>`}
     <button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="renameEntity('pgkBank',${i})">✏️</button>
     <button class="del" onclick="deleteEntity('pgkBank',${i})">🗑</button></span></div>`;
   const pgkActive=(S.pgkBanks||[]).map((b,i)=>({b,i})).filter(x=>!x.b.inactive);
   const pgkInactive=(S.pgkBanks||[]).map((b,i)=>({b,i})).filter(x=>x.b.inactive);
   setHTML('s-pgkbanks',
     (pgkActive.map(x=>pgkRow(x.b,x.i)).join('')||`<div class="empty">No active PGK banks</div>`)+
-    (pgkInactive.length?`<details class="collapse-card" style="margin-top:8px"><summary style="font-size:11px;font-weight:600;color:var(--txt2);padding:4px 0">Inactive banks (${pgkInactive.length})</summary>${pgkInactive.map(x=>pgkRow(x.b,x.i)).join('')}</details>`:''));
+    (pgkInactive.length?`<details class="collapse-card" style="margin-top:8px"><summary style="font-size:11px;font-weight:600;color:var(--txt2);padding:4px 0">${tr('st_inactive_banks')} (${pgkInactive.length})</summary>${pgkInactive.map(x=>pgkRow(x.b,x.i)).join('')}</details>`:''));
   const fxMonths=Object.keys(S.fxRates||{}).sort().reverse();
   setHTML('s-fxrates',fxMonths.length?fxMonths.map(m=>`<div class="setting-row">
     <span><b>${ml(m)}</b></span>
