@@ -29,6 +29,8 @@ h1{font-size:18px;font-weight:600;margin-bottom:.75rem}
 .btn-sec{padding:7px 14px;font-size:12px;font-weight:500;background:var(--bg3);border:1px solid var(--bdr2);border-radius:var(--r);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
 .btn-sec:hover{background:var(--bdr)}
 .btn-sec.on{background:var(--bl);color:#fff;border-color:var(--bl)}
+body.readonly .btn-pri,body.readonly .btn-plat,body.readonly .btn-add,body.readonly .btn-danger,body.readonly .del,body.readonly .attach-btn,body.readonly .op-only{display:none!important}
+body.readonly table .btn-sec{display:none!important}
 .btn-plat{padding:9px 18px;font-size:12px;font-weight:700;background:var(--bl);color:#fff;border:none;border-radius:var(--r);cursor:pointer}
 .btn-plat:hover{background:var(--bl2)}
 .btn-add{padding:6px 12px;font-size:11px;background:none;border:1px solid var(--bdr2);border-radius:var(--r);cursor:pointer;color:var(--txt2);display:inline-flex;align-items:center;gap:4px}
@@ -283,7 +285,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
   <div class="info-box" data-i18n="fnd_info">💰 <b>Funder Movements</b> — Record capital injections, returns, and profit distributions. Each transaction gets a unique FND reference number.</div>
 
   <!-- Entry form -->
-  <div class="card">
+  <div class="card op-only">
     <div class="step-lbl pu" data-i18n="fnd_new">New funder transaction</div>
     <div class="g4" style="margin-bottom:9px">
       <div class="f"><label data-i18n="date">Date</label><input type="date" id="fnd-date"></div>
@@ -336,7 +338,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
   <div class="info-box" data-i18n="exp_info">🧾 <b>Expenses</b> — Record all MYR expenses. Attach receipts per transaction.</div>
 
   <!-- Entry form -->
-  <div class="card">
+  <div class="card op-only">
     <div style="display:flex;gap:6px;margin-bottom:10px">
       <button id="exp-tab-src-bank" onclick="setExpTabSrc('bank')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid #378ADD;background:#378ADD;color:#fff;cursor:pointer" data-i18n="exp_bank_src">🏦 Paid from MYR bank</button>
       <button id="exp-tab-src-funder" onclick="setExpTabSrc('funder')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid var(--bdr2);background:none;color:var(--txt2);cursor:pointer" data-i18n="exp_funder_src">👤 Paid by funder (direct)</button>
@@ -702,10 +704,11 @@ details.collapse-card[open]>summary:before{content:'▾'}
     <div class="g3" style="margin-bottom:9px">
       <div class="f"><label data-i18n="st_name">Name</label><input type="text" id="acct-name" placeholder="e.g. Operator 1"></div>
       <div class="f"><label data-i18n="st_pin">PIN (4–6 digits)</label><input type="text" id="acct-pin" inputmode="numeric" placeholder="e.g. 1234"></div>
-      <div class="f"><label data-i18n="st_role">Role</label><select id="acct-role" onchange="acctRolePreset()"><option value="operator" data-i18n="st_role_op">Operator (entry only)</option><option value="manager" data-i18n="st_role_mgr">Manager (entry + reports)</option><option value="admin" data-i18n="st_role_admin">Admin (everything)</option><option value="custom" data-i18n="st_role_custom">Custom</option></select></div>
+      <div class="f"><label data-i18n="st_role">Role</label><select id="acct-role" onchange="acctRolePreset()"><option value="operator" data-i18n="st_role_op">Operator (entry only)</option><option value="manager" data-i18n="st_role_mgr">Manager (entry + reports)</option><option value="funder" data-i18n="st_role_funder">Funder (view only)</option><option value="admin" data-i18n="st_role_admin">Admin (everything)</option><option value="custom" data-i18n="st_role_custom">Custom</option></select></div>
     </div>
     <div style="font-size:10px;color:var(--txt2);margin-bottom:5px" data-i18n="st_allowed_tabs">Allowed tabs (role sets these; adjust for custom):</div>
     <div id="acct-tabs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:5px;margin-bottom:10px"></div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:10px"><input type="checkbox" id="acct-viewonly"> <span data-i18n="st_viewonly">View only — can see the allowed tabs but cannot add, edit or delete data</span></label>
     <div style="display:flex;gap:8px"><button class="btn-add" id="acct-save-btn" onclick="saveAccount()" data-i18n="st_create_acct">+ Create account</button><button class="btn-sec" onclick="clearAcctForm()" data-i18n="st_clear">Clear</button></div>
   </div>
   <div class="card">
@@ -920,7 +923,8 @@ const LANG = {
     st_users:'Users & Access', st_banks_platforms:'Banks & Platforms', st_exch_rates:'Exchange & Rates', st_general:'General & Data',
     st_users_desc:'Create accounts and choose which tabs each can see. Operators see only entry tabs; managers see reports; admins see everything. Note: role separation, not bulletproof security for a single HTML file.',
     st_add_edit_acct:'Add / edit account', st_name:'Name', st_pin:'PIN (4-6 digits)', st_role:'Role',
-    st_role_op:'Operator (entry only)', st_role_mgr:'Manager (entry + reports)', st_role_admin:'Admin (everything)', st_role_custom:'Custom',
+    st_role_op:'Operator (entry only)', st_role_mgr:'Manager (entry + reports)', st_role_funder:'Funder (view only)', st_role_admin:'Admin (everything)', st_role_custom:'Custom',
+    st_viewonly:'View only — can see the allowed tabs but cannot add, edit or delete data', st_viewonly_tag:'view only',
     st_allowed_tabs:'Allowed tabs (role sets these; adjust for custom):', st_create_acct:'+ Create account', st_update_acct:'Update account', st_clear:'Clear',
     st_pgk_banks:'PGK bank accounts', st_pgk_banks_desc:'Used for internal bank-to-bank transfers (e.g. NASHON / MAKUEL overflow)', st_pgk_label:'PGK bank label', st_add_pgk:'+ Add PGK bank',
     st_inactive_banks:'Inactive banks', st_deactivate:'Deactivate', st_reactivate:'Reactivate', st_inactive_tag:'INACTIVE',
@@ -1144,7 +1148,8 @@ const LANG = {
     st_users:'用户与权限', st_banks_platforms:'银行与平台', st_exch_rates:'兑换与汇率', st_general:'通用与数据',
     st_users_desc:'创建账户并选择每个账户可见的标签页。操作员只见录入页；经理见报表；管理员见全部。注意：仅为权限分隔，单文件网页非绝对安全。',
     st_add_edit_acct:'添加 / 编辑账户', st_name:'名称', st_pin:'PIN（4-6位数字）', st_role:'角色',
-    st_role_op:'操作员（仅录入）', st_role_mgr:'经理（录入+报表）', st_role_admin:'管理员（全部）', st_role_custom:'自定义',
+    st_role_op:'操作员（仅录入）', st_role_mgr:'经理（录入+报表）', st_role_funder:'投资人（只看）', st_role_admin:'管理员（全部）', st_role_custom:'自定义',
+    st_viewonly:'只看 — 可查看允许的标签页，但不能新增、编辑或删除数据', st_viewonly_tag:'只看',
     st_allowed_tabs:'允许的标签页（角色已预设；自定义可调整）：', st_create_acct:'+ 创建账户', st_update_acct:'更新账户', st_clear:'清除',
     st_pgk_banks:'PGK银行账户', st_pgk_banks_desc:'用于内部银行间转账（例如 NASHON / MAKUEL 溢出）', st_pgk_label:'PGK银行名称', st_add_pgk:'+ 添加PGK银行',
     st_inactive_banks:'停用银行', st_deactivate:'停用', st_reactivate:'重新启用', st_inactive_tag:'已停用',
@@ -1529,6 +1534,7 @@ const ALL_TABS=[
 const ROLE_PRESETS={
   operator:['entry','pgk-entry','exchange-tab','exp-tab'],
   manager:['entry','pgk-entry','exchange-tab','fnd-tab','exp-tab','recon','cashflow','weekly','pl','funders','funder-review'],
+  funder:['exchange-tab','fnd-tab','exp-tab','recon','cashflow','weekly','pl','funders','funder-review'],
   admin:ALL_TABS.map(t=>t.id)
 };
 let currentUser=null,loginSelId=null;
@@ -1541,6 +1547,8 @@ function allowedTabs(){
 function isAdminCtx(){return!S.accounts||!S.accounts.length||(currentUser&&currentUser.role==='admin');}
 function applyAccess(){
   const allow=allowedTabs();
+  // View-only (e.g. funder) accounts: hide all add/edit/delete actions via body class (see CSS)
+  document.body.classList.toggle('readonly',!!(currentUser&&currentUser.viewOnly));
   document.querySelectorAll('.nav .nb').forEach(btn=>{const t=navTabOf(btn);if(t)btn.style.display=allow.includes(t)?'':'none';});
   const badge=document.getElementById('user-badge');
   if(badge)badge.innerHTML=currentUser?`👤 <b>${currentUser.name}</b> <span style="opacity:.6">(${currentUser.role})</span> <button class="btn-sec" style="font-size:10px;padding:2px 8px" onclick="lockApp()">🔒 Lock</button>`:'';
@@ -1588,13 +1596,16 @@ function acctRolePreset(){
   if(role&&ROLE_PRESETS[role]){
     ALL_TABS.forEach(t=>{const cb=document.getElementById('acct-tab-'+t.id);if(cb)cb.checked=ROLE_PRESETS[role].includes(t.id);});
   }
+  // Funder defaults to view-only; other named roles default to full edit. Custom keeps current choice.
+  const vo=document.getElementById('acct-viewonly');
+  if(vo&&role!=='custom')vo.checked=(role==='funder');
 }
 function renderAccounts(){
   const card=document.getElementById('s-accounts-card');
   if(card)card.style.display=isAdminCtx()?'':'none';
   const list=document.getElementById('s-accounts');if(!list)return;
   list.innerHTML=(S.accounts||[]).length?S.accounts.map(a=>`<div class="setting-row">
-    <span><b>${a.name}</b> <span style="font-size:10px;color:var(--txt2)">${a.role} · ${a.role==='admin'?'all tabs':(a.tabs||[]).length+' tabs'}</span></span>
+    <span><b>${a.name}</b> <span style="font-size:10px;color:var(--txt2)">${a.role} · ${a.role==='admin'?'all tabs':(a.tabs||[]).length+' tabs'}${a.viewOnly?' · 👁 '+tr('st_viewonly_tag'):''}</span></span>
     <span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="editAccount('${a.id}')">✏️</button><button class="del" onclick="deleteAccount('${a.id}')">🗑</button></span>
   </div>`).join(''):`<div class="empty">No accounts yet — app opens with no login. Create an Admin account to enable sign-in.</div>`;
   const tabBox=document.getElementById('acct-tabs');
@@ -1616,6 +1627,7 @@ function saveAccount(){
   if(!name){showToast('Enter a name',true);return;}
   if(!/^\d{4,6}$/.test(pin)){showToast('PIN must be 4–6 digits',true);return;}
   const tabs=ALL_TABS.filter(t=>document.getElementById('acct-tab-'+t.id)?.checked).map(t=>t.id);
+  const viewOnly=!!document.getElementById('acct-viewonly')?.checked;
   const others=(S.accounts||[]).filter(a=>a.id!==acctEditId);
   if(others.some(a=>a.name.toLowerCase()===name.toLowerCase())){showToast('Name already exists',true);return;}
   if(!acctEditId&&!others.length&&role!=='admin'){showToast('The first account must be Admin (so you can manage users)',true);return;}
@@ -1623,11 +1635,11 @@ function saveAccount(){
     const a=S.accounts.find(x=>x.id===acctEditId);
     // prevent removing the last admin
     if(a.role==='admin'&&role!=='admin'&&S.accounts.filter(x=>x.role==='admin').length===1){showToast('Cannot demote the only Admin',true);return;}
-    Object.assign(a,{name,pin,role,tabs});
+    Object.assign(a,{name,pin,role,tabs,viewOnly});
   }else{
     if(!S.accounts)S.accounts=[];
     const uid='USR-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-    S.accounts.push({id:uid,name,pin,role,tabs});
+    S.accounts.push({id:uid,name,pin,role,tabs,viewOnly});
   }
   persist();clearAcctForm();renderAccounts();
   showToast('Account saved ✓');
@@ -1639,6 +1651,7 @@ function editAccount(id){
   document.getElementById('acct-pin').value=a.pin;
   document.getElementById('acct-role').value=a.role;
   ALL_TABS.forEach(t=>{const cb=document.getElementById('acct-tab-'+t.id);if(cb)cb.checked=(a.role==='admin'?true:(a.tabs||[]).includes(t.id));});
+  const vo=document.getElementById('acct-viewonly');if(vo)vo.checked=!!a.viewOnly;
   const btn=document.getElementById('acct-save-btn');if(btn)btn.textContent='💾 Update account';
   document.getElementById('acct-name').scrollIntoView({behavior:'smooth',block:'center'});
 }
