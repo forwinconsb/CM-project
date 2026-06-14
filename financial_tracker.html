@@ -885,6 +885,17 @@ const LANG = {
     pl_title:'P&L', pl_today:'Today', pl_month:'This month', pl_year:'This year', pl_custom:'Custom range',
     pl_revenue:'Revenue — MYR received via exchange', pl_gross:'Gross Profit',
     pl_net:'Net Profit / (Loss)', pl_margin:'Margin', pl_myr_out:'MYR sent to top up PGK',
+    pl_fxgl:'FX gain/loss', pl_rev_wl:'Revenue (net win/lose @ monthly rate)', pl_rates:'Rates',
+    pl_norate:'No rate set for', pl_norate2:"these months' PGK figures are excluded — set rates in Setup",
+    pl_pgk_costs:'PGK Costs (@ monthly rate)', pl_pgk_charges:'PGK bank charges',
+    pl_writeoffs:'Frozen-fund write-offs', pl_recoveries:'Frozen-fund recoveries', pl_total_pgk_costs:'Total PGK costs',
+    pl_fxgl_title:'FX gain/loss on actual conversions', pl_click_detail:'click for detail',
+    pl_real_myr:'Real MYR', pl_fixed_rate:'@ Fixed rate', pl_gainloss:'Gain/Loss', pl_dir:'Dir',
+    pl_fxgl_note:'Positive = exchanger gave a better rate than the fixed monthly rate. Negative = worse.',
+    pl_cash_view:'Cash view — MYR actually moved this period (memo)',
+    pl_myr_from_exch:'MYR received from exchangers (cash)', pl_myr_exp_paid:'MYR expenses paid',
+    pl_net_cash:'Net MYR cash movement', pl_total_prefix:'Total',
+    pl_cash_note:'Cash timing only — net profit above uses fixed monthly rates.',
     pl_view:'▶ click to view', pl_exch_summary:'Exchanger Balance Summary', pl_funder_summary:'Funder Position',
     // Funders
     fn_title:'Funders', fn_commitment:'Commitment', fn_injected:'Capital Injected',
@@ -1049,6 +1060,17 @@ const LANG = {
     pl_title:'损益表', pl_today:'今天', pl_month:'本月', pl_year:'本年', pl_custom:'自定义',
     pl_revenue:'收入 — MYR兑换所得', pl_gross:'毛利润',
     pl_net:'净利润 / （亏损）', pl_margin:'利润率', pl_myr_out:'MYR转出用于PGK充值',
+    pl_fxgl:'FX汇兑盈亏', pl_rev_wl:'收入（净输赢 @ 月度汇率）', pl_rates:'汇率',
+    pl_norate:'未设定汇率：', pl_norate2:'这些月份的PGK数据已排除 — 请到设置中设定汇率',
+    pl_pgk_costs:'PGK成本（@ 月度汇率）', pl_pgk_charges:'PGK银行手续费',
+    pl_writeoffs:'冻结资金核销', pl_recoveries:'冻结资金收回', pl_total_pgk_costs:'PGK成本总计',
+    pl_fxgl_title:'实际兑换的汇兑盈亏', pl_click_detail:'点击查看明细',
+    pl_real_myr:'实际MYR', pl_fixed_rate:'@ 固定汇率', pl_gainloss:'盈亏', pl_dir:'方向',
+    pl_fxgl_note:'正数 = 兑换商汇率优于固定月度汇率；负数 = 较差。',
+    pl_cash_view:'现金视图 — 本期实际MYR流动（备注）',
+    pl_myr_from_exch:'从兑换商收到的MYR（现金）', pl_myr_exp_paid:'已付MYR费用',
+    pl_net_cash:'MYR净现金流动', pl_total_prefix:'合计',
+    pl_cash_note:'仅为现金时点 — 上方净利润采用固定月度汇率。',
     pl_view:'▶ 点击查看', pl_exch_summary:'兑换商汇总', pl_funder_summary:'资金方汇总',
     // Funders
     fn_title:'资金方', fn_commitment:'承诺资金', fn_injected:'已注入资本',
@@ -2799,14 +2821,14 @@ function renderPL(){
   const{revMYR,fxGL,pgkChargesPGK,pgkLossPGK,pgkRecPGK,pgkChargesMYR,pgkLossMYR,pgkRecMYR,pgkCostMYR,rateNotes,noRateMonths,fxRows}=plFixedStats(from,to);
   const rev=revMYR,gross=rev-sumSec('direct'),net=rev-pgkCostMYR-totalCost+fxGL;
   const pct=v=>rev?((v/rev)*100).toFixed(1)+'%':'—';
-  setHTML('pl-metrics',`<div class="mc"><div class="ml">${tr('lbl_period')}</div><div class="mv" style="font-size:11px">${rangeLabel}</div></div><div class="mc"><div class="ml">${tr('pl_revenue')} (PGK @ rate)</div><div class="mv pos">RM ${fmt(rev)}</div></div><div class="mc"><div class="ml">FX gain/loss</div><div class="mv ${fxGL>=0?'pos':'neg'}">${fxGL>=0?'+':'-'}RM ${fmt(Math.abs(fxGL))}</div></div><div class="mc"><div class="ml" >${tr('lbl_total_exp')}</div><div class="mv neg">-RM ${fmt(totalCost+pgkCostMYR)}</div></div><div class="mc"><div class="ml">${tr('pl_net')}</div><div class="mv ${net>=0?'pos':'neg'}">${net>=0?'':'('}RM ${fmt(Math.abs(net))}${net>=0?'':')'}</div></div><div class="mc"><div class="ml">${tr('pl_margin')}</div><div class="mv ${net>=0?'pos':'neg'}">${pct(net)}</div></div>`);
+  setHTML('pl-metrics',`<div class="mc"><div class="ml">${tr('lbl_period')}</div><div class="mv" style="font-size:11px">${rangeLabel}</div></div><div class="mc"><div class="ml">${tr('pl_revenue')} (PGK @ rate)</div><div class="mv pos">RM ${fmt(rev)}</div></div><div class="mc"><div class="ml">${tr('pl_fxgl')}</div><div class="mv ${fxGL>=0?'pos':'neg'}">${fxGL>=0?'+':'-'}RM ${fmt(Math.abs(fxGL))}</div></div><div class="mc"><div class="ml" >${tr('lbl_total_exp')}</div><div class="mv neg">-RM ${fmt(totalCost+pgkCostMYR)}</div></div><div class="mc"><div class="ml">${tr('pl_net')}</div><div class="mv ${net>=0?'pos':'neg'}">${net>=0?'':'('}RM ${fmt(Math.abs(net))}${net>=0?'':')'}</div></div><div class="mc"><div class="ml">${tr('pl_margin')}</div><div class="mv ${net>=0?'pos':'neg'}">${pct(net)}</div></div>`);
   let plHtml=`<div class="sl">P&L — ${rangeLabel}</div>
   <div class="pr">
-    <span style="font-weight:700">${tr("lbl_revenue")} — net win/lose ${fmt(totWL)} PGK @ monthly rate</span>
+    <span style="font-weight:700">${tr('pl_rev_wl')} — ${fmt(totWL)} PGK</span>
     <span style="font-weight:700;color:${rev>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(rev)}</span>
   </div>
-  <div style="font-size:10px;color:var(--txt2);margin:2px 0 4px">Rates: ${rateNotes.join(' · ')||'—'}</div>
-  ${noRateMonths.length?`<div style="font-size:11px;color:var(--am);background:#FFF3E0;border:1px solid #F0D49A;border-radius:var(--r);padding:6px 10px;margin-bottom:6px">⚠ No rate available for ${noRateMonths.join(', ')} — these months' PGK figures are excluded. Set rates in Setup → Monthly rates.</div>`:''}`;
+  <div style="font-size:10px;color:var(--txt2);margin:2px 0 4px">${tr('pl_rates')}: ${rateNotes.join(' · ')||'—'}</div>
+  ${noRateMonths.length?`<div style="font-size:11px;color:var(--am);background:#FFF3E0;border:1px solid #F0D49A;border-radius:var(--r);padding:6px 10px;margin-bottom:6px">⚠ ${tr('pl_norate')} ${noRateMonths.join(', ')} — ${tr('pl_norate2')}</div>`:''}`;
   ordSec.forEach(sec=>{
     if(!secMap[sec.id])return;
     const tot=sumSec(sec.id);
@@ -2819,38 +2841,38 @@ function renderPL(){
       </div>`;
     });
     const secTxns=Object.values(secMap[sec.id].cats).flat();
-    plHtml+=`<div class="pr ptot" style="cursor:pointer" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''" onclick="showPLTxnModal('exp',${JSON.stringify(sec.name+' — all')},${JSON.stringify(secTxns)})"><span>Total ${sec.name.toLowerCase()} <span style="font-size:10px;color:var(--bl)">▶ view all</span></span><span style="color:var(--rd)">-RM ${fmt(tot)}</span></div>`;
+    plHtml+=`<div class="pr ptot" style="cursor:pointer" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''" onclick="showPLTxnModal('exp',${JSON.stringify(sec.name+' — all')},${JSON.stringify(secTxns)})"><span>${tr('pl_total_prefix')} ${sec.name.toLowerCase()} <span style="font-size:10px;color:var(--bl)">▶ view all</span></span><span style="color:var(--rd)">-RM ${fmt(tot)}</span></div>`;
     if(sec.id==='direct')plHtml+=`<div class="pr" style="font-weight:700"><span>${tr("lbl_gross_profit")}</span><span style="color:${gross>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(gross)}</span></div>`;
   });
   // PGK costs (translated at the same monthly rates, INCLUDED in net)
   if(pgkChargesPGK||pgkLossPGK||pgkRecPGK){
-    plHtml+=`<div class="sl" style="margin-top:14px;display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:2px;background:#0C447C;display:inline-block"></span>PGK Costs (@ monthly rate)</div>`;
-    if(pgkChargesPGK)plHtml+=`<div class="pr pi"><span>PGK bank charges (${fmt(pgkChargesPGK)} PGK)</span><span style="color:var(--rd)">-RM ${fmt(pgkChargesMYR)}</span></div>`;
-    if(pgkLossPGK)plHtml+=`<div class="pr pi"><span>Frozen-fund write-offs (${fmt(pgkLossPGK)} PGK)</span><span style="color:var(--rd)">-RM ${fmt(pgkLossMYR)}</span></div>`;
-    if(pgkRecPGK)plHtml+=`<div class="pr pi"><span>Frozen-fund recoveries (${fmt(pgkRecPGK)} PGK)</span><span style="color:var(--gr)">+RM ${fmt(pgkRecMYR)}</span></div>`;
-    plHtml+=`<div class="pr ptot"><span>Total PGK costs (${fmt(pgkChargesPGK+pgkLossPGK-pgkRecPGK)} PGK)</span><span style="color:${pgkCostMYR>0?'var(--rd)':'var(--gr)'}">${pgkCostMYR>0?'-':'+'}RM ${fmt(Math.abs(pgkCostMYR))}</span></div>`;
+    plHtml+=`<div class="sl" style="margin-top:14px;display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:2px;background:#0C447C;display:inline-block"></span>${tr('pl_pgk_costs')}</div>`;
+    if(pgkChargesPGK)plHtml+=`<div class="pr pi"><span>${tr('pl_pgk_charges')} (${fmt(pgkChargesPGK)} PGK)</span><span style="color:var(--rd)">-RM ${fmt(pgkChargesMYR)}</span></div>`;
+    if(pgkLossPGK)plHtml+=`<div class="pr pi"><span>${tr('pl_writeoffs')} (${fmt(pgkLossPGK)} PGK)</span><span style="color:var(--rd)">-RM ${fmt(pgkLossMYR)}</span></div>`;
+    if(pgkRecPGK)plHtml+=`<div class="pr pi"><span>${tr('pl_recoveries')} (${fmt(pgkRecPGK)} PGK)</span><span style="color:var(--gr)">+RM ${fmt(pgkRecMYR)}</span></div>`;
+    plHtml+=`<div class="pr ptot"><span>${tr('pl_total_pgk_costs')} (${fmt(pgkChargesPGK+pgkLossPGK-pgkRecPGK)} PGK)</span><span style="color:${pgkCostMYR>0?'var(--rd)':'var(--gr)'}">${pgkCostMYR>0?'-':'+'}RM ${fmt(Math.abs(pgkCostMYR))}</span></div>`;
   }
   // FX gain/loss — click to expand per-exchange detail
   if(fxRows.length){
     plHtml+=`<details class="collapse-card" style="margin-top:12px">
-      <summary><span class="pr" style="flex:1;border-bottom:none;font-weight:700"><span>FX gain/loss on actual conversions <span style="font-size:10px;color:var(--bl)">(${fxRows.length} txns — click for detail)</span></span><span style="color:${fxGL>=0?'var(--gr)':'var(--rd)'}">${fxGL>=0?'+':'-'}RM ${fmt(Math.abs(fxGL))}</span></span></summary>
+      <summary><span class="pr" style="flex:1;border-bottom:none;font-weight:700"><span>${tr('pl_fxgl_title')} <span style="font-size:10px;color:var(--bl)">(${fxRows.length} ${tr('pl_click_detail')})</span></span><span style="color:${fxGL>=0?'var(--gr)':'var(--rd)'}">${fxGL>=0?'+':'-'}RM ${fmt(Math.abs(fxGL))}</span></span></summary>
       <div class="tw" style="margin-top:8px"><table>
-        <thead><tr><th>Date</th><th>Dir</th><th>Exchanger</th><th>PGK</th><th>Real MYR</th><th>@ Fixed rate</th><th>Gain/Loss</th></tr></thead>
+        <thead><tr><th>${tr('date')}</th><th>${tr('pl_dir')}</th><th>${tr('exch_exchanger')}</th><th>PGK</th><th>${tr('pl_real_myr')}</th><th>${tr('pl_fixed_rate')}</th><th>${tr('pl_gainloss')}</th></tr></thead>
         <tbody>${fxRows.map(f=>`<tr><td>${fD(f.date)}</td><td>${f.dir==='out'?'PGK→MYR':'MYR→PGK'}</td><td>${f.exchanger}</td><td>${fmt(f.pgk)}</td><td>RM ${fmt(f.myr)}</td><td>RM ${fmt(f.dir==='out'?f.pgk*f.rate:f.myr*f.rate)}</td><td style="font-weight:700;color:${f.gl>=0?'var(--gr)':'var(--rd)'}">${f.gl>=0?'+':'-'}RM ${fmt(Math.abs(f.gl))}</td></tr>`).join('')}</tbody>
       </table></div>
-      <div style="font-size:10px;color:var(--txt2);margin-top:4px">Positive = your exchanger gave a better rate than the fixed monthly rate. Negative = worse.</div>
+      <div style="font-size:10px;color:var(--txt2);margin-top:4px">${tr('pl_fxgl_note')}</div>
     </details>`;
   }
   plHtml+=`<div style="border-top:2px solid #999;margin-top:12px;padding-top:12px"><div class="pr" style="font-weight:700;font-size:14px;color:${net>=0?'var(--gr)':'var(--rd)'}"><span>${tr("lbl_net_profit")}</span><span>${net>=0?'':'('}RM ${fmt(Math.abs(net))}${net>=0?'':')'}</span></div></div>`;
   // Cash view — collapsed memo
   plHtml+=`<details class="collapse-card" style="margin-top:10px">
-    <summary style="font-size:11px;font-weight:600;color:var(--txt2);padding:4px 0">Cash view — MYR actually moved this period (memo)</summary>
+    <summary style="font-size:11px;font-weight:600;color:var(--txt2);padding:4px 0">${tr('pl_cash_view')}</summary>
     <div style="margin-top:6px">
-      <div class="pr pi"><span>MYR received from exchangers (cash)</span><span style="color:var(--gr)">RM ${fmt(myrIn)}</span></div>
+      <div class="pr pi"><span>${tr('pl_myr_from_exch')}</span><span style="color:var(--gr)">RM ${fmt(myrIn)}</span></div>
       ${myrOut?`<div class="pr pi"><span>${tr("lbl_myr_topup")}</span><span style="color:var(--rd)">-RM ${fmt(myrOut)}</span></div>`:''}
-      <div class="pr pi"><span>MYR expenses paid</span><span style="color:var(--rd)">-RM ${fmt(totalCost)}</span></div>
-      <div class="pr ptot"><span>Net MYR cash movement</span><span style="font-weight:700;color:${(myrIn-myrOut-totalCost)>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(myrIn-myrOut-totalCost)}</span></div>
-      <div style="font-size:10px;color:var(--txt2);margin-top:4px">Cash timing only — the net profit above measures business performance at fixed monthly rates. Conversion timing differences appear here, not in profit.</div>
+      <div class="pr pi"><span>${tr('pl_myr_exp_paid')}</span><span style="color:var(--rd)">-RM ${fmt(totalCost)}</span></div>
+      <div class="pr ptot"><span>${tr('pl_net_cash')}</span><span style="font-weight:700;color:${(myrIn-myrOut-totalCost)>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(myrIn-myrOut-totalCost)}</span></div>
+      <div style="font-size:10px;color:var(--txt2);margin-top:4px">${tr('pl_cash_note')}</div>
     </div>
   </details>`;
   setHTML('pl-content',plHtml);
