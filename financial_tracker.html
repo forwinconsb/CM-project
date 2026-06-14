@@ -28,6 +28,7 @@ h1{font-size:18px;font-weight:600;margin-bottom:.75rem}
 .btn-pri:hover{background:var(--bl2)}
 .btn-sec{padding:7px 14px;font-size:12px;font-weight:500;background:var(--bg3);border:1px solid var(--bdr2);border-radius:var(--r);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
 .btn-sec:hover{background:var(--bdr)}
+.btn-sec.on{background:var(--bl);color:#fff;border-color:var(--bl)}
 .btn-plat{padding:9px 18px;font-size:12px;font-weight:700;background:var(--bl);color:#fff;border:none;border-radius:var(--r);cursor:pointer}
 .btn-plat:hover{background:var(--bl2)}
 .btn-add{padding:6px 12px;font-size:11px;background:none;border:1px solid var(--bdr2);border-radius:var(--r);cursor:pointer;color:var(--txt2);display:inline-flex;align-items:center;gap:4px}
@@ -407,28 +408,42 @@ details.collapse-card[open]>summary:before{content:'▾'}
 
 <!-- RECONCILIATION -->
 <div id="pg-recon" class="pg">
-  <div class="card">
-    <div class="ct">📑 <span data-i18n="rc_myr_title">MYR Bank Reconciliation — summary (click a row for detail)</span></div>
-    <div id="recon-summary"><div class="empty">No data yet</div></div>
-  </div>
   <div class="filter-row">
     <select id="rc-month" onchange="rcDetailOpen=true;renderRecon();renderPGKRecon()"></select>
-    <select id="rc-bank" onchange="rcDetailOpen=true;renderRecon()"><option value="">All MYR banks</option></select>
   </div>
-  <div id="recon-content"><div class="empty" data-i18n="no_data">No data yet</div></div>
-  <hr class="divider" style="margin:20px 0">
-  <div class="card">
-    <div class="ct">🎰 <span data-i18n="rc_pgk_title">PGK Platform Reconciliation</span></div>
-    <div style="font-size:11px;color:var(--txt2);margin-bottom:10px" data-i18n="rc_pgk_desc">Computed book closing vs entered closing per platform. Exchanges auto-linked by platform + date.</div>
-    <div class="filter-row">
-      <select id="rc-pgk-platform" onchange="renderPGKRecon()"><option value="">All platforms</option></select>
+  <div style="display:flex;gap:14px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:8px;min-width:88px;flex-shrink:0">
+      <span style="font-size:11px;color:var(--txt2);font-weight:500" data-i18n="rc_cur">Currency</span>
+      <button class="btn-sec on" id="rc-cur-myr" onclick="setReconCur('myr')" style="justify-content:flex-start">🏦 MYR</button>
+      <button class="btn-sec" id="rc-cur-pgk" onclick="setReconCur('pgk')" style="justify-content:flex-start">🎰 PGK</button>
     </div>
-    <div id="pgk-recon-content"><div class="empty">No data yet</div></div>
-  </div>
-  <div class="card">
-    <div class="ct">🧊 <span data-i18n="rc_frozen_title">Frozen Funds — PGK stuck in frozen banks</span></div>
-    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px" data-i18n="rc_frozen_desc">Created when a bank with balance is deactivated. Write off = loss in P&L. Recovery (full or partial) credits back. Written-off funds can still be marked recovered later.</div>
-    <div id="frozen-content"><div class="empty">No frozen funds — all banks healthy</div></div>
+    <div style="flex:1;min-width:0">
+      <div id="recon-view-myr">
+        <div class="card">
+          <div class="ct">📑 <span data-i18n="rc_myr_title">MYR Bank Reconciliation — summary (click a row for detail)</span></div>
+          <div id="recon-summary"><div class="empty">No data yet</div></div>
+        </div>
+        <div class="filter-row">
+          <select id="rc-bank" onchange="rcDetailOpen=true;renderRecon()"><option value="">All MYR banks</option></select>
+        </div>
+        <div id="recon-content"><div class="empty" data-i18n="no_data">No data yet</div></div>
+      </div>
+      <div id="recon-view-pgk" style="display:none">
+        <div class="card">
+          <div class="ct">🎰 <span data-i18n="rc_pgk_title">PGK Platform Reconciliation</span></div>
+          <div style="font-size:11px;color:var(--txt2);margin-bottom:10px" data-i18n="rc_pgk_desc">Computed book closing vs entered closing per platform. Exchanges auto-linked by platform + date.</div>
+          <div class="filter-row">
+            <select id="rc-pgk-platform" onchange="renderPGKRecon()"><option value="">All platforms</option></select>
+          </div>
+          <div id="pgk-recon-content"><div class="empty">No data yet</div></div>
+        </div>
+        <div class="card">
+          <div class="ct">🧊 <span data-i18n="rc_frozen_title">Frozen Funds — PGK stuck in frozen banks</span></div>
+          <div style="font-size:11px;color:var(--txt2);margin-bottom:8px" data-i18n="rc_frozen_desc">Created when a bank with balance is deactivated. Write off = loss in P&L. Recovery (full or partial) credits back. Written-off funds can still be marked recovered later.</div>
+          <div id="frozen-content"><div class="empty">No frozen funds — all banks healthy</div></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -896,6 +911,7 @@ const LANG = {
     pl_myr_from_exch:'MYR received from exchangers (cash)', pl_myr_exp_paid:'MYR expenses paid',
     pl_net_cash:'Net MYR cash movement', pl_total_prefix:'Total',
     pl_cash_note:'Cash timing only — net profit above uses fixed monthly rates.',
+    rc_cur:'Currency',
     rc_myr_title:'MYR Bank Reconciliation — summary (click a row for detail)',
     rc_pgk_title:'PGK Platform Reconciliation', rc_pgk_desc:'Computed book closing vs entered closing per platform. Exchanges auto-linked by platform + date.',
     rc_frozen_title:'Frozen Funds — PGK stuck in frozen banks', rc_frozen_desc:'Created when a bank with balance is deactivated. Write off = loss in P&L. Recovery (full or partial) credits back. Written-off funds can still be marked recovered later.',
@@ -1119,6 +1135,7 @@ const LANG = {
     pl_myr_from_exch:'从兑换商收到的MYR（现金）', pl_myr_exp_paid:'已付MYR费用',
     pl_net_cash:'MYR净现金流动', pl_total_prefix:'合计',
     pl_cash_note:'仅为现金时点 — 上方净利润采用固定月度汇率。',
+    rc_cur:'货币',
     rc_myr_title:'MYR银行对账 — 汇总（点击行查看明细）',
     rc_pgk_title:'PGK平台对账', rc_pgk_desc:'各平台账面计算余额 vs 录入余额。兑换按平台+日期自动关联。',
     rc_frozen_title:'冻结资金 — 卡在冻结银行的PGK', rc_frozen_desc:'当有余额的银行被停用时生成。核销=计入损益表的亏损。收回（全部或部分）可冲回。已核销资金日后仍可标记为已收回。',
@@ -1704,7 +1721,7 @@ function renderPage(p){
   }
   if(p==='fnd-tab'){initFndTab();return;}
   if(p==='exp-tab'){initExpTab();return;}
-  if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);setSel('rc-pgk-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);rcDetailOpen=false;renderRecon();renderPGKRecon();renderFrozen();}
+  if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);setSel('rc-pgk-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);rcDetailOpen=false;renderRecon();renderPGKRecon();renderFrozen();setReconCur(rcCur);}
   if(p==='cashflow'){toggleCFCustom();setSel('cf-plat',[{v:'',l:'All platforms'},...S.platforms.map(q=>({v:q.name,l:q.name}))]);renderCF();}
   if(p==='weekly'){setSel('wk-month',mopts());renderWeekly();}
   if(p==='pl'){togglePLCustom();renderPL();}
@@ -2565,6 +2582,17 @@ function buildPGKLedger(platformName,dayEntries){
       const computed=(e.pgkOpen||0)+(e.dep||0)-(e.with||0)-(e.bankCharges||0)-exchOut+exchIn+adjNet;
       return{date:e.date,entry:e,linked,exchOut,exchIn,adjNet,computed,entered:e.pgkClose||0,diff:(e.pgkClose||0)-computed};
     });
+}
+// Reconciliation currency switch (left-side toggle): show MYR or PGK view
+let rcCur='myr';
+function setReconCur(c){
+  rcCur=c;
+  const mv=document.getElementById('recon-view-myr'),pv=document.getElementById('recon-view-pgk');
+  if(mv)mv.style.display=c==='myr'?'block':'none';
+  if(pv)pv.style.display=c==='pgk'?'block':'none';
+  const bm=document.getElementById('rc-cur-myr'),bp=document.getElementById('rc-cur-pgk');
+  if(bm)bm.classList.toggle('on',c==='myr');
+  if(bp)bp.classList.toggle('on',c==='pgk');
 }
 function renderPGKRecon(){
   const cont=document.getElementById('pgk-recon-content');if(!cont)return;
