@@ -408,7 +408,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
 <!-- RECONCILIATION -->
 <div id="pg-recon" class="pg">
   <div class="card">
-    <div class="ct">📑 MYR Bank Reconciliation — summary (click a row to open detail)</div>
+    <div class="ct">📑 <span data-i18n="rc_myr_title">MYR Bank Reconciliation — summary (click a row for detail)</span></div>
     <div id="recon-summary"><div class="empty">No data yet</div></div>
   </div>
   <div class="filter-row">
@@ -418,16 +418,16 @@ details.collapse-card[open]>summary:before{content:'▾'}
   <div id="recon-content"><div class="empty" data-i18n="no_data">No data yet</div></div>
   <hr class="divider" style="margin:20px 0">
   <div class="card">
-    <div class="ct">🎰 PGK Platform Reconciliation</div>
-    <div style="font-size:11px;color:var(--txt2);margin-bottom:10px">Computed book closing vs entered closing per platform. Exchanges auto-linked by platform + date.</div>
+    <div class="ct">🎰 <span data-i18n="rc_pgk_title">PGK Platform Reconciliation</span></div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:10px" data-i18n="rc_pgk_desc">Computed book closing vs entered closing per platform. Exchanges auto-linked by platform + date.</div>
     <div class="filter-row">
       <select id="rc-pgk-platform" onchange="renderPGKRecon()"><option value="">All platforms</option></select>
     </div>
     <div id="pgk-recon-content"><div class="empty">No data yet</div></div>
   </div>
   <div class="card">
-    <div class="ct">🧊 Frozen Funds — PGK stuck in frozen banks</div>
-    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">Created when a bank with balance is deactivated. Write off = loss in P&L. Recovery (full or partial) credits back. Written-off funds can still be marked recovered later.</div>
+    <div class="ct">🧊 <span data-i18n="rc_frozen_title">Frozen Funds — PGK stuck in frozen banks</span></div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px" data-i18n="rc_frozen_desc">Created when a bank with balance is deactivated. Write off = loss in P&L. Recovery (full or partial) credits back. Written-off funds can still be marked recovered later.</div>
     <div id="frozen-content"><div class="empty">No frozen funds — all banks healthy</div></div>
   </div>
 </div>
@@ -896,6 +896,21 @@ const LANG = {
     pl_myr_from_exch:'MYR received from exchangers (cash)', pl_myr_exp_paid:'MYR expenses paid',
     pl_net_cash:'Net MYR cash movement', pl_total_prefix:'Total',
     pl_cash_note:'Cash timing only — net profit above uses fixed monthly rates.',
+    rc_myr_title:'MYR Bank Reconciliation — summary (click a row for detail)',
+    rc_pgk_title:'PGK Platform Reconciliation', rc_pgk_desc:'Computed book closing vs entered closing per platform. Exchanges auto-linked by platform + date.',
+    rc_frozen_title:'Frozen Funds — PGK stuck in frozen banks', rc_frozen_desc:'Created when a bank with balance is deactivated. Write off = loss in P&L. Recovery (full or partial) credits back. Written-off funds can still be marked recovered later.',
+    rc_all_reconciled:'All reconciled', rc_out_by:'Out by', rc_total_suffix:'total', rc_reconciled:'Reconciled', rc_oob:'Out of balance',
+    rc_opening:'Opening', rc_deposit:'Deposit', rc_withdraw:'Withdraw', rc_bank_charges:'Bank charges', rc_exch_out:'Exchange out', rc_exch_in:'Exchange in', rc_txn:'txn', rc_adjustments:'Adjustments',
+    rc_computed:'Computed book closing', rc_entered:'Entered closing (actual)', rc_linked_exch:'Linked exchanges', rc_no_pgk:'No PGK platform entries',
+    rc_col_month:'Statement month', rc_col_book:'Book closing', rc_col_stmt:'Statement closing', rc_col_status:'Status', rc_not_entered:'statement not entered', rc_open_btn:'Open', rc_no_daily:'No daily entries yet — reconciliation rows appear once MYR bank data is entered',
+    rc_click_row:'Click a row in the summary above to open the fill-in reconciliation detail',
+    rc_book_all:'Book closing (all banks)', rc_entered_all:'Entered closing (all banks)', rc_enter_stmt:'Enter statement',
+    rc_all_banks_recon:'All banks reconciled — Out of Balance: RM 0.00', rc_pool_oob:'Pool Out of Balance', rc_stmt_higher:'statement higher', rc_book_higher:'book higher',
+    rc_stmt_recon_title:'Bank statement reconciliation', rc_book_entered:'Book closing (entered)', rc_book_entered_desc:'Balance you recorded in Daily Entry', rc_stmt_closing:'Bank statement closing', rc_stmt_ph:'Type statement closing here...', rc_from_stmt:'From your physical bank statement',
+    rc_enter_stmt_arrow:'Enter statement balance', rc_fully_recon:'Fully reconciled', rc_stmt_higher_book:'Statement higher than book', rc_book_higher_stmt:'Book higher than statement',
+    rc_book_check:'Book check:', rc_differs:'Differs from entered closing by', rc_matches:'Matches entered closing',
+    rc_still_frozen:'STILL FROZEN (AT RISK)', rc_net_loss:'NET LOSS TO DATE', rc_date_frozen:'Date frozen', rc_amount_pgk:'Amount (PGK)', rc_recovered:'Recovered', rc_net_loss_col:'Net loss', rc_action:'Action',
+    rc_frozen_tag:'Frozen', rc_recovered_tag:'Recovered', rc_partial:'partial', rc_writtenoff_tag:'Written off', rc_writeoff_btn:'Write off', rc_recovered_btn:'Recovered', rc_recovered_afterall:'Recovered after all', rc_no_frozen:'No frozen funds — all banks healthy',
     pl_view:'▶ click to view', pl_exch_summary:'Exchanger Balance Summary', pl_funder_summary:'Funder Position',
     // Funders
     fn_title:'Funders', fn_commitment:'Commitment', fn_injected:'Capital Injected',
@@ -1071,6 +1086,21 @@ const LANG = {
     pl_myr_from_exch:'从兑换商收到的MYR（现金）', pl_myr_exp_paid:'已付MYR费用',
     pl_net_cash:'MYR净现金流动', pl_total_prefix:'合计',
     pl_cash_note:'仅为现金时点 — 上方净利润采用固定月度汇率。',
+    rc_myr_title:'MYR银行对账 — 汇总（点击行查看明细）',
+    rc_pgk_title:'PGK平台对账', rc_pgk_desc:'各平台账面计算余额 vs 录入余额。兑换按平台+日期自动关联。',
+    rc_frozen_title:'冻结资金 — 卡在冻结银行的PGK', rc_frozen_desc:'当有余额的银行被停用时生成。核销=计入损益表的亏损。收回（全部或部分）可冲回。已核销资金日后仍可标记为已收回。',
+    rc_all_reconciled:'全部已对账', rc_out_by:'差额', rc_total_suffix:'（合计）', rc_reconciled:'已对账', rc_oob:'不平衡',
+    rc_opening:'期初', rc_deposit:'存款', rc_withdraw:'取款', rc_bank_charges:'银行手续费', rc_exch_out:'兑出', rc_exch_in:'兑入', rc_txn:'笔', rc_adjustments:'调整',
+    rc_computed:'账面计算余额', rc_entered:'录入余额（实际）', rc_linked_exch:'关联兑换', rc_no_pgk:'无PGK平台记录',
+    rc_col_month:'对账月份', rc_col_book:'账面余额', rc_col_stmt:'对账单余额', rc_col_status:'状态', rc_not_entered:'未录入对账单', rc_open_btn:'展开', rc_no_daily:'暂无每日记录 — 录入MYR银行数据后会出现对账行',
+    rc_click_row:'点击上方汇总中的行以展开填写对账明细',
+    rc_book_all:'账面余额（所有银行）', rc_entered_all:'录入余额（所有银行）', rc_enter_stmt:'请录入对账单',
+    rc_all_banks_recon:'所有银行已对账 — 差额：RM 0.00', rc_pool_oob:'汇总不平衡', rc_stmt_higher:'对账单较高', rc_book_higher:'账面较高',
+    rc_stmt_recon_title:'银行对账单核对', rc_book_entered:'账面余额（录入）', rc_book_entered_desc:'您在每日录入中记录的余额', rc_stmt_closing:'银行对账单余额', rc_stmt_ph:'在此输入对账单余额...', rc_from_stmt:'来自您的实体银行对账单',
+    rc_enter_stmt_arrow:'请录入对账单余额', rc_fully_recon:'完全平衡', rc_stmt_higher_book:'对账单高于账面', rc_book_higher_stmt:'账面高于对账单',
+    rc_book_check:'账面核对：', rc_differs:'与录入余额相差', rc_matches:'与录入余额一致',
+    rc_still_frozen:'仍冻结（有风险）', rc_net_loss:'累计净亏损', rc_date_frozen:'冻结日期', rc_amount_pgk:'金额（PGK）', rc_recovered:'已收回', rc_net_loss_col:'净亏损', rc_action:'操作',
+    rc_frozen_tag:'冻结', rc_recovered_tag:'已收回', rc_partial:'部分', rc_writtenoff_tag:'已核销', rc_writeoff_btn:'核销', rc_recovered_btn:'已收回', rc_recovered_afterall:'最终已收回', rc_no_frozen:'无冻结资金 — 所有银行正常',
     pl_view:'▶ 点击查看', pl_exch_summary:'兑换商汇总', pl_funder_summary:'资金方汇总',
     // Funders
     fn_title:'资金方', fn_commitment:'承诺资金', fn_injected:'已注入资本',
@@ -2475,7 +2505,7 @@ function renderPGKRecon(){
     html+=`<details class="plat-recon collapse-card" ${allOk?'':'open'}>
       <summary class="plat-recon-hdr">
         <span style="flex:1">🎰 ${pn} <span style="font-weight:400;color:var(--txt2)">(${ledger.length} day${ledger.length>1?'s':''})</span></span>
-        <span style="color:${allOk?'#0F6E56':'#A32D2D'}">${allOk?'✓ All reconciled':'⚠ Out by '+fmt(totDiff)+' PGK total'}</span>
+        <span style="color:${allOk?'#0F6E56':'#A32D2D'}">${allOk?'✓ '+tr('rc_all_reconciled'):'⚠ '+tr('rc_out_by')+' '+fmt(totDiff)+' PGK '+tr('rc_total_suffix')}</span>
       </summary>
       <div style="padding:10px 14px">`;
     ledger.forEach(r=>{
@@ -2483,25 +2513,25 @@ function renderPGKRecon(){
       html+=`<div style="margin-bottom:12px;border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden">
         <div style="display:flex;justify-content:space-between;padding:7px 12px;background:var(--bg3);font-size:12px;font-weight:700">
           <span>${fD(r.date)}</span>
-          <span style="color:${ok?'#0F6E56':'#A32D2D'}">${ok?'✓ Reconciled':'⚠ Out of balance: '+fmt(r.diff)+' PGK'}</span>
+          <span style="color:${ok?'#0F6E56':'#A32D2D'}">${ok?'✓ '+tr('rc_reconciled'):'⚠ '+tr('rc_oob')+': '+fmt(r.diff)+' PGK'}</span>
         </div>
         <div style="padding:8px 12px;font-size:12px">
-          <div class="recon-row"><span>Opening</span><span>${fmt(r.entry.pgkOpen||0)}</span></div>
-          <div class="recon-row"><span>+ Deposit</span><span class="pos">${fmt(r.entry.dep||0)}</span></div>
-          <div class="recon-row"><span>− Withdraw</span><span class="neg">${fmt(r.entry.with||0)}</span></div>
-          ${r.entry.bankCharges?`<div class="recon-row"><span>− Bank charges</span><span class="neg">${fmt(r.entry.bankCharges)}</span></div>`:''}
-          ${r.exchOut?`<div class="recon-row"><span>− Exchange out (${r.linked.filter(x=>x.dir==='out').length} txn)</span><span class="neg">${fmt(r.exchOut)}</span></div>`:''}
-          ${r.exchIn?`<div class="recon-row"><span>+ Exchange in (${r.linked.filter(x=>x.dir==='in').length} txn)</span><span class="pos">${fmt(r.exchIn)}</span></div>`:''}
-          ${r.adjNet?`<div class="recon-row"><span>± Adjustments</span><span>${fmt(r.adjNet)}</span></div>`:''}
-          <div class="recon-row subtot"><span>Computed book closing</span><span>${fmt(r.computed)}</span></div>
-          <div class="recon-row"><span>Entered closing (actual)</span><span style="font-weight:700">${fmt(r.entered)}</span></div>
-          ${r.linked.length?`<div style="font-size:11px;color:var(--txt2);margin-top:7px">Linked exchanges: ${r.linked.map(x=>`${x.dir==='out'?'−':'+'}${fmt(x.dir==='out'?x.pgk:x.myr)} (${x.exchanger||'?'})`).join(', ')}</div>`:''}
+          <div class="recon-row"><span>${tr('rc_opening')}</span><span>${fmt(r.entry.pgkOpen||0)}</span></div>
+          <div class="recon-row"><span>+ ${tr('rc_deposit')}</span><span class="pos">${fmt(r.entry.dep||0)}</span></div>
+          <div class="recon-row"><span>− ${tr('rc_withdraw')}</span><span class="neg">${fmt(r.entry.with||0)}</span></div>
+          ${r.entry.bankCharges?`<div class="recon-row"><span>− ${tr('rc_bank_charges')}</span><span class="neg">${fmt(r.entry.bankCharges)}</span></div>`:''}
+          ${r.exchOut?`<div class="recon-row"><span>− ${tr('rc_exch_out')} (${r.linked.filter(x=>x.dir==='out').length} ${tr('rc_txn')})</span><span class="neg">${fmt(r.exchOut)}</span></div>`:''}
+          ${r.exchIn?`<div class="recon-row"><span>+ ${tr('rc_exch_in')} (${r.linked.filter(x=>x.dir==='in').length} ${tr('rc_txn')})</span><span class="pos">${fmt(r.exchIn)}</span></div>`:''}
+          ${r.adjNet?`<div class="recon-row"><span>± ${tr('rc_adjustments')}</span><span>${fmt(r.adjNet)}</span></div>`:''}
+          <div class="recon-row subtot"><span>${tr('rc_computed')}</span><span>${fmt(r.computed)}</span></div>
+          <div class="recon-row"><span>${tr('rc_entered')}</span><span style="font-weight:700">${fmt(r.entered)}</span></div>
+          ${r.linked.length?`<div style="font-size:11px;color:var(--txt2);margin-top:7px">${tr('rc_linked_exch')}: ${r.linked.map(x=>`${x.dir==='out'?'−':'+'}${fmt(x.dir==='out'?x.pgk:x.myr)} (${x.exchanger||'?'})`).join(', ')}</div>`:''}
         </div>
       </div>`;
     });
     html+=`</div></details>`;
   });
-  cont.innerHTML=html||`<div class="empty">No PGK platform entries${month?' for '+ml(month):''}</div>`;
+  cont.innerHTML=html||`<div class="empty">${tr('rc_no_pgk')}${month?' '+ml(month):''}</div>`;
 }
 
 // ── RECONCILIATION ──
@@ -2530,9 +2560,9 @@ function renderReconSummary(){
       if(!has&&stmt===null)return;
       const ok=stmt!==null&&close!==null&&Math.abs(stmt-close)<0.01;
       const status=stmt===null
-        ?`<span style="color:var(--txt2)">— statement not entered</span>`
-        :ok?`<span style="color:var(--gr);font-weight:700">✓ Reconciled</span>`
-        :`<span style="color:var(--rd);font-weight:700">⚠ Out by RM ${fmt(Math.abs(stmt-(close||0)))}</span>`;
+        ?`<span style="color:var(--txt2)">— ${tr('rc_not_entered')}</span>`
+        :ok?`<span style="color:var(--gr);font-weight:700">✓ ${tr('rc_reconciled')}</span>`
+        :`<span style="color:var(--rd);font-weight:700">⚠ ${tr('rc_out_by')} RM ${fmt(Math.abs(stmt-(close||0)))}</span>`;
       const bKey=b.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       rows+=`<tr style="cursor:pointer" onclick="openReconDetail('${m}','${bKey}')">
         <td>${ml(m)}</td>
@@ -2540,13 +2570,13 @@ function renderReconSummary(){
         <td style="text-align:right">${close!==null?'RM '+fmt(close):'-'}</td>
         <td style="text-align:right;font-weight:700">${stmt!==null?'RM '+fmt(stmt):'-'}</td>
         <td>${status}</td>
-        <td><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();openReconDetail('${m}','${bKey}')">Open ▸</button></td>
+        <td><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();openReconDetail('${m}','${bKey}')">${tr('rc_open_btn')} ▸</button></td>
       </tr>`;
     });
   });
   el.innerHTML=rows?`<div class="tw"><table>
-    <thead><tr><th>Statement month</th><th>Bank</th><th style="text-align:right">Book closing</th><th style="text-align:right">Statement closing</th><th>Status</th><th></th></tr></thead>
-    <tbody>${rows}</tbody></table></div>`:`<div class="empty">No daily entries yet — reconciliation rows appear once MYR bank data is entered</div>`;
+    <thead><tr><th>${tr('rc_col_month')}</th><th>${tr('bank')}</th><th style="text-align:right">${tr('rc_col_book')}</th><th style="text-align:right">${tr('rc_col_stmt')}</th><th>${tr('rc_col_status')}</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`:`<div class="empty">${tr('rc_no_daily')}</div>`;
 }
 function openReconDetail(month,bank){
   const ms=document.getElementById('rc-month');if(ms)ms.value=month;
@@ -2560,10 +2590,10 @@ function renderRecon(){
   const month=document.getElementById('rc-month')?.value||'';
   const selBank=document.getElementById('rc-bank')?.value||'';
   const cont=document.getElementById('recon-content');if(!cont)return;
-  if(!rcDetailOpen){cont.innerHTML=`<div class="empty">👆 Click a row in the summary above to open the fill-in reconciliation detail</div>`;return;}
+  if(!rcDetailOpen){cont.innerHTML=`<div class="empty">👆 ${tr('rc_click_row')}</div>`;return;}
   if(!month){cont.innerHTML=`<div class="empty">${tr('no_data')}</div>`;return;}
   const dayRows=S.dayEntries.filter(e=>mk(e.date)===month);
-  if(!dayRows.length){cont.innerHTML=`<div class="empty">No entries for ${ml(month)}.</div>`;return;}
+  if(!dayRows.length){cont.innerHTML=`<div class="empty">${tr('no_entries')} ${ml(month)}</div>`;return;}
   const BL={};S.myrBanks.forEach(b=>{BL[b.name]={txns:[],open:0,close:0};});
   dayRows.forEach(d=>{
     (d.myrBanks||[]).forEach(b=>{if(b.name&&BL[b.name]){if(!BL[b.name].open&&b.open)BL[b.name].open=b.open;BL[b.name].close=b.close||0;}});
@@ -2586,13 +2616,13 @@ function renderRecon(){
     <div class="mc"><div class="ml">${tr('bank_open')}</div><div class="mv">RM ${fmt(pO)}</div></div>
     <div class="mc"><div class="ml">${tr('lbl_myr_in')}</div><div class="mv pos">+RM ${fmt(pI)}</div></div>
     <div class="mc"><div class="ml">${tr('lbl_myr_out')}</div><div class="mv neg">−RM ${fmt(pOut)}</div></div>
-    <div class="mc"><div class="ml">Book closing (all banks)</div><div class="mv warn">RM ${fmt(pO+pI-pOut)}</div></div>
-    <div class="mc"><div class="ml">Entered closing (all banks)</div><div class="mv">RM ${fmt(pC)}</div></div>
-    <div class="mc"><div class="ml">Out of balance</div><div class="mv ${pStmtSet?(pOk?'pos':'neg'):''}">
-      ${pStmtSet?(pOk?'✓ RM 0.00':'⚠ RM '+fmt(Math.abs(pOOB))):'<span style="color:var(--txt2);font-size:11px">Enter statement ↓</span>'}
+    <div class="mc"><div class="ml">${tr('rc_book_all')}</div><div class="mv warn">RM ${fmt(pO+pI-pOut)}</div></div>
+    <div class="mc"><div class="ml">${tr('rc_entered_all')}</div><div class="mv">RM ${fmt(pC)}</div></div>
+    <div class="mc"><div class="ml">${tr('rc_oob')}</div><div class="mv ${pStmtSet?(pOk?'pos':'neg'):''}">
+      ${pStmtSet?(pOk?'✓ RM 0.00':'⚠ RM '+fmt(Math.abs(pOOB))):'<span style="color:var(--txt2);font-size:11px">'+tr('rc_enter_stmt')+' ↓</span>'}
     </div></div>
   </div>`;
-  if(pStmtSet){html+=`<div class="${pOk?'recon-ok':'recon-fail'}" style="margin-bottom:14px;font-size:13px">${pOk?'✓ All banks reconciled — Out of Balance: RM 0.00':'⚠ Pool Out of Balance: RM '+fmt(Math.abs(pOOB))+' '+(pOOB>0?'(statement higher)':'(book higher)')}</div>`;}
+  if(pStmtSet){html+=`<div class="${pOk?'recon-ok':'recon-fail'}" style="margin-bottom:14px;font-size:13px">${pOk?'✓ '+tr('rc_all_banks_recon'):'⚠ '+tr('rc_pool_oob')+': RM '+fmt(Math.abs(pOOB))+' ('+(pOOB>0?tr('rc_stmt_higher'):tr('rc_book_higher'))+')'}</div>`;}
   banksToShow.forEach(b=>{
     const bl=BL[b.name];if(!bl.txns.length&&!bl.open&&!bl.close)return;
     const tI=bl.txns.reduce((s,t)=>s+t.in,0),tO=bl.txns.reduce((s,t)=>s+t.out,0);
@@ -2605,36 +2635,36 @@ function renderRecon(){
     html+=`<div style="margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--bdr)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700"><span class="bdot" style="background:${b.color}"></span>${b.name}</div>
-        ${hasStmt?`<div class="${reconOk?'recon-ok':'recon-fail'}" style="margin:0;padding:5px 14px;font-size:12px">${reconOk?'✓ Reconciled':'⚠ Out of Balance: RM '+fmt(Math.abs(oob))}</div>`:''}
+        ${hasStmt?`<div class="${reconOk?'recon-ok':'recon-fail'}" style="margin:0;padding:5px 14px;font-size:12px">${reconOk?'✓ '+tr('rc_reconciled'):'⚠ '+tr('rc_oob')+': RM '+fmt(Math.abs(oob))}</div>`:''}
       </div>
       <div style="background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;margin-bottom:12px">
-        <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Bank statement reconciliation</div>
+        <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">${tr('rc_stmt_recon_title')}</div>
         <div class="recon-3col">
           <div>
-            <div style="font-size:10px;color:var(--txt2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Book closing (entered)</div>
+            <div style="font-size:10px;color:var(--txt2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${tr('rc_book_entered')}</div>
             <div style="font-size:18px;font-weight:700;color:var(--bl)">RM ${fmt(bl.close)}</div>
-            <div style="font-size:10px;color:var(--txt2);margin-top:3px">Balance you recorded in Daily Entry</div>
+            <div style="font-size:10px;color:var(--txt2);margin-top:3px">${tr('rc_book_entered_desc')}</div>
           </div>
           <div>
-            <div style="font-size:10px;color:var(--txt2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Bank statement closing</div>
-            <input type="number" step="0.01" value="${hasStmt?stmtVal:''}" placeholder="Type statement closing here..."
+            <div style="font-size:10px;color:var(--txt2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${tr('rc_stmt_closing')}</div>
+            <input type="number" step="0.01" value="${hasStmt?stmtVal:''}" placeholder="${tr('rc_stmt_ph')}"
               style="width:100%;padding:7px 10px;font-size:13px;font-weight:700;border:1.5px solid ${hasStmt?(reconOk?'#0F6E56':'#A32D2D'):'var(--bdr2)'};border-radius:var(--r);background:#fff;color:var(--txt)"
               onchange="saveStmtBalance('${bKey}','${month}',this.value);renderRecon()"
               oninput="saveStmtBalance('${bKey}','${month}',this.value);renderRecon()">
-            <div style="font-size:10px;color:var(--txt2);margin-top:4px">From your physical bank statement</div>
+            <div style="font-size:10px;color:var(--txt2);margin-top:4px">${tr('rc_from_stmt')}</div>
           </div>
           <div>
-            <div style="font-size:10px;color:var(--txt2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Out of balance</div>
+            <div style="font-size:10px;color:var(--txt2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${tr('rc_oob')}</div>
             <div style="font-size:18px;font-weight:700;color:${!hasStmt?'var(--txt2)':reconOk?'#0F6E56':'#A32D2D'}">
               ${!hasStmt?'—':reconOk?'RM 0.00':'RM '+fmt(Math.abs(oob))}
             </div>
-            <div style="font-size:10px;color:var(--txt2);margin-top:3px">${!hasStmt?'Enter statement balance →':reconOk?'✓ Fully reconciled':oob>0?'Statement higher than book':'Book higher than statement'}</div>
+            <div style="font-size:10px;color:var(--txt2);margin-top:3px">${!hasStmt?tr('rc_enter_stmt_arrow')+' →':reconOk?'✓ '+tr('rc_fully_recon'):oob>0?tr('rc_stmt_higher_book'):tr('rc_book_higher_stmt')}</div>
           </div>
         </div>
         <div style="border-top:1px solid var(--bdr);padding-top:9px;font-size:11px;color:var(--txt2);line-height:1.8">
-          <b style="color:var(--txt)">Book check:</b>
-          Opening RM ${fmt(bl.open)} + In RM ${fmt(tI)} − Out RM ${fmt(tO)} = <b style="color:var(--bl)">RM ${fmt(bookClose)}</b>
-          ${Math.abs(bookClose-bl.close)>0.01?`&nbsp;<span style="color:#A32D2D;font-weight:600">⚠ Differs from entered closing by RM ${fmt(Math.abs(bookClose-bl.close))}</span>`:'&nbsp;<span style="color:#0F6E56">✓ Matches entered closing</span>'}
+          <b style="color:var(--txt)">${tr('rc_book_check')}</b>
+          ${tr('rc_opening')} RM ${fmt(bl.open)} + In RM ${fmt(tI)} − Out RM ${fmt(tO)} = <b style="color:var(--bl)">RM ${fmt(bookClose)}</b>
+          ${Math.abs(bookClose-bl.close)>0.01?`&nbsp;<span style="color:#A32D2D;font-weight:600">⚠ ${tr('rc_differs')} RM ${fmt(Math.abs(bookClose-bl.close))}</span>`:'&nbsp;<span style="color:#0F6E56">✓ '+tr('rc_matches')+'</span>'}
         </div>
       </div>
       <div class="recon-row"><span>${tr('bank_open')}</span><span>RM ${fmt(bl.open)}</span></div>
@@ -3150,25 +3180,25 @@ function setPgkBankStatus(i,inactive){
 function renderFrozen(){
   const el=document.getElementById('frozen-content');if(!el)return;
   const rows=[...(S.pgkFrozen||[])].sort((a,b)=>b.dateFrozen.localeCompare(a.dateFrozen));
-  if(!rows.length){el.innerHTML=`<div class="empty">No frozen funds — all banks healthy</div>`;return;}
+  if(!rows.length){el.innerHTML=`<div class="empty">${tr('rc_no_frozen')}</div>`;return;}
   const stillFrozen=rows.filter(f=>f.status==='frozen').reduce((s,f)=>s+f.amount,0);
   const totalLoss=rows.filter(f=>f.dateResolved).reduce((s,f)=>s+f.amount-(f.recoveredAmount||0),0);
   el.innerHTML=`<div class="metrics" style="margin-bottom:10px">
-    <div class="mc"><div class="ml">STILL FROZEN (AT RISK)</div><div class="mv warn">${fmt(stillFrozen)} PGK</div></div>
-    <div class="mc"><div class="ml">NET LOSS TO DATE</div><div class="mv ${totalLoss>0?'neg':'pos'}">${fmt(totalLoss)} PGK</div></div>
+    <div class="mc"><div class="ml">${tr('rc_still_frozen')}</div><div class="mv warn">${fmt(stillFrozen)} PGK</div></div>
+    <div class="mc"><div class="ml">${tr('rc_net_loss')}</div><div class="mv ${totalLoss>0?'neg':'pos'}">${fmt(totalLoss)} PGK</div></div>
   </div>
   <div class="tw"><table>
-    <thead><tr><th>Date frozen</th><th>Bank</th><th>Amount (PGK)</th><th>Status</th><th>Recovered</th><th>Net loss</th><th>Action</th></tr></thead>
+    <thead><tr><th>${tr('rc_date_frozen')}</th><th>${tr('bank')}</th><th>${tr('rc_amount_pgk')}</th><th>${tr('rc_col_status')}</th><th>${tr('rc_recovered')}</th><th>${tr('rc_net_loss_col')}</th><th>${tr('rc_action')}</th></tr></thead>
     <tbody>`+rows.map(f=>{
       const rec=f.recoveredAmount||0;
       const loss=f.dateResolved?f.amount-rec:0;
-      const st=f.status==='frozen'?`<span class="tag tag-exch">🧊 Frozen</span>`
-        :f.status==='recovered'?`<span class="tag tag-in">💰 Recovered${rec<f.amount-0.009?' (partial)':''}</span>`
-        :`<span class="tag tag-out">💸 Written off</span>`;
+      const st=f.status==='frozen'?`<span class="tag tag-exch">🧊 ${tr('rc_frozen_tag')}</span>`
+        :f.status==='recovered'?`<span class="tag tag-in">💰 ${tr('rc_recovered_tag')}${rec<f.amount-0.009?' ('+tr('rc_partial')+')':''}</span>`
+        :`<span class="tag tag-out">💸 ${tr('rc_writtenoff_tag')}</span>`;
       const act=f.status==='frozen'
-        ?`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="writeOffFrozen('${f.id}')">💸 Write off</button> <button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="recoverFrozen('${f.id}')">💰 Recovered</button>`
+        ?`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="writeOffFrozen('${f.id}')">💸 ${tr('rc_writeoff_btn')}</button> <button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="recoverFrozen('${f.id}')">💰 ${tr('rc_recovered_btn')}</button>`
         :f.status==='writtenOff'&&rec<f.amount-0.009
-          ?`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="recoverFrozen('${f.id}')">💰 Recovered after all</button>`
+          ?`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="recoverFrozen('${f.id}')">💰 ${tr('rc_recovered_afterall')}</button>`
           :'-';
       return`<tr>
         <td>${fD(f.dateFrozen)}</td><td style="font-weight:500">${f.bank}</td>
