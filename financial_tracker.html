@@ -451,15 +451,15 @@ details.collapse-card[open]>summary:before{content:'▾'}
     <button class="btn-sec" onclick="exportCSV('cf')">⬇ CSV</button>
   </div>
   <div id="cf-metrics" class="metrics"></div>
-  <div class="card"><div class="ct">Daily trend - deposit (bars) &amp; win/lose (line)</div><div id="cf-chart"></div></div>
+  <div class="card"><div class="ct" data-i18n="cf_chart_title">Daily trend - deposit (bars) &amp; win/lose (line)</div><div id="cf-chart"></div></div>
   <div class="card"><div class="ct" data-i18n="lbl_plat_perf">Platform performance (PGK)</div>
-    <div class="tw"><table><thead><tr><th>Date</th><th data-i18n="pgk_platform">Platform</th><th data-i18n="col_deposit">Deposit</th><th data-i18n="col_withdraw">Withdraw</th><th data-i18n="win_lose">Win / Lose</th><th data-i18n="col_close">PGK close</th><th data-i18n="col_diff">Recon diff</th></tr></thead><tbody id="cf-plat-body"><tr><td colspan="7" class="empty">No data yet</td></tr></tbody></table></div>
+    <div class="tw"><table><thead><tr><th data-i18n="date">Date</th><th data-i18n="pgk_platform">Platform</th><th data-i18n="col_deposit">Deposit</th><th data-i18n="col_withdraw">Withdraw</th><th data-i18n="win_lose">Win / Lose</th><th data-i18n="col_close">PGK close</th><th data-i18n="col_diff">Recon diff</th></tr></thead><tbody id="cf-plat-body"><tr><td colspan="7" class="empty">No data yet</td></tr></tbody></table></div>
   </div>
   <div class="card"><div class="ct" data-i18n="lbl_exch_txns">Exchange transactions</div>
-    <div class="tw"><table><thead><tr><th>Date</th><th>Dir</th><th>Exchanger</th><th>PGK</th><th>Rate</th><th>MYR</th><th>Paid/Rcvd</th><th>Due</th><th>MYR bank</th></tr></thead><tbody id="cf-exch-body"><tr><td colspan="9" class="empty">No data yet</td></tr></tbody></table></div>
+    <div class="tw"><table><thead><tr><th data-i18n="date">Date</th><th data-i18n="pl_dir">Dir</th><th data-i18n="exch_exchanger">Exchanger</th><th>PGK</th><th data-i18n="exch_rate">Rate</th><th>MYR</th><th data-i18n="cf_paid_rcvd">Paid/Rcvd</th><th data-i18n="cf_due">Due</th><th data-i18n="bank">MYR bank</th></tr></thead><tbody id="cf-exch-body"><tr><td colspan="9" class="empty">No data yet</td></tr></tbody></table></div>
   </div>
   <div class="card"><div class="ct" data-i18n="cf_myr_ledger">MYR bank ledger (running balance)</div>
-    <div class="tw"><table><thead><tr><th>Date</th><th>Bank</th><th>Type</th><th>Description</th><th>In (MYR)</th><th>Out (MYR)</th><th>Balance</th><th>📎</th></tr></thead><tbody id="cf-myr-body"><tr><td colspan="8" class="empty">No data yet</td></tr></tbody></table></div>
+    <div class="tw"><table><thead><tr><th data-i18n="date">Date</th><th data-i18n="bank">Bank</th><th data-i18n="type">Type</th><th data-i18n="description">Description</th><th data-i18n="cf_in">In (MYR)</th><th data-i18n="cf_out">Out (MYR)</th><th data-i18n="cf_balance">Balance</th><th>📎</th></tr></thead><tbody id="cf-myr-body"><tr><td colspan="8" class="empty">No data yet</td></tr></tbody></table></div>
   </div>
 </div>
 
@@ -911,6 +911,8 @@ const LANG = {
     rc_book_check:'Book check:', rc_differs:'Differs from entered closing by', rc_matches:'Matches entered closing',
     rc_still_frozen:'STILL FROZEN (AT RISK)', rc_net_loss:'NET LOSS TO DATE', rc_date_frozen:'Date frozen', rc_amount_pgk:'Amount (PGK)', rc_recovered:'Recovered', rc_net_loss_col:'Net loss', rc_action:'Action',
     rc_frozen_tag:'Frozen', rc_recovered_tag:'Recovered', rc_partial:'partial', rc_writtenoff_tag:'Written off', rc_writeoff_btn:'Write off', rc_recovered_btn:'Recovered', rc_recovered_afterall:'Recovered after all', rc_no_frozen:'No frozen funds — all banks healthy',
+    cf_chart_title:'Daily trend - deposit (bars) & win/lose (line)', cf_dep_legend:'Deposit (PGK)', cf_wl_legend:'Win / Lose (PGK)',
+    cf_paid_rcvd:'Paid/Rcvd', cf_due:'Due', cf_in:'In (MYR)', cf_out:'Out (MYR)', cf_balance:'Balance',
     pl_view:'▶ click to view', pl_exch_summary:'Exchanger Balance Summary', pl_funder_summary:'Funder Position',
     // Funders
     fn_title:'Funders', fn_commitment:'Commitment', fn_injected:'Capital Injected',
@@ -1101,6 +1103,8 @@ const LANG = {
     rc_book_check:'账面核对：', rc_differs:'与录入余额相差', rc_matches:'与录入余额一致',
     rc_still_frozen:'仍冻结（有风险）', rc_net_loss:'累计净亏损', rc_date_frozen:'冻结日期', rc_amount_pgk:'金额（PGK）', rc_recovered:'已收回', rc_net_loss_col:'净亏损', rc_action:'操作',
     rc_frozen_tag:'冻结', rc_recovered_tag:'已收回', rc_partial:'部分', rc_writtenoff_tag:'已核销', rc_writeoff_btn:'核销', rc_recovered_btn:'已收回', rc_recovered_afterall:'最终已收回', rc_no_frozen:'无冻结资金 — 所有银行正常',
+    cf_chart_title:'每日趋势 - 存款（柱）& 输赢（线）', cf_dep_legend:'存款 (PGK)', cf_wl_legend:'输赢 (PGK)',
+    cf_paid_rcvd:'已付/已收', cf_due:'欠款', cf_in:'收入 (MYR)', cf_out:'支出 (MYR)', cf_balance:'余额',
     pl_view:'▶ 点击查看', pl_exch_summary:'兑换商汇总', pl_funder_summary:'资金方汇总',
     // Funders
     fn_title:'资金方', fn_commitment:'承诺资金', fn_injected:'已注入资本',
@@ -2737,7 +2741,7 @@ function renderCFChart(platRows){
   days.forEach((d,i)=>{if(i%step===0||i===days.length-1)svg+='<text x="'+xAt(i)+'" y="'+(H-padB+14)+'" font-size="8" fill="#999" text-anchor="middle">'+fD(d).replace(/ \d{4}$/,'')+'</text>';});
   svg+='<text x="'+(padL+plotW+5)+'" y="'+(wlY(wlMax)+3)+'" font-size="8" fill="var(--pu)" text-anchor="start">'+fmt(wlMax)+'</text>';
   if(wlMin<0)svg+='<text x="'+(padL+plotW+5)+'" y="'+(wlY(wlMin)+3)+'" font-size="8" fill="var(--pu)" text-anchor="start">'+fmt(wlMin)+'</text>';
-  svg+='</svg><div style="display:flex;gap:16px;justify-content:center;font-size:11px;color:var(--txt2);margin-top:4px"><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:11px;height:11px;background:var(--bl);opacity:.75;border-radius:2px;display:inline-block"></span>Deposit (PGK)</span><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:var(--pu);display:inline-block"></span>Win / Lose (PGK)</span></div>';
+  svg+='</svg><div style="display:flex;gap:16px;justify-content:center;font-size:11px;color:var(--txt2);margin-top:4px"><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:11px;height:11px;background:var(--bl);opacity:.75;border-radius:2px;display:inline-block"></span>'+tr('cf_dep_legend')+'</span><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:var(--pu);display:inline-block"></span>'+tr('cf_wl_legend')+'</span></div>';
   el.innerHTML=svg;
 }
 function renderCF(){
