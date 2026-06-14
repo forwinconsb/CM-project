@@ -27,6 +27,14 @@ opening the HTML file in a browser. All data persists in browser `localStorage`.
 ## Conventions — follow these
 1. **Mobile check is mandatory.** After ANY UI change, verify at 375px width: no horizontal
    overflow, grids readable. There is an `@media print` and a mobile media query already.
+1a. **Bilingual (EN / 中文) — translate new text.** The app switches language via `data-i18n`
+   attributes + the `LANG` object (`LANG.en` / `LANG.zh`) read through `tr(key)`. When adding ANY
+   user-facing wording, add a key with BOTH an English and a **Chinese** value (put the 中文 string
+   in `LANG.zh`) and reference it — do not hardcode an English-only string in new features, or it
+   stays English in 中文 mode. **Priority:** operator-facing tabs (Daily Entry, PGK Platforms,
+   Exchanges, Expenses) must be translated (the operator reads Chinese); PM/report tabs are lower
+   priority. Note: features added rapidly may have English-only text — a translation pass is
+   worthwhile when convenient.
 2. **New user-facing strings: prefer ASCII** where practical. The file has been hit by an
    encoding corruption before (BOM + mojibake on `✓`/emoji). Existing emoji are fine; just be
    careful introducing new multi-byte characters and never let a tool re-save with a BOM.
