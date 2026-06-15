@@ -3080,7 +3080,7 @@ function renderPL(){
       <summary><span class="pr" style="flex:1;border-bottom:none;font-weight:700"><span>${tr('pl_fxgl_title')} <span style="font-size:10px;color:var(--bl)">(${fxRows.length} ${tr('pl_click_detail')})</span></span><span style="color:${fxGL>=0?'var(--gr)':'var(--rd)'}">${fxGL>=0?'+':'-'}RM ${fmt(Math.abs(fxGL))}</span></span></summary>
       <div class="tw" style="margin-top:8px"><table>
         <thead><tr><th>${tr('date')}</th><th>${tr('pl_dir')}</th><th>${tr('exch_exchanger')}</th><th>PGK</th><th>${tr('pl_real_myr')}</th><th>${tr('pl_fixed_rate')}</th><th>${tr('pl_gainloss')}</th></tr></thead>
-        <tbody>${fxRows.map(f=>`<tr><td>${fD(f.date)}</td><td>${f.dir==='out'?'PGK→MYR':'MYR→PGK'}</td><td>${f.exchanger}</td><td>${fmt(f.pgk)}</td><td>RM ${fmt(f.myr)}</td><td>RM ${fmt(f.dir==='out'?f.pgk*f.rate:f.myr*f.rate)}</td><td style="font-weight:700;color:${f.gl>=0?'var(--gr)':'var(--rd)'}">${f.gl>=0?'+':'-'}RM ${fmt(Math.abs(f.gl))}</td></tr>`).join('')}</tbody>
+        <tbody>${fxRows.map(f=>`<tr><td>${fD(f.date)}</td><td>${f.dir==='out'?'PGK→MYR':'MYR→PGK'}</td><td>${f.exchanger}</td><td>${fmt(f.pgk)}</td><td>RM ${fmt(f.myr)}</td><td>RM ${fmt(f.pgk*f.rate)}</td><td style="font-weight:700;color:${f.gl>=0?'var(--gr)':'var(--rd)'}">${f.gl>=0?'+':'-'}RM ${fmt(Math.abs(f.gl))}</td></tr>`).join('')}</tbody>
       </table></div>
       <div style="font-size:10px;color:var(--txt2);margin-top:4px">${tr('pl_fxgl_note')}</div>
     </details>`;
@@ -3467,7 +3467,10 @@ function plFixedStats(from,to){
     o.pgkChargesMYR+=ch*rate;o.pgkLossMYR+=lo*rate;o.pgkRecMYR+=re*rate;
     o.pgkCostMYR+=(ch+lo-re)*rate;
     dayRows.filter(d=>mk(d.date)===m).forEach(d=>(d.exchanges||[]).forEach(x=>{
-      const gl=x.dir==='out'?(x.myr||0)-(x.pgk||0)*rate:((x.myr||0)*rate)-(x.pgk||0);
+      // FX gain/loss vs the fixed monthly rate, always in MYR (positive = better than fixed):
+      //  PGK→MYR: real MYR received − fixed-rate value of PGK = myr − pgk*rate
+      //  MYR→PGK: fixed-rate value of PGK received − MYR paid = pgk*rate − myr
+      const gl=x.dir==='out'?(x.myr||0)-(x.pgk||0)*rate:(x.pgk||0)*rate-(x.myr||0);
       o.fxGL+=gl;
       o.fxRows.push({date:d.date,dir:x.dir,exchanger:x.exchanger||'-',pgk:x.pgk||0,myr:x.myr||0,rate,gl});
     }));
