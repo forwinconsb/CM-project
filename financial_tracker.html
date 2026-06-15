@@ -31,6 +31,10 @@ h1{font-size:18px;font-weight:600;margin-bottom:.75rem}
 .btn-sec.on{background:var(--bl);color:#fff;border-color:var(--bl)}
 body.readonly .btn-pri,body.readonly .btn-plat,body.readonly .btn-add,body.readonly .btn-danger,body.readonly .del,body.readonly .attach-btn,body.readonly .op-only{display:none!important}
 body.readonly table .btn-sec{display:none!important}
+.pl-drill{transition:background .15s}
+.pl-drill:hover{background:var(--bg3)}
+.pl-badge{font-size:9px;color:var(--bl2);background:#E6F1FB;border:1px solid #B5D4F4;border-radius:10px;padding:1px 7px;font-weight:600;white-space:nowrap;margin-left:4px}
+.pl-chev{color:var(--bl);font-weight:700;font-size:13px}
 .btn-plat{padding:9px 18px;font-size:12px;font-weight:700;background:var(--bl);color:#fff;border:none;border-radius:var(--r);cursor:pointer}
 .btn-plat:hover{background:var(--bl2)}
 .btn-add{padding:6px 12px;font-size:11px;background:none;border:1px solid var(--bdr2);border-radius:var(--r);cursor:pointer;color:var(--txt2);display:inline-flex;align-items:center;gap:4px}
@@ -888,6 +892,7 @@ const LANG = {
     en_status_title:'Today’s status', en_st_plats:'PGK platforms', en_st_exch:'Exchanges', en_st_exp:'Expenses', en_st_fnd:'Funder moves', en_st_banks:'MYR banks', en_st_saved:'saved', en_st_locked:'month locked',
     mb_open_auto:'Opening (auto)', mb_from:'from', mb_first:'first entry — opening 0', bank_close_label:'Closing balance (MYR)',
     bl_title:'Saved bank balances', bl_none:'No balances saved yet', bl_closing:'Closing (MYR)', bl_allmonths:'All months',
+    pl_txn:'txn', pl_txns:'txns', pl_view_all:'view all', pl_tap_hint:'Tap any expense line to see its individual transactions',
     lk_lock:'Lock month', lk_unlock:'Unlock', lk_closed:'closed', lk_locked_toast:'is now locked ✓', lk_unlocked_toast:'unlocked — editing allowed again',
     lk_confirm_lock:'Lock {m}?\n\nTransactions dated in this month will be protected — no adding, editing or deleting until you unlock it.', lk_confirm_unlock:'Unlock {m}?\n\nThis allows transactions in that month to be edited again.',
     lk_blocked:'🔒 {m} is locked — unlock it in Reconciliation to make changes', lk_admin_only:'Only an Admin can lock or unlock months',
@@ -1119,6 +1124,7 @@ const LANG = {
     en_status_title:'今日状态', en_st_plats:'PGK平台', en_st_exch:'兑换', en_st_exp:'支出', en_st_fnd:'投资人交易', en_st_banks:'MYR银行', en_st_saved:'已保存', en_st_locked:'本月已锁定',
     mb_open_auto:'期初（自动）', mb_from:'来自', mb_first:'首次录入 — 期初为0', bank_close_label:'期末余额（MYR）',
     bl_title:'已保存的银行余额', bl_none:'暂无已保存的余额', bl_closing:'期末（MYR）', bl_allmonths:'所有月份',
+    pl_txn:'笔', pl_txns:'笔', pl_view_all:'查看全部', pl_tap_hint:'点击任意支出行查看明细交易',
     lk_lock:'锁定本月', lk_unlock:'解锁', lk_closed:'已锁定', lk_locked_toast:'已锁定 ✓', lk_unlocked_toast:'已解锁 — 可再次编辑',
     lk_confirm_lock:'锁定 {m}？\n\n该月的交易将被保护 — 在解锁前无法新增、编辑或删除。', lk_confirm_unlock:'解锁 {m}？\n\n将允许再次编辑该月的交易。',
     lk_blocked:'🔒 {m} 已锁定 — 请在对账页解锁后再修改', lk_admin_only:'只有管理员可以锁定或解锁月份',
@@ -3044,19 +3050,20 @@ function renderPL(){
   </div>
   <div style="font-size:10px;color:var(--txt2);margin:2px 0 4px">${tr('pl_rates')}: ${rateNotes.join(' · ')||'—'}</div>
   ${noRateMonths.length?`<div style="font-size:11px;color:var(--am);background:#FFF3E0;border:1px solid #F0D49A;border-radius:var(--r);padding:6px 10px;margin-bottom:6px">⚠ ${tr('pl_norate')} ${noRateMonths.join(', ')} — ${tr('pl_norate2')}</div>`:''}`;
+  if(Object.keys(secMap).length)plHtml+=`<div style="font-size:11px;color:var(--bl2);background:#E6F1FB;border:1px solid #B5D4F4;border-radius:var(--r);padding:5px 10px;margin:8px 0 2px">💡 ${tr('pl_tap_hint')}</div>`;
   ordSec.forEach(sec=>{
     if(!secMap[sec.id])return;
     const tot=sumSec(sec.id);
     plHtml+=`<div class="sl" style="margin-top:14px;display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:2px;background:${sec.color};display:inline-block"></span>${sec.name}</div>`;
     Object.entries(secMap[sec.id].cats).forEach(([c,catTxns])=>{
       const a=catTxns.reduce((s,e)=>s+e.amt,0);
-      plHtml+=`<div class="pr pi" style="cursor:pointer;border-radius:var(--r);padding:5px 8px 5px 24px;margin:-2px -8px;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''" onclick="showPLTxnModal('exp',${JSON.stringify(c)},${JSON.stringify(catTxns)})">
-        <span>${c} <span style="font-size:10px;color:var(--bl)">▶ ${catTxns.length} txn${catTxns.length>1?'s':''}</span></span>
-        <span style="color:var(--rd)">-RM ${fmt(a)}</span>
+      plHtml+=`<div class="pr pi pl-drill" style="cursor:pointer;border-radius:var(--r);padding:5px 8px 5px 20px;margin:-2px -8px" onclick="showPLTxnModal('exp',${JSON.stringify(c).replace(/"/g,'&quot;')},${JSON.stringify(catTxns).replace(/"/g,'&quot;')})">
+        <span>${c} <span class="pl-badge">${catTxns.length} ${catTxns.length>1?tr('pl_txns'):tr('pl_txn')}</span></span>
+        <span style="display:flex;align-items:center;gap:7px;color:var(--rd)">-RM ${fmt(a)}<span class="pl-chev">›</span></span>
       </div>`;
     });
     const secTxns=Object.values(secMap[sec.id].cats).flat();
-    plHtml+=`<div class="pr ptot" style="cursor:pointer" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''" onclick="showPLTxnModal('exp',${JSON.stringify(sec.name+' — all')},${JSON.stringify(secTxns)})"><span>${tr('pl_total_prefix')} ${sec.name.toLowerCase()} <span style="font-size:10px;color:var(--bl)">▶ view all</span></span><span style="color:var(--rd)">-RM ${fmt(tot)}</span></div>`;
+    plHtml+=`<div class="pr ptot pl-drill" style="cursor:pointer" onclick="showPLTxnModal('exp',${JSON.stringify(sec.name+' — all').replace(/"/g,'&quot;')},${JSON.stringify(secTxns).replace(/"/g,'&quot;')})"><span>${tr('pl_total_prefix')} ${sec.name.toLowerCase()} <span class="pl-badge">${tr('pl_view_all')}</span></span><span style="display:flex;align-items:center;gap:7px;color:var(--rd)">-RM ${fmt(tot)}<span class="pl-chev">›</span></span></div>`;
     if(sec.id==='direct')plHtml+=`<div class="pr" style="font-weight:700"><span>${tr("lbl_gross_profit")}</span><span style="color:${gross>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(gross)}</span></div>`;
   });
   // PGK costs (translated at the same monthly rates, INCLUDED in net)
