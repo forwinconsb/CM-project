@@ -17,8 +17,15 @@ opening the HTML file in a browser. All data persists in browser `localStorage`.
 - **Exchange transactions link to a Platform, NOT a bank.** One exchange entry feeds both
   the MYR bank ledger (`buildLedger`) and the PGK platform reconciliation (`buildPGKLedger`).
   Do not change this — it is a deliberate decision.
-- **Reconciliation formula:**
+- **Reconciliation formula (PGK platforms):**
   `Expected Closing = Opening + Deposit − Withdraw − Bank Charges − ExchangeOut + ExchangeIn ± Adjustments`
+- **MYR bank reconciliation is MONTHLY, statement-anchored (no daily bank entry).** Operators do
+  NOT enter a daily MYR closing. The MYR balance is computed from transactions (`buildLedger`:
+  exchanges, due settlements, funder moves, bank-paid expenses). Each month: opening = the
+  PREVIOUS month's entered statement balance (`getStmtBalance(bank, prevMonth(m))`); book closing =
+  opening + in − out; you reconcile it against THIS month's statement balance typed in the
+  Reconciliation tab (`S.stmtBalances`, key `bank||YYYY-MM`). So statement balances chain
+  month-to-month and are the only manual MYR figure.
 - **P&L uses fixed monthly FX rates** (`S.fxRates`, one rate per month, independent) to translate
   PGK→MYR; an FX gain/loss line bridges fixed vs actual exchange rates. Cash figures are a memo only.
 - **Accounts/roles** (`S.accounts`): Operator/Manager/Admin/custom tab access via `applyAccess()`.

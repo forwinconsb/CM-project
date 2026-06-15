@@ -275,32 +275,12 @@ details.collapse-card[open]>summary:before{content:'▾'}
 
 <!-- DAILY ENTRY -->
 <div id="pg-entry" class="pg on">
-  <div class="info-box">💡 <b>Daily workflow:</b> PGK → PGK Platforms tab. Exchanges → Exchanges tab. Funder Movements → Funder Movements tab. Expenses → Expenses tab. Here: save MYR Bank Balances only.</div>
+  <div class="info-box">💡 <b>Daily workflow:</b> PGK → PGK Platforms · Exchanges → Exchanges · Funder → Funder Movements · Expenses → Expenses. MYR bank balance is reconciled monthly in the Reconciliation tab (enter your bank statement closing there).</div>
   <div class="card">
     <div class="ct" data-i18n="date">Entry date</div>
     <div style="max-width:200px"><div class="f"><label data-i18n="date">Date</label><input type="date" id="e-date" onchange="autoFillMyrOpens()"></div></div>
   </div>
   <div id="day-status"></div>
-  <div class="card">
-    <div class="step-lbl gr" data-i18n="myr_bank_step">① MYR Bank Balances — opening & closing once per day</div>
-    <div id="myr-banks-entry"></div>
-    <hr class="divider">
-    <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em" data-i18n="day_attach_label">Day-level attachment (e.g. bank statement)</div>
-    <input type="file" id="day-attach-file" accept="image/*,.pdf" style="display:none" onchange="handleDayFile(this)">
-    <button class="attach-btn" onclick="document.getElementById('day-attach-file').click()" data-i18n="attach_day">📎 Attach day document</button>
-    <div id="day-attach-preview" style="margin-top:7px"></div>
-  </div>
-  <button class="btn-pri" onclick="saveDay()" data-i18n="save_myr">✅ Save MYR bank balances</button>
-  <div class="card">
-    <div class="ct">📋 <span data-i18n="bl_title">Saved bank balances</span></div>
-    <div class="filter-row">
-      <select id="bl-month" onchange="renderBankListing()"><option value="">All months</option></select>
-    </div>
-    <div class="tw"><table>
-      <thead><tr><th data-i18n="date">Date</th><th data-i18n="bank">Bank</th><th data-i18n="bl_closing">Closing (MYR)</th><th data-i18n="remark">Remark</th></tr></thead>
-      <tbody id="bl-body"><tr><td colspan="4" class="empty">No entries yet</td></tr></tbody>
-    </table></div>
-  </div>
 </div>
 
 <!-- FUNDER MOVEMENTS TAB -->
@@ -932,7 +912,7 @@ const LANG = {
     rc_click_row:'Click a row in the summary above to open the fill-in reconciliation detail',
     rc_book_all:'Book closing (all banks)', rc_entered_all:'Entered closing (all banks)', rc_enter_stmt:'Enter statement',
     rc_all_banks_recon:'All banks reconciled — Out of Balance: RM 0.00', rc_pool_oob:'Pool Out of Balance', rc_stmt_higher:'statement higher', rc_book_higher:'book higher',
-    rc_stmt_recon_title:'Bank statement reconciliation', rc_book_entered:'Book closing (entered)', rc_book_entered_desc:'Balance you recorded in Daily Entry', rc_stmt_closing:'Bank statement closing', rc_stmt_ph:'Type statement closing here...', rc_from_stmt:'From your physical bank statement',
+    rc_stmt_recon_title:'Bank statement reconciliation', rc_book_entered:'Book closing (entered)', rc_book_entered_desc:'Balance you recorded in Daily Entry', rc_book_computed:'Book closing (computed)', rc_book_computed_desc:'Opening + In − Out, from your transactions', rc_stmt_closing:'Bank statement closing', rc_stmt_ph:'Type statement closing here...', rc_from_stmt:'From your physical bank statement',
     rc_enter_stmt_arrow:'Enter statement balance', rc_fully_recon:'Fully reconciled', rc_stmt_higher_book:'Statement higher than book', rc_book_higher_stmt:'Book higher than statement',
     rc_book_check:'Book check:', rc_differs:'Differs from entered closing by', rc_matches:'Matches entered closing',
     rc_still_frozen:'STILL FROZEN (AT RISK)', rc_net_loss:'NET LOSS TO DATE', rc_date_frozen:'Date frozen', rc_amount_pgk:'Amount (PGK)', rc_recovered:'Recovered', rc_net_loss_col:'Net loss', rc_action:'Action',
@@ -1163,7 +1143,7 @@ const LANG = {
     rc_click_row:'点击上方汇总中的行以展开填写对账明细',
     rc_book_all:'账面余额（所有银行）', rc_entered_all:'录入余额（所有银行）', rc_enter_stmt:'请录入对账单',
     rc_all_banks_recon:'所有银行已对账 — 差额：RM 0.00', rc_pool_oob:'汇总不平衡', rc_stmt_higher:'对账单较高', rc_book_higher:'账面较高',
-    rc_stmt_recon_title:'银行对账单核对', rc_book_entered:'账面余额（录入）', rc_book_entered_desc:'您在每日录入中记录的余额', rc_stmt_closing:'银行对账单余额', rc_stmt_ph:'在此输入对账单余额...', rc_from_stmt:'来自您的实体银行对账单',
+    rc_stmt_recon_title:'银行对账单核对', rc_book_entered:'账面余额（录入）', rc_book_entered_desc:'您在每日录入中记录的余额', rc_book_computed:'账面余额（计算）', rc_book_computed_desc:'期初 + 收入 − 支出，来自您的交易', rc_stmt_closing:'银行对账单余额', rc_stmt_ph:'在此输入对账单余额...', rc_from_stmt:'来自您的实体银行对账单',
     rc_enter_stmt_arrow:'请录入对账单余额', rc_fully_recon:'完全平衡', rc_stmt_higher_book:'对账单高于账面', rc_book_higher_stmt:'账面高于对账单',
     rc_book_check:'账面核对：', rc_differs:'与录入余额相差', rc_matches:'与录入余额一致',
     rc_still_frozen:'仍冻结（有风险）', rc_net_loss:'累计净亏损', rc_date_frozen:'冻结日期', rc_amount_pgk:'金额（PGK）', rc_recovered:'已收回', rc_net_loss_col:'净亏损', rc_action:'操作',
@@ -1399,6 +1379,7 @@ function fmt(v,d=2){return(Math.round(v*100)/100).toLocaleString('en-MY',{minimu
 function fD(s){if(!s)return'';const d=new Date(s+'T00:00:00');return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'});}
 function mk(s){return s?s.slice(0,7):'';}
 function ml(m){if(!m)return'No data';try{const[y,mo]=m.split('-');return new Date(y,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});}catch(e){return m;}}
+function prevMonth(m){if(!m)return'';const[y,mo]=m.split('-').map(Number);const d=new Date(y,mo-2,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
 function aMo(){const ms=new Set([...S.platEntries.map(e=>mk(e.date)),...S.dayEntries.map(e=>mk(e.date))]);return[...ms].sort().reverse();}
 function gWk(ds){const d=new Date(ds+'T00:00:00'),y=d.getFullYear(),mo=d.getMonth();return Math.ceil((d.getDate()+new Date(y,mo,1).getDay())/7);}
 function bClr(nm){const b=S.myrBanks.find(b=>b.name===nm);return b?b.color:'#888';}
@@ -1727,7 +1708,7 @@ function doNav(p,btn){
   setTimeout(()=>{try{renderPage(p);}catch(e){console.error('render error',p,e);}},0);
 }
 function renderPage(p){
-  if(p==='entry'){setSel('bl-month',[{v:'',l:tr('bl_allmonths')},...mopts().filter(o=>o.v)]);renderDayStatus();renderBankListing();return;}
+  if(p==='entry'){renderDayStatus();return;}
   if(p==='pgk-entry'){
     setSel('pgk-tab-platform',S.platforms.map(pl=>pl.name));
     document.getElementById('pgk-tab-date').value=new Date().toISOString().slice(0,10);
@@ -2390,9 +2371,8 @@ function renderDayStatus(){
   const exch=(day?.exchanges||[]).length;
   const fnd=(day?.funderTxns||[]).filter(t=>!t.isAutoFromExpense).length;
   const exp=(day?.expenses||[]).length;
-  const banksSaved=!!(day&&day.myrBanks&&day.myrBanks.length);
   const locked=isLocked(date);
-  const card=(label,val,strong)=>`<div class="mc"><div class="ml">${label}</div><div class="mv"${strong?' style="color:var(--gr)"':''}>${val}</div></div>`;
+  const card=(label,val)=>`<div class="mc"><div class="ml">${label}</div><div class="mv">${val}</div></div>`;
   el.innerHTML=`<div class="card">
     <div class="ct">📋 ${tr('en_status_title')} — ${fD(date)}${locked?` <span style="color:var(--rd)">· 🔒 ${tr('en_st_locked')}</span>`:''}</div>
     <div class="metrics">
@@ -2400,7 +2380,6 @@ function renderDayStatus(){
       ${card(tr('en_st_exch'),exch)}
       ${card(tr('en_st_exp'),exp)}
       ${card(tr('en_st_fnd'),fnd)}
-      ${card(tr('en_st_banks'),banksSaved?'✓ '+tr('en_st_saved'):'—',banksSaved)}
     </div>
   </div>`;
 }
@@ -2768,23 +2747,24 @@ function renderReconSummary(){
   const months=aMo();
   let rows='';
   months.forEach(m=>{
-    const dayRows=S.dayEntries.filter(e=>mk(e.date)===m).sort((a,b)=>a.date.localeCompare(b.date));
-    if(!dayRows.length)return;
+    const dayRows=S.dayEntries.filter(e=>mk(e.date)===m);
     S.myrBanks.forEach(b=>{
-      let close=null,has=false;
-      dayRows.forEach(d=>{(d.myrBanks||[]).forEach(x=>{if(x.name===b.name){has=true;if(x.close||x.close===0)close=x.close;}});});
+      let tin=0,tout=0,hasTxn=false;
+      dayRows.forEach(d=>{buildLedger(d.date,d).forEach(t=>{if(t.bank===b.name){tin+=t.in;tout+=t.out;hasTxn=true;}});});
+      const open=getStmtBalance(b.name,prevMonth(m));
       const stmt=getStmtBalance(b.name,m);
-      if(!has&&stmt===null)return;
-      const ok=stmt!==null&&close!==null&&Math.abs(stmt-close)<0.01;
+      if(!hasTxn&&stmt===null&&open==null)return;
+      const book=(open||0)+tin-tout;
+      const ok=stmt!==null&&Math.abs(stmt-book)<0.01;
       const status=stmt===null
         ?`<span style="color:var(--txt2)">— ${tr('rc_not_entered')}</span>`
         :ok?`<span style="color:var(--gr);font-weight:700">✓ ${tr('rc_reconciled')}</span>`
-        :`<span style="color:var(--rd);font-weight:700">⚠ ${tr('rc_out_by')} RM ${fmt(Math.abs(stmt-(close||0)))}</span>`;
+        :`<span style="color:var(--rd);font-weight:700">⚠ ${tr('rc_out_by')} RM ${fmt(Math.abs(stmt-book))}</span>`;
       const bKey=b.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       rows+=`<tr style="cursor:pointer" onclick="openReconDetail('${m}','${bKey}')">
         <td>${ml(m)}</td>
         <td><span class="bdot" style="background:${b.color}"></span> ${b.name}</td>
-        <td style="text-align:right">${close!==null?'RM '+fmt(close):'-'}</td>
+        <td style="text-align:right">RM ${fmt(book)}</td>
         <td style="text-align:right;font-weight:700">${stmt!==null?'RM '+fmt(stmt):'-'}</td>
         <td>${status}</td>
         <td><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();openReconDetail('${m}','${bKey}')">${tr('rc_open_btn')} ▸</button></td>
@@ -2816,25 +2796,26 @@ function renderRecon(){
     (d.myrBanks||[]).forEach(b=>{if(b.name&&BL[b.name]){if(!BL[b.name].open&&b.open)BL[b.name].open=b.open;BL[b.name].close=b.close||0;}});
     buildLedger(d.date,d).forEach(t=>{if(t.bank&&BL[t.bank])BL[t.bank].txns.push({...t,date:d.date});});
   });
+  // Opening chains from the previous month's entered statement balance (monthly model)
+  S.myrBanks.forEach(b=>{if(!BL[b.name].open){const po=getStmtBalance(b.name,prevMonth(month));if(po!=null)BL[b.name].open=po;}});
   const banksToShow=selBank?[S.myrBanks.find(b=>b.name===selBank)].filter(Boolean):S.myrBanks;
-  let pO=0,pC=0,pI=0,pOut=0,pStmt=0,pStmtSet=true;
+  let pO=0,pBook=0,pI=0,pOut=0,pStmt=0,pStmtSet=true;
   S.myrBanks.forEach(b=>{
     const bl=BL[b.name];
-    pO+=bl.open;pC+=bl.close;
-    pI+=bl.txns.reduce((s,t)=>s+t.in,0);
-    pOut+=bl.txns.reduce((s,t)=>s+t.out,0);
+    const bi=bl.txns.reduce((s,t)=>s+t.in,0),bo=bl.txns.reduce((s,t)=>s+t.out,0);
+    pO+=bl.open;pI+=bi;pOut+=bo;pBook+=bl.open+bi-bo;
     const sv=getStmtBalance(b.name,month);
     if(sv===null)pStmtSet=false;else pStmt+=sv;
   });
-  const pOOB=pStmtSet?pStmt-pC:null;
+  const pOOB=pStmtSet?pStmt-pBook:null;
   const pOk=pStmtSet&&Math.abs(pOOB)<0.01;
   let html=`<div class="card"><div class="ct">${tr("cf_myr_ledger")} — ${ml(month)}</div>`;
   html+=`<div class="metrics" style="margin-bottom:14px">
     <div class="mc"><div class="ml">${tr('bank_open')}</div><div class="mv">RM ${fmt(pO)}</div></div>
     <div class="mc"><div class="ml">${tr('lbl_myr_in')}</div><div class="mv pos">+RM ${fmt(pI)}</div></div>
     <div class="mc"><div class="ml">${tr('lbl_myr_out')}</div><div class="mv neg">−RM ${fmt(pOut)}</div></div>
-    <div class="mc"><div class="ml">${tr('rc_book_all')}</div><div class="mv warn">RM ${fmt(pO+pI-pOut)}</div></div>
-    <div class="mc"><div class="ml">${tr('rc_entered_all')}</div><div class="mv">RM ${fmt(pC)}</div></div>
+    <div class="mc"><div class="ml">${tr('rc_book_all')}</div><div class="mv warn">RM ${fmt(pBook)}</div></div>
+    <div class="mc"><div class="ml">${tr('rc_stmt_closing')}</div><div class="mv">${pStmtSet?'RM '+fmt(pStmt):'—'}</div></div>
     <div class="mc"><div class="ml">${tr('rc_oob')}</div><div class="mv ${pStmtSet?(pOk?'pos':'neg'):''}">
       ${pStmtSet?(pOk?'✓ RM 0.00':'⚠ RM '+fmt(Math.abs(pOOB))):'<span style="color:var(--txt2);font-size:11px">'+tr('rc_enter_stmt')+' ↓</span>'}
     </div></div>
@@ -2846,7 +2827,7 @@ function renderRecon(){
     const bookClose=bl.open+tI-tO;
     const stmtVal=getStmtBalance(b.name,month);
     const hasStmt=stmtVal!==null;
-    const oob=hasStmt?stmtVal-bl.close:null;
+    const oob=hasStmt?stmtVal-bookClose:null;
     const reconOk=hasStmt&&Math.abs(oob)<0.01;
     const bKey=b.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     html+=`<div style="margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--bdr)">
@@ -2858,9 +2839,9 @@ function renderRecon(){
         <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">${tr('rc_stmt_recon_title')}</div>
         <div class="recon-3col">
           <div>
-            <div style="font-size:10px;color:var(--txt2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${tr('rc_book_entered')}</div>
-            <div style="font-size:18px;font-weight:700;color:var(--bl)">RM ${fmt(bl.close)}</div>
-            <div style="font-size:10px;color:var(--txt2);margin-top:3px">${tr('rc_book_entered_desc')}</div>
+            <div style="font-size:10px;color:var(--txt2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${tr('rc_book_computed')}</div>
+            <div style="font-size:18px;font-weight:700;color:var(--bl)">RM ${fmt(bookClose)}</div>
+            <div style="font-size:10px;color:var(--txt2);margin-top:3px">${tr('rc_book_computed_desc')}</div>
           </div>
           <div>
             <div style="font-size:10px;color:var(--txt2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${tr('rc_stmt_closing')}</div>
@@ -2881,7 +2862,6 @@ function renderRecon(){
         <div style="border-top:1px solid var(--bdr);padding-top:9px;font-size:11px;color:var(--txt2);line-height:1.8">
           <b style="color:var(--txt)">${tr('rc_book_check')}</b>
           ${tr('rc_opening')} RM ${fmt(bl.open)} + In RM ${fmt(tI)} − Out RM ${fmt(tO)} = <b style="color:var(--bl)">RM ${fmt(bookClose)}</b>
-          ${Math.abs(bookClose-bl.close)>0.01?`&nbsp;<span style="color:#A32D2D;font-weight:600">⚠ ${tr('rc_differs')} RM ${fmt(Math.abs(bookClose-bl.close))}</span>`:'&nbsp;<span style="color:#0F6E56">✓ '+tr('rc_matches')+'</span>'}
         </div>
       </div>
       <div class="recon-row"><span>${tr('bank_open')}</span><span>RM ${fmt(bl.open)}</span></div>
