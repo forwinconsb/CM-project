@@ -253,8 +253,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
 </div>
 
 <div class="nav">
-  <button class="nb on" onclick="doNav('entry',this)" data-i18n="nav_entry">✏️ Daily Entry</button>
-  <button class="nb" onclick="doNav('pgk-entry',this)" data-i18n="nav_pgk">🎮 PGK Platforms</button>
+  <button class="nb on" onclick="doNav('pgk-entry',this)" data-i18n="nav_pgk">🎮 PGK Platforms</button>
   <button class="nb" onclick="doNav('exchange-tab',this)" data-i18n="nav_exchange">💱 Exchanges</button>
   <button class="nb" onclick="doNav('fnd-tab',this)" data-i18n="nav_fnd">💰 Funder Movements</button>
   <button class="nb" onclick="doNav('exp-tab',this)" data-i18n="nav_exp">🧾 Expenses</button>
@@ -271,16 +270,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
     <button class="lang-btn" data-lang="zh" onclick="setLang('zh')"
       style="padding:4px 10px;border-radius:var(--r);border:1.5px solid var(--bdr2);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">中文</button>
   </div>
-</div>
-
-<!-- DAILY ENTRY -->
-<div id="pg-entry" class="pg on">
-  <div class="info-box">💡 <b>Daily workflow:</b> PGK → PGK Platforms · Exchanges → Exchanges · Funder → Funder Movements · Expenses → Expenses. MYR bank balance is reconciled monthly in the Reconciliation tab (enter your bank statement closing there).</div>
-  <div class="card">
-    <div class="ct" data-i18n="date">Entry date</div>
-    <div style="max-width:200px"><div class="f"><label data-i18n="date">Date</label><input type="date" id="e-date" onchange="autoFillMyrOpens()"></div></div>
-  </div>
-  <div id="day-status"></div>
 </div>
 
 <!-- FUNDER MOVEMENTS TAB -->
@@ -569,7 +558,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
 </div>
 
 <!-- PGK PLATFORM ENTRY TAB -->
-<div id="pg-pgk-entry" class="pg">
+<div id="pg-pgk-entry" class="pg on">
   <div class="info-box">🎮 <span data-i18n="pe_info">PGK Platform Entry — Enter each platform's daily figures here. Save each platform individually.</span></div>
   <div class="card">
     <div class="ct" data-i18n="pe_entry_date">Entry date</div>
@@ -1536,7 +1525,6 @@ function viewDayDetail(date){
 
 // ── ACCOUNTS & ACCESS ──
 const ALL_TABS=[
-  {id:'entry',label:'✏️ Daily Entry'},
   {id:'pgk-entry',label:'🎮 PGK Platforms'},
   {id:'exchange-tab',label:'💱 Exchanges'},
   {id:'fnd-tab',label:'💰 Funder Movements'},
@@ -1550,8 +1538,8 @@ const ALL_TABS=[
   {id:'settings',label:'⚙️ Setup'},
 ];
 const ROLE_PRESETS={
-  operator:['entry','pgk-entry','exchange-tab','exp-tab'],
-  manager:['entry','pgk-entry','exchange-tab','fnd-tab','exp-tab','recon','cashflow','weekly','pl','funders','funder-review'],
+  operator:['pgk-entry','exchange-tab','exp-tab'],
+  manager:['pgk-entry','exchange-tab','fnd-tab','exp-tab','recon','cashflow','weekly','pl','funders','funder-review'],
   funder:['exchange-tab','fnd-tab','exp-tab','recon','cashflow','weekly','pl','funders','funder-review'],
   admin:ALL_TABS.map(t=>t.id)
 };
@@ -4992,7 +4980,6 @@ function labelizeTables(){
 }
 
 // ── INIT ──
-document.getElementById('e-date').value=new Date().toISOString().slice(0,10);
 loadData();
 setTimeout(applyLang, 50);
 setTimeout(initAuth, 60);
