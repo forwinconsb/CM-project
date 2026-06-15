@@ -115,6 +115,18 @@ details.collapse-card[open]>summary:before{content:'▾'}
   th,td{padding:6px 7px;font-size:11px}
   .modal{max-height:95vh}
   .exp-detail-grid{grid-template-columns:1fr}
+  /* Phone: tables become stacked cards (PC keeps the table layout) */
+  .tw{overflow-x:visible}
+  .tw table,.tw tbody,.tw tr,.tw td{display:block;width:100%}
+  .tw thead{display:none}
+  .tw tr{border:1px solid var(--bdr2);border-radius:var(--rlg);margin-bottom:9px;padding:6px 11px;background:var(--bg2)}
+  .tw tr:last-child{margin-bottom:0}
+  .tw tr:hover td{background:transparent}
+  .tw td{border:none;border-bottom:1px solid var(--bg3);padding:6px 0;white-space:normal;display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:right;font-size:12px}
+  .tw td:last-child{border-bottom:none}
+  .tw td::before{content:attr(data-label);font-weight:700;color:var(--txt2);font-size:11px;text-align:left;flex:0 0 auto;white-space:nowrap}
+  .tw td.empty{display:block;text-align:center;color:var(--txt2)}
+  .tw td.empty::before{content:none}
 }
 
 /* ── EXPENSE ROW with detail expand ── */
@@ -4983,11 +4995,32 @@ function exportPDF(type){
 
 
 
+// ── PHONE CARD TABLES ──
+// Tag each cell with its column header so the mobile CSS can show "Label: value"
+// cards. Runs on any DOM change (debounced); observer watches childList only,
+// so setAttribute below never re-triggers it (no loop).
+function labelizeTables(){
+  document.querySelectorAll('.tw table').forEach(tbl=>{
+    const ths=[...tbl.querySelectorAll('thead th')].map(th=>th.textContent.trim());
+    if(!ths.length)return;
+    tbl.querySelectorAll('tbody tr').forEach(tr=>{
+      const tds=[...tr.children];
+      if(tds.length===1&&tds[0].hasAttribute('colspan'))return;
+      tds.forEach((td,i)=>{const lbl=ths[i]!==undefined?ths[i]:'';if(td.getAttribute('data-label')!==lbl)td.setAttribute('data-label',lbl);});
+    });
+  });
+}
+
 // ── INIT ──
 document.getElementById('e-date').value=new Date().toISOString().slice(0,10);
 loadData();
 setTimeout(applyLang, 50);
 setTimeout(initAuth, 60);
+(function(){
+  const obs=new MutationObserver(()=>{if(window._lblRAF)cancelAnimationFrame(window._lblRAF);window._lblRAF=requestAnimationFrame(labelizeTables);});
+  obs.observe(document.body,{childList:true,subtree:true});
+  labelizeTables();
+})();
 </script>
 </body>
 </html>
