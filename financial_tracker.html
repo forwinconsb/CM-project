@@ -466,13 +466,13 @@ details.collapse-card[open]>summary:before{content:'▾'}
   <div id="cf-metrics" class="metrics"></div>
   <div class="card"><div class="ct" data-i18n="cf_chart_title">Daily trend - deposit (bars) &amp; win/lose (line)</div><div id="cf-chart"></div></div>
   <div class="card"><div class="ct" data-i18n="lbl_plat_perf">Platform performance (PGK)</div>
-    <div class="tw"><table><thead><tr><th data-i18n="date">Date</th><th data-i18n="pgk_platform">Platform</th><th data-i18n="col_deposit">Deposit</th><th data-i18n="col_withdraw">Withdraw</th><th data-i18n="win_lose">Win / Lose</th><th data-i18n="col_close">PGK close</th><th data-i18n="col_diff">Recon diff</th></tr></thead><tbody id="cf-plat-body"><tr><td colspan="7" class="empty">No data yet</td></tr></tbody></table></div>
+    <div class="tw"><table><thead><tr><th data-i18n="pgk_platform">Platform</th><th data-i18n="col_deposit">Deposit</th><th data-i18n="col_withdraw">Withdraw</th><th data-i18n="win_lose">Win / Lose</th><th data-i18n="cf_count">Count</th><th></th></tr></thead><tbody id="cf-plat-body"><tr><td colspan="6" class="empty">No data yet</td></tr></tbody></table></div>
   </div>
   <div class="card"><div class="ct" data-i18n="lbl_exch_txns">Exchange transactions</div>
-    <div class="tw"><table><thead><tr><th data-i18n="date">Date</th><th data-i18n="pl_dir">Dir</th><th data-i18n="exch_exchanger">Exchanger</th><th>PGK</th><th data-i18n="exch_rate">Rate</th><th>MYR</th><th data-i18n="cf_paid_rcvd">Paid/Rcvd</th><th data-i18n="cf_due">Due</th><th data-i18n="bank">MYR bank</th></tr></thead><tbody id="cf-exch-body"><tr><td colspan="9" class="empty">No data yet</td></tr></tbody></table></div>
+    <div class="tw"><table><thead><tr><th data-i18n="exch_exchanger">Exchanger</th><th>PGK</th><th>MYR</th><th data-i18n="cf_paid_rcvd">Paid/Rcvd</th><th data-i18n="cf_due">Due</th><th data-i18n="cf_count">Count</th><th></th></tr></thead><tbody id="cf-exch-body"><tr><td colspan="7" class="empty">No data yet</td></tr></tbody></table></div>
   </div>
   <div class="card"><div class="ct" data-i18n="cf_myr_ledger">MYR bank ledger (running balance)</div>
-    <div class="tw"><table><thead><tr><th data-i18n="date">Date</th><th data-i18n="bank">Bank</th><th data-i18n="type">Type</th><th data-i18n="description">Description</th><th data-i18n="cf_in">In (MYR)</th><th data-i18n="cf_out">Out (MYR)</th><th data-i18n="cf_balance">Balance</th><th>📎</th></tr></thead><tbody id="cf-myr-body"><tr><td colspan="8" class="empty">No data yet</td></tr></tbody></table></div>
+    <div class="tw"><table><thead><tr><th data-i18n="type">Type</th><th data-i18n="cf_in">In (MYR)</th><th data-i18n="cf_out">Out (MYR)</th><th data-i18n="cf_net">Net</th><th data-i18n="cf_count">Count</th><th></th></tr></thead><tbody id="cf-myr-body"><tr><td colspan="6" class="empty">No data yet</td></tr></tbody></table></div>
   </div>
 </div>
 
@@ -881,6 +881,7 @@ const LANG = {
     mb_open_auto:'Opening (auto)', mb_from:'from', mb_first:'first entry — opening 0', bank_close_label:'Closing balance (MYR)',
     bl_title:'Saved bank balances', bl_none:'No balances saved yet', bl_closing:'Closing (MYR)', bl_allmonths:'All months',
     pl_txn:'txn', pl_txns:'txns', pl_view_all:'view all', pl_tap_hint:'Tap any expense line to see its individual transactions',
+    cf_count:'Count', cf_net:'Net',
     lk_lock:'Lock month', lk_unlock:'Unlock', lk_closed:'closed', lk_locked_toast:'is now locked ✓', lk_unlocked_toast:'unlocked — editing allowed again',
     lk_confirm_lock:'Lock {m}?\n\nTransactions dated in this month will be protected — no adding, editing or deleting until you unlock it.', lk_confirm_unlock:'Unlock {m}?\n\nThis allows transactions in that month to be edited again.',
     lk_blocked:'🔒 {m} is locked — unlock it in Reconciliation to make changes', lk_admin_only:'Only an Admin can lock or unlock months',
@@ -1113,6 +1114,7 @@ const LANG = {
     mb_open_auto:'期初（自动）', mb_from:'来自', mb_first:'首次录入 — 期初为0', bank_close_label:'期末余额（MYR）',
     bl_title:'已保存的银行余额', bl_none:'暂无已保存的余额', bl_closing:'期末（MYR）', bl_allmonths:'所有月份',
     pl_txn:'笔', pl_txns:'笔', pl_view_all:'查看全部', pl_tap_hint:'点击任意支出行查看明细交易',
+    cf_count:'数量', cf_net:'净额',
     lk_lock:'锁定本月', lk_unlock:'解锁', lk_closed:'已锁定', lk_locked_toast:'已锁定 ✓', lk_unlocked_toast:'已解锁 — 可再次编辑',
     lk_confirm_lock:'锁定 {m}？\n\n该月的交易将被保护 — 在解锁前无法新增、编辑或删除。', lk_confirm_unlock:'解锁 {m}？\n\n将允许再次编辑该月的交易。',
     lk_blocked:'🔒 {m} 已锁定 — 请在对账页解锁后再修改', lk_admin_only:'只有管理员可以锁定或解锁月份',
@@ -2924,27 +2926,62 @@ function renderCF(){
   const platRows=S.platEntries.filter(e=>e.date>=from&&e.date<=to&&(!pf||e.platform===pf));
   renderCFChart(platRows);
   const dayRows=S.dayEntries.filter(e=>e.date>=from&&e.date<=to);
-  setHTML('cf-plat-body',!platRows.length?`<tr><td colspan="7" class="empty">${tr('no_entries')} — ${rangeLabel}</td></tr>`:
-    platRows.map(e=>`<tr style="cursor:pointer" onclick="viewDayDetail('${e.date}')"><td>${fD(e.date)}</td><td>${e.platform}</td><td>${fmt(e.dep)}</td><td>${fmt(e.with)}</td><td style="color:${e.winLose>=0?'var(--gr)':'var(--rd)'}">${fmt(e.winLose)}</td><td>${fmt(e.pgkClose)}</td><td style="font-weight:700;color:${Math.abs(e.pgkDiff||0)<0.01?'var(--gr)':Math.abs(e.pgkDiff||0)<1?'var(--am)':'var(--rd)'}">${Math.abs(e.pgkDiff||0)<0.01?'✓':fmt(e.pgkDiff||0)}</td></tr>`).join(''));
+  const platG={};
+  platRows.forEach(e=>{const k=e.platform||'-';if(!platG[k])platG[k]={dep:0,wd:0,wl:0,n:0};const g=platG[k];g.dep+=e.dep||0;g.wd+=e.with||0;g.wl+=e.winLose||0;g.n++;});
+  const platKeys=Object.keys(platG).sort();
+  setHTML('cf-plat-body',!platKeys.length?`<tr><td colspan="6" class="empty">${tr('no_entries')} — ${rangeLabel}</td></tr>`:
+    platKeys.map(k=>{const g=platG[k];const kk=k.replace(/\\/g,'\\\\').replace(/'/g,"\\'");return`<tr style="cursor:pointer" onclick="cfPlatDetail('${kk}')"><td><b>${k}</b></td><td>${fmt(g.dep)}</td><td>${fmt(g.wd)}</td><td style="color:${g.wl>=0?'var(--gr)':'var(--rd)'}">${fmt(g.wl)}</td><td><span class="pl-badge">${g.n}</span></td><td style="text-align:right"><span class="pl-chev">›</span></td></tr>`;}).join(''));
   const allExch=dayRows.flatMap(d=>(d.exchanges||[]).map(x=>({...x,date:d.date})));
-  setHTML('cf-exch-body',!allExch.length?`<tr><td colspan="9" class="empty">${tr('no_entries')} — ${rangeLabel}</td></tr>`:
-    allExch.map(x=>`<tr><td>${fD(x.date)}</td><td><span class="tag ${x.dir==='out'?'tag-out':'tag-in'}">${x.dir==='out'?'PGK→MYR':'MYR→PGK'}</span></td><td>${x.exchanger||'-'}</td><td>${fmt(x.pgk)}</td><td>${x.rate}</td><td>${fmt(x.myr)}</td><td>${fmt(x.paid)}</td><td style="color:${(x.myr-x.paid)>0.01?'var(--am)':'var(--gr)'}">${fmt(Math.max(0,x.myr-x.paid))}</td><td>${bDot(x.myrBank||'')} ${x.myrBank||'-'}</td></tr>`).join(''));
+  const exchG={};
+  allExch.forEach(x=>{const k=x.exchanger||'-';if(!exchG[k])exchG[k]={pgk:0,myr:0,paid:0,due:0,n:0};const g=exchG[k];g.pgk+=x.pgk||0;g.myr+=x.myr||0;g.paid+=x.paid||0;g.due+=Math.max(0,(x.myr||0)-(x.paid||0));g.n++;});
+  const exchKeys=Object.keys(exchG).sort();
+  setHTML('cf-exch-body',!exchKeys.length?`<tr><td colspan="7" class="empty">${tr('no_entries')} — ${rangeLabel}</td></tr>`:
+    exchKeys.map(k=>{const g=exchG[k];const kk=k.replace(/\\/g,'\\\\').replace(/'/g,"\\'");return`<tr style="cursor:pointer" onclick="cfExchDetail('${kk}')"><td><b>${k}</b></td><td>${fmt(g.pgk)}</td><td>${fmt(g.myr)}</td><td>${fmt(g.paid)}</td><td style="color:${g.due>0.01?'var(--am)':'var(--gr)'}">${fmt(g.due)}</td><td><span class="pl-badge">${g.n}</span></td><td style="text-align:right"><span class="pl-chev">›</span></td></tr>`;}).join(''));
   const allTxns=dayRows.flatMap(d=>buildLedger(d.date,d).map(t=>({...t,date:d.date}))).sort((a,b)=>a.date.localeCompare(b.date));
   const runBal={};S.myrBanks.forEach(b=>{runBal[b.name]=0;});dayRows.forEach(d=>(d.myrBanks||[]).forEach(b=>{if(b.open&&!runBal[b.name])runBal[b.name]=b.open;}));
-  setHTML('cf-myr-body',!allTxns.length?`<tr><td colspan="8" class="empty">${tr('no_entries')} — ${rangeLabel}</td></tr>`:
-    allTxns.map(t=>{runBal[t.bank]=(runBal[t.bank]||0)+t.in-t.out;return`<tr style="cursor:${t.type==='expense'?'pointer':''}" ${t.type==='expense'&&t.expRef?`onclick="viewExpDetail(${JSON.stringify(t.expRef).replace(/"/g,'&quot;')},'${t.date}')"`:''}>
-      <td>${fD(t.date)}</td><td>${bDot(t.bank)} ${t.bank}</td>
-      <td><span class="tag ${t.type==='exchange'?'tag-exch':t.type==='funder'?'tag-fund':'tag-exp'}">${tr('cf_type_'+t.type)||t.type}</span></td>
-      <td style="color:var(--txt2)">${t.desc}</td>
-      <td style="color:var(--gr)">${t.in>0?'RM '+fmt(t.in):'-'}</td>
-      <td style="color:var(--rd)">${t.out>0?'RM '+fmt(t.out):'-'}</td>
-      <td style="font-weight:700">RM ${fmt(runBal[t.bank])}</td>
-      <td>${t.attachment?`<span class="attach-badge" onclick="event.stopPropagation();viewAttachment(${JSON.stringify(t.attachment).replace(/"/g,'&quot;')})">📎</span>`:'—'}</td>
-    </tr>`;}).join(''));
+  const typeG={};
+  allTxns.forEach(t=>{const k=t.type;if(!typeG[k])typeG[k]={in:0,out:0,n:0};typeG[k].in+=t.in;typeG[k].out+=t.out;typeG[k].n++;});
+  const typeKeys=Object.keys(typeG);
+  setHTML('cf-myr-body',!typeKeys.length?`<tr><td colspan="6" class="empty">${tr('no_entries')} — ${rangeLabel}</td></tr>`:
+    typeKeys.map(k=>{const g=typeG[k];const net=g.in-g.out;return`<tr style="cursor:pointer" onclick="cfMyrDetail('${k}')"><td><span class="tag ${k==='exchange'?'tag-exch':k==='funder'?'tag-fund':'tag-exp'}">${tr('cf_type_'+k)||k}</span></td><td style="color:var(--gr)">RM ${fmt(g.in)}</td><td style="color:var(--rd)">RM ${fmt(g.out)}</td><td style="font-weight:700;color:${net>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(net)}</td><td><span class="pl-badge">${g.n}</span></td><td style="text-align:right"><span class="pl-chev">›</span></td></tr>`;}).join(''));
   const totDep=platRows.reduce((s,e)=>s+e.dep,0),totWL=platRows.reduce((s,e)=>s+e.winLose,0);
   const myrIn=allExch.filter(x=>x.dir==='out').reduce((s,x)=>s+x.myr,0),myrOut=allExch.filter(x=>x.dir==='in').reduce((s,x)=>s+(x.paid||0),0);
   const lastDay=dayRows[dayRows.length-1];const myrBal=lastDay?.myrBanks?lastDay.myrBanks.reduce((s,b)=>s+(b.close||0),0):0;
   setHTML('cf-metrics',`<div class="mc"><div class="ml" >${tr('lbl_total_dep')}</div><div class="mv">${fmt(totDep)}</div></div><div class="mc"><div class="ml" >${tr('lbl_net_wl')}</div><div class="mv ${totWL>=0?'pos':'neg'}">${fmt(totWL)}</div></div><div class="mc"><div class="ml">${tr('lbl_myr_rcvd')}</div><div class="mv pos">${fmt(myrIn)}</div></div><div class="mc"><div class="ml" >${tr('lbl_myr_out')}</div><div class="mv neg">${myrOut?'-'+fmt(myrOut):'-'}</div></div><div class="mc"><div class="ml" >${tr('lbl_total_exp')}</div><div class="mv neg">-${fmt(dayRows.reduce((s,d)=>s+d.totalExp,0))}</div></div><div class="mc"><div class="ml" >${tr('lbl_myr_bal')}</div><div class="mv">${fmt(myrBal)}</div></div>`);
+}
+
+// ── CASH FLOW DRILL-DOWN (click a summary row to see its detail) ──
+function cfPlatDetail(platform){
+  const{from,to}=getCFDates();
+  const rows=S.platEntries.filter(e=>e.date>=from&&e.date<=to&&(e.platform||'-')===platform).sort((a,b)=>a.date.localeCompare(b.date));
+  let body=`<div class="modal-section">${tr('lbl_plat_perf')} — ${platform}</div>`;
+  if(!rows.length)body+=`<div style="font-size:12px;color:var(--txt2)">${tr('no_entries')}</div>`;
+  else body+=`<div class="tw"><table><thead><tr><th>${tr('date')}</th><th>${tr('col_deposit')}</th><th>${tr('col_withdraw')}</th><th>${tr('win_lose')}</th><th>${tr('col_close')}</th><th>${tr('col_diff')}</th></tr></thead><tbody>`+
+    rows.map(e=>`<tr><td>${fD(e.date)}</td><td>${fmt(e.dep)}</td><td>${fmt(e.with)}</td><td style="color:${e.winLose>=0?'var(--gr)':'var(--rd)'}">${fmt(e.winLose)}</td><td>${fmt(e.pgkClose)}</td><td style="font-weight:700;color:${Math.abs(e.pgkDiff||0)<0.01?'var(--gr)':Math.abs(e.pgkDiff||0)<1?'var(--am)':'var(--rd)'}">${Math.abs(e.pgkDiff||0)<0.01?'✓':fmt(e.pgkDiff||0)}</td></tr>`).join('')+`</tbody></table></div>`;
+  openModal(tr('lbl_plat_perf'),body);
+}
+function cfExchDetail(exchanger){
+  const{from,to}=getCFDates();
+  const rows=S.dayEntries.filter(e=>e.date>=from&&e.date<=to).flatMap(d=>(d.exchanges||[]).filter(x=>(x.exchanger||'-')===exchanger).map(x=>({...x,date:d.date}))).sort((a,b)=>a.date.localeCompare(b.date));
+  let body=`<div class="modal-section">${tr('lbl_exch_txns')} — ${exchanger}</div>`;
+  if(!rows.length)body+=`<div style="font-size:12px;color:var(--txt2)">${tr('no_entries')}</div>`;
+  else body+=`<div class="tw"><table><thead><tr><th>${tr('date')}</th><th>${tr('pl_dir')}</th><th>PGK</th><th>${tr('exch_rate')}</th><th>MYR</th><th>${tr('cf_paid_rcvd')}</th><th>${tr('cf_due')}</th><th>${tr('bank')}</th></tr></thead><tbody>`+
+    rows.map(x=>`<tr><td>${fD(x.date)}</td><td><span class="tag ${x.dir==='out'?'tag-out':'tag-in'}">${x.dir==='out'?'PGK→MYR':'MYR→PGK'}</span></td><td>${fmt(x.pgk)}</td><td>${x.rate}</td><td>${fmt(x.myr)}</td><td>${fmt(x.paid)}</td><td style="color:${(x.myr-x.paid)>0.01?'var(--am)':'var(--gr)'}">${fmt(Math.max(0,(x.myr||0)-(x.paid||0)))}</td><td>${bDot(x.myrBank||'')} ${x.myrBank||'-'}</td></tr>`).join('')+`</tbody></table></div>`;
+  openModal(tr('lbl_exch_txns'),body);
+}
+function cfMyrDetail(type){
+  const{from,to}=getCFDates();
+  const rows=S.dayEntries.filter(e=>e.date>=from&&e.date<=to).flatMap(d=>buildLedger(d.date,d).filter(t=>t.type===type).map(t=>({...t,date:d.date}))).sort((a,b)=>a.date.localeCompare(b.date));
+  const label=tr('cf_type_'+type)||type;
+  let body=`<div class="modal-section">${tr('cf_myr_ledger')} — ${label}</div>`;
+  if(!rows.length)body+=`<div style="font-size:12px;color:var(--txt2)">${tr('no_entries')}</div>`;
+  else{
+    let ti=0,too=0;
+    body+=`<div class="tw"><table><thead><tr><th>${tr('date')}</th><th>${tr('bank')}</th><th>${tr('description')}</th><th>${tr('cf_in')}</th><th>${tr('cf_out')}</th></tr></thead><tbody>`+
+    rows.map(t=>{ti+=t.in;too+=t.out;return`<tr><td>${fD(t.date)}</td><td>${bDot(t.bank)} ${t.bank}</td><td style="color:var(--txt2)">${t.desc}</td><td style="color:var(--gr)">${t.in>0?'RM '+fmt(t.in):'-'}</td><td style="color:var(--rd)">${t.out>0?'RM '+fmt(t.out):'-'}</td></tr>`;}).join('')+
+    `<tr style="font-weight:700;background:var(--bg3)"><td colspan="3">Total</td><td style="color:var(--gr)">RM ${fmt(ti)}</td><td style="color:var(--rd)">RM ${fmt(too)}</td></tr></tbody></table></div>`;
+  }
+  openModal(tr('cf_myr_ledger'),body);
 }
 
 // ── WEEKLY ──
