@@ -263,7 +263,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
   <button class="nb" onclick="doNav('exp-tab',this)" data-i18n="nav_exp">🧾 Expenses</button>
   <button class="nb" onclick="doNav('recon',this)" data-i18n="nav_recon">🏦 Reconciliation</button>
   <button class="nb" onclick="doNav('cashflow',this)" data-i18n="nav_cf">↔️ Cash Flow</button>
-  <button class="nb" onclick="doNav('weekly',this)" data-i18n="nav_weekly">📅 Weekly</button>
   <button class="nb" onclick="doNav('pl',this)" data-i18n="nav_pl">📊 P&L</button>
   <button class="nb" onclick="doNav('funders',this)" data-i18n="nav_funders">👥 Funders</button>
   <button class="nb" onclick="doNav('funder-review',this)" data-i18n="nav_fv">📊 Funder View</button>
@@ -477,15 +476,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
   </div>
 </div>
 
-<!-- WEEKLY -->
-<div id="pg-weekly" class="pg">
-  <div class="filter-row">
-    <select id="wk-month" onchange="renderWeekly()"></select>
-    <button class="btn-sec" onclick="exportCSV('wk')">⬇ CSV</button>
-  </div>
-  <div id="wk-content"><div class="empty">No data yet</div></div>
-</div>
-
 <!-- P&L -->
 <div id="pg-pl" class="pg">
   <div class="filter-row">
@@ -504,8 +494,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
   </div>
   <div id="pl-metrics" class="metrics"></div>
   <div class="card"><div id="pl-content"><div class="empty">No data yet</div></div></div>
-  <div class="card"><div class="ct" data-i18n="lbl_exch_summary">Exchanger balance summary</div><div id="pl-exch"><div class="empty">No data yet</div></div></div>
-  <div class="card"><div class="ct" data-i18n="lbl_funder_summary">Funder position this period</div><div id="pl-funder-summary"><div class="empty">No data yet</div></div></div>
 </div>
 
 <!-- FUNDERS -->
@@ -1537,7 +1525,6 @@ const ALL_TABS=[
   {id:'exp-tab',label:'🧾 Expenses'},
   {id:'recon',label:'🏦 Reconciliation'},
   {id:'cashflow',label:'↔️ Cash Flow'},
-  {id:'weekly',label:'📅 Weekly'},
   {id:'pl',label:'📊 P&L'},
   {id:'funders',label:'👥 Funders'},
   {id:'funder-review',label:'📊 Funder View'},
@@ -1545,8 +1532,8 @@ const ALL_TABS=[
 ];
 const ROLE_PRESETS={
   operator:['pgk-entry','exchange-tab','exp-tab'],
-  manager:['pgk-entry','exchange-tab','fnd-tab','exp-tab','recon','cashflow','weekly','pl','funders','funder-review'],
-  funder:['exchange-tab','fnd-tab','exp-tab','recon','cashflow','weekly','pl','funders','funder-review'],
+  manager:['pgk-entry','exchange-tab','fnd-tab','exp-tab','recon','cashflow','pl','funders','funder-review'],
+  funder:['exchange-tab','fnd-tab','exp-tab','recon','cashflow','pl','funders','funder-review'],
   admin:ALL_TABS.map(t=>t.id)
 };
 let currentUser=null,loginSelId=null;
@@ -1725,7 +1712,6 @@ function renderPage(p){
   if(p==='exp-tab'){initExpTab();return;}
   if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);setSel('rc-pgk-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);rcDetailOpen=false;renderRecon();renderPGKRecon();renderFrozen();setReconCur(rcCur);renderLockBtn();}
   if(p==='cashflow'){toggleCFCustom();setSel('cf-plat',[{v:'',l:'All platforms'},...S.platforms.map(q=>({v:q.name,l:q.name}))]);renderCF();}
-  if(p==='weekly'){setSel('wk-month',mopts());renderWeekly();}
   if(p==='pl'){togglePLCustom();renderPL();}
   if(p==='funders'){toggleFNCustom();renderFundersTab();}
   if(p==='settings'){renderSettings();renderExpTypeSetup();renderSetupRail();}
