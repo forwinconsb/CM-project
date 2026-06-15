@@ -279,6 +279,16 @@ details.collapse-card[open]>summary:before{content:'▾'}
     <div id="day-attach-preview" style="margin-top:7px"></div>
   </div>
   <button class="btn-pri" onclick="saveDay()" data-i18n="save_myr">✅ Save MYR bank balances</button>
+  <div class="card">
+    <div class="ct">📋 <span data-i18n="bl_title">Saved bank balances</span></div>
+    <div class="filter-row">
+      <select id="bl-month" onchange="renderBankListing()"><option value="">All months</option></select>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th data-i18n="date">Date</th><th data-i18n="bank">Bank</th><th data-i18n="bl_closing">Closing (MYR)</th><th data-i18n="remark">Remark</th></tr></thead>
+      <tbody id="bl-body"><tr><td colspan="4" class="empty">No entries yet</td></tr></tbody>
+    </table></div>
+  </div>
 </div>
 
 <!-- FUNDER MOVEMENTS TAB -->
@@ -842,7 +852,7 @@ const LANG = {
     attach:'📎 Attach file', attach_day:'📎 Attach day document',
     // Daily Entry
     daily_title:'Daily Entry', daily_info:'PGK → PGK Platforms tab. Exchanges → Exchanges tab. Funder Movements → Funder Movements tab. Expenses → Expenses tab. Here: save MYR Bank Balances only.',
-    myr_bank_step:'① MYR Bank Balances — opening & closing once per day',
+    myr_bank_step:'① MYR Bank Closing Balance — once per day (opening carries from yesterday)',
     day_attach_label:'Day-level attachment (e.g. bank statement)',
     save_myr:'✅ Save MYR bank balances',
     bank_open:'Opening balance', bank_close:'Closing balance',
@@ -895,8 +905,8 @@ const LANG = {
     pl_cash_note:'Cash timing only — net profit above uses fixed monthly rates.',
     rc_cur:'Currency',
     en_status_title:'Today’s status', en_st_plats:'PGK platforms', en_st_exch:'Exchanges', en_st_exp:'Expenses', en_st_fnd:'Funder moves', en_st_banks:'MYR banks', en_st_saved:'saved', en_st_locked:'month locked',
-    mb_override:'override', mb_loaded:'Loaded saved entry', mb_autofill:'Auto-filled from {d} closing', mb_manual:'No previous closing — enter manually',
-    mb_override_confirm:'The opening should match the previous day’s closing.\nOverride it manually anyway?', mb_override_on:'Manual override — please double-check this value',
+    mb_open_auto:'Opening (auto)', mb_from:'from', mb_first:'first entry — opening 0', bank_close_label:'Closing balance (MYR)',
+    bl_title:'Saved bank balances', bl_none:'No balances saved yet', bl_closing:'Closing (MYR)', bl_allmonths:'All months',
     lk_lock:'Lock month', lk_unlock:'Unlock', lk_closed:'closed', lk_locked_toast:'is now locked ✓', lk_unlocked_toast:'unlocked — editing allowed again',
     lk_confirm_lock:'Lock {m}?\n\nTransactions dated in this month will be protected — no adding, editing or deleting until you unlock it.', lk_confirm_unlock:'Unlock {m}?\n\nThis allows transactions in that month to be edited again.',
     lk_blocked:'🔒 {m} is locked — unlock it in Reconciliation to make changes', lk_admin_only:'Only an Admin can lock or unlock months',
@@ -1073,7 +1083,7 @@ const LANG = {
     attach:'📎 上传附件', attach_day:'📎 上传当日文件',
     // Daily Entry
     daily_title:'每日录入', daily_info:'PGK → PGK平台标签。兑换 → 兑换交易标签。资金方动账 → 资金方动账标签。费用 → 费用标签。此处：仅保存MYR银行余额。',
-    myr_bank_step:'① MYR银行余额 — 每日录入期初和期末余额',
+    myr_bank_step:'① MYR银行期末余额 — 每日录入（期初自动延续昨日）',
     day_attach_label:'当日附件（如银行对账单）',
     save_myr:'✅ 保存MYR银行余额',
     bank_open:'期初余额', bank_close:'期末余额',
@@ -1126,8 +1136,8 @@ const LANG = {
     pl_cash_note:'仅为现金时点 — 上方净利润采用固定月度汇率。',
     rc_cur:'货币',
     en_status_title:'今日状态', en_st_plats:'PGK平台', en_st_exch:'兑换', en_st_exp:'支出', en_st_fnd:'投资人交易', en_st_banks:'MYR银行', en_st_saved:'已保存', en_st_locked:'本月已锁定',
-    mb_override:'修改', mb_loaded:'已载入保存的记录', mb_autofill:'从 {d} 期末自动填入', mb_manual:'无前期期末 — 请手动输入',
-    mb_override_confirm:'期初余额应与前一天的期末相符。\n仍要手动修改吗？', mb_override_on:'已手动修改 — 请仔细核对此数值',
+    mb_open_auto:'期初（自动）', mb_from:'来自', mb_first:'首次录入 — 期初为0', bank_close_label:'期末余额（MYR）',
+    bl_title:'已保存的银行余额', bl_none:'暂无已保存的余额', bl_closing:'期末（MYR）', bl_allmonths:'所有月份',
     lk_lock:'锁定本月', lk_unlock:'解锁', lk_closed:'已锁定', lk_locked_toast:'已锁定 ✓', lk_unlocked_toast:'已解锁 — 可再次编辑',
     lk_confirm_lock:'锁定 {m}？\n\n该月的交易将被保护 — 在解锁前无法新增、编辑或删除。', lk_confirm_unlock:'解锁 {m}？\n\n将允许再次编辑该月的交易。',
     lk_blocked:'🔒 {m} 已锁定 — 请在对账页解锁后再修改', lk_admin_only:'只有管理员可以锁定或解锁月份',
@@ -1705,7 +1715,7 @@ function doNav(p,btn){
   setTimeout(()=>{try{renderPage(p);}catch(e){console.error('render error',p,e);}},0);
 }
 function renderPage(p){
-  if(p==='entry'){renderDayStatus();return;}
+  if(p==='entry'){setSel('bl-month',[{v:'',l:tr('bl_allmonths')},...mopts().filter(o=>o.v)]);renderDayStatus();renderBankListing();return;}
   if(p==='pgk-entry'){
     setSel('pgk-tab-platform',S.platforms.map(pl=>pl.name));
     document.getElementById('pgk-tab-date').value=new Date().toISOString().slice(0,10);
@@ -2350,11 +2360,11 @@ function initForms(){
   if(mb)mb.innerHTML=S.myrBanks.map((b,i)=>`
     <div style="margin-bottom:${i<S.myrBanks.length-1?'12px':'0'}">
       <div style="font-size:12px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:7px"><span class="bdot" style="background:${b.color}"></span>${b.name}</div>
-      <div class="g3">
-        <div class="f"><label>Opening (MYR)</label><input type="number" id="mb-o-${i}" placeholder="0.00" step="0.01"><div id="mb-on-${i}" style="font-size:10px;color:var(--txt2);margin-top:3px"></div></div>
-        <div class="f"><label>Closing (MYR)</label><input type="number" id="mb-c-${i}" placeholder="0.00" step="0.01"></div>
-        <div class="f"><label>Remark</label><input type="text" id="mb-r-${i}" placeholder="optional"></div>
+      <div class="g2">
+        <div class="f"><label>${tr('bank_close_label')}</label><input type="number" id="mb-c-${i}" placeholder="0.00" step="0.01"></div>
+        <div class="f"><label>${tr('remark')}</label><input type="text" id="mb-r-${i}" placeholder="optional"></div>
       </div>
+      <div id="mb-on-${i}" style="font-size:10px;color:var(--txt2);margin-top:5px"></div>
       ${i<S.myrBanks.length-1?'<hr class="divider">':''}</div>`).join('');
   autoFillMyrOpens();
   renderFunders_entry();renderExch();renderAdj();
@@ -2382,40 +2392,35 @@ function renderDayStatus(){
     </div>
   </div>`;
 }
+// Opening for an RM bank = the most recent closing strictly before `date` (0 if none).
+function prevClose(bankName,date){
+  const prior=S.dayEntries.filter(d=>d.date<date&&(d.myrBanks||[]).some(x=>x.name===bankName&&(x.close||x.close===0)))
+    .sort((a,c)=>c.date.localeCompare(a.date))[0];
+  if(!prior)return{val:0,from:null};
+  const pb=prior.myrBanks.find(x=>x.name===bankName);
+  return{val:pb?(pb.close||0):0,from:prior.date};
+}
+function renderBankListing(){
+  const tbody=document.getElementById('bl-body');if(!tbody)return;
+  const fm=document.getElementById('bl-month')?.value||'';
+  const rows=[];
+  (S.dayEntries||[]).forEach(d=>{(d.myrBanks||[]).forEach(b=>{if(b.close||b.close===0)rows.push({date:d.date,name:b.name,close:b.close||0,remark:b.remark||''});});});
+  const filtered=rows.filter(r=>!fm||mk(r.date)===fm).sort((a,b)=>b.date.localeCompare(a.date)||a.name.localeCompare(b.name));
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="4" class="empty">${tr('bl_none')}</td></tr>`;return;}
+  tbody.innerHTML=filtered.map(r=>`<tr><td>${fD(r.date)}</td><td>${bDot(r.name)} ${r.name}</td><td style="font-weight:700">RM ${fmt(r.close)}</td><td style="color:var(--txt2)">${r.remark||'-'}</td></tr>`).join('');
+}
 function autoFillMyrOpens(){
   const date=document.getElementById('e-date')?.value||'';
   renderDayStatus();
   if(!date)return;
+  // No opening entry for RM banks — only closing. Show the carried opening as read-only info.
   S.myrBanks.forEach((b,i)=>{
-    const oEl=document.getElementById('mb-o-'+i),note=document.getElementById('mb-on-'+i);
-    if(!oEl)return;
-    // override link — opening is locked when carried/loaded; this unlocks it deliberately
-    const ovr=`<a onclick="overrideOpen(${i})" style="color:var(--bl);cursor:pointer;text-decoration:underline;margin-left:6px">🔓 ${tr('mb_override')}</a>`;
-    const today=S.dayEntries.find(d=>d.date===date);
-    const saved=(today?.myrBanks||[]).find(x=>x.name===b.name);
-    if(saved&&(saved.open||saved.open===0)&&saved.open!==''){
-      oEl.value=saved.open;oEl.readOnly=true;
-      if(note)note.innerHTML=`🔒 ${tr('mb_loaded')}${ovr}`;
-      return;
-    }
-    const prior=S.dayEntries.filter(d=>d.date<date&&(d.myrBanks||[]).some(x=>x.name===b.name&&x.close))
-      .sort((a,c)=>c.date.localeCompare(a.date))[0];
-    const pb=prior?prior.myrBanks.find(x=>x.name===b.name):null;
-    if(pb&&pb.close){
-      oEl.value=pb.close;oEl.readOnly=true;
-      if(note)note.innerHTML=`🔒 ${tr('mb_autofill').replace('{d}',fD(prior.date))}: <b>${fmt(pb.close)}</b>${ovr}`;
-    }else{
-      oEl.readOnly=false;
-      if(note)note.textContent=tr('mb_manual');
-    }
+    const note=document.getElementById('mb-on-'+i);if(!note)return;
+    const p=prevClose(b.name,date);
+    note.innerHTML=p.from
+      ? `${tr('mb_open_auto')}: <b>RM ${fmt(p.val)}</b> <span style="opacity:.7">(${tr('mb_from')} ${fD(p.from)})</span>`
+      : `${tr('mb_open_auto')}: <b>RM 0</b> <span style="opacity:.7">(${tr('mb_first')})</span>`;
   });
-}
-function overrideOpen(i){
-  const oEl=document.getElementById('mb-o-'+i);if(!oEl)return;
-  if(!confirm(tr('mb_override_confirm')))return;
-  oEl.readOnly=false;oEl.focus();oEl.select();
-  const note=document.getElementById('mb-on-'+i);
-  if(note)note.innerHTML=`<span style="color:var(--am)">⚠️ ${tr('mb_override_on')}</span>`;
 }
 function updExpCats(){const tid=document.getElementById('e-exp-type')?.value;const t=S.expTypes.find(t=>t.id===tid);setSel('e-exp-cat',(t?.cats||[]).map(c=>({v:c,l:c})));}
 
@@ -2623,7 +2628,7 @@ function renderSavedPlats(){
 function saveDay(){
   const date=document.getElementById('e-date').value;if(!date){showToast('Select date first',true);return;}
   if(lockBlocked(date))return;
-  const myrBanks=S.myrBanks.map((b,i)=>({name:b.name,open:n(document.getElementById('mb-o-'+i)?.value),close:n(document.getElementById('mb-c-'+i)?.value),remark:document.getElementById('mb-r-'+i)?.value||''}));
+  const myrBanks=S.myrBanks.map((b,i)=>({name:b.name,open:prevClose(b.name,date).val,close:n(document.getElementById('mb-c-'+i)?.value),remark:document.getElementById('mb-r-'+i)?.value||''}));
   const idx=S.dayEntries.findIndex(e=>e.date===date);
   if(idx>=0){
     S.dayEntries[idx].myrBanks=myrBanks;
@@ -2638,7 +2643,7 @@ function saveDay(){
   pendingDayFile=null;
   renderDayFilePreview();
   S.myrBanks.forEach((_,i)=>['o','c','r'].forEach(f=>{const el=document.getElementById('mb-'+f+'-'+i);if(el){el.value='';el.readOnly=false;}}));
-  renderDayStatus();
+  renderDayStatus();renderBankListing();
   showToast('MYR bank balances saved for '+fD(date)+' ✓');
 }
 
