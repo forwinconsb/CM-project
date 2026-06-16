@@ -47,6 +47,7 @@ body.readonly table .btn-sec{display:none!important}
 .mv{font-size:16px;font-weight:700}
 .pos{color:var(--gr)}.neg{color:var(--rd)}.warn{color:var(--am)}.pur{color:var(--pu)}
 .tw{overflow-x:auto}
+.fn-pos-cards{display:none}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th{text-align:left;padding:7px 9px;color:var(--txt2);border-bottom:1px solid var(--bdr);font-weight:700;white-space:nowrap;background:var(--bg3);font-size:11px}
 td{padding:7px 9px;border-bottom:1px solid var(--bdr);white-space:nowrap;font-size:12px}
@@ -132,6 +133,8 @@ details.collapse-card[open]>summary:before{content:'▾'}
   .tw td.empty{display:block;text-align:center;color:var(--txt2)}
   .tw td.empty::before{content:none}
   .tw td.hide-sm{display:none!important}
+  .fn-pos-wide{display:none}
+  .fn-pos-cards{display:block}
   .tw tr.row-tap::after{content:'👆 ⋯';display:block;width:100%;text-align:right;font-size:11px;color:var(--bl);margin-top:2px}
 }
 
@@ -3443,7 +3446,15 @@ function renderFundersTab(){
     html+=`<div class="pos-row${row.bold?' subtot':''}" style="grid-template-columns:${cols}"><div style="color:${row.bold?'var(--txt)':'var(--txt2)'}">${row.label}</div>${vals.map(v=>`<div class="cell-r" style="font-weight:${row.bold?700:400};color:${row.key==='_pct'?'var(--pu)':row.color||'var(--txt)'}">${row.key==='_pct'?v:(row.neg?'-':'')+' RM '+fmt(parseFloat(v)||0)}</div>`).join('')}<div class="cell-r" style="font-weight:${row.bold?700:400}">${tRow(row.key)}</div></div>`;
     if(row.key==='total_injected'){html+=`<div class="pos-row" style="grid-template-columns:${cols};padding:4px 10px"><div style="font-size:10px;color:var(--txt2)">Ownership</div>${names.map(nm=>{const pct=tI?(stats[nm].total_injected/tI*100):0;return`<div style="padding:0 5px"><div class="own-bar"><div class="own-fill" style="width:${pct}%"></div></div><div style="font-size:10px;color:var(--pu);text-align:right;margin-top:3px">${pct.toFixed(1)}%</div></div>`;}).join('')}<div></div></div>`;}
   });
-  setHTML('fn-pos-table',html+'</div>');
+  // Desktop: side-by-side matrix. Phone: one card per funder (CSS toggles which is shown).
+  const matrixHtml='<div class="fn-pos-wide">'+html+'</div></div>';
+  const cardsHtml='<div class="fn-pos-cards">'+names.map(nm=>{
+    const s=stats[nm];const pct=tI?(s.total_injected/tI*100):0;
+    let c=`<div style="border:1px solid var(--bdr);border-radius:var(--r);padding:10px;margin-bottom:9px"><div style="display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13px;margin-bottom:7px"><span>${nm}</span><span style="font-size:11px;color:var(--pu)">${pct.toFixed(1)}%</span></div>`;
+    rows.forEach(r=>{if(r.key==='_pct')return;const v=parseFloat(s[r.key])||0;c+=`<div class="pr ${r.bold?'ptot':'pi'}"><span style="color:var(--txt2)">${r.label}</span><span style="font-weight:${r.bold?700:400};color:${r.color||'var(--txt)'}">${(r.neg?'-':'')}RM ${fmt(v)}</span></div>`;});
+    c+='</div>';return c;
+  }).join('')+'</div>';
+  setHTML('fn-pos-table',matrixHtml+cardsHtml);
   const allForTab=isCumul?S.dayEntries.flatMap(d=>(d.funderTxns||[]).map(t=>({...t,date:d.date}))):cur;
   allForTab.sort((a,b)=>a.date.localeCompare(b.date));
   const displayRows=allForTab.filter(t=>!t.isAutoFromExpense||t._isExpenseRow);
