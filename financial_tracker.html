@@ -357,22 +357,32 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <button id="exp-tab-src-funder" onclick="setExpTabSrc('funder')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid var(--bdr2);background:none;color:var(--txt2);cursor:pointer" data-i18n="exp_funder_src">👤 Paid by funder (direct)</button>
     </div>
 
-    <!-- Bank expense fields -->
+    <!-- Bank expense fields — Payment Voucher style: header + line grid -->
     <div id="exp-tab-bank-fields">
+      <!-- Voucher header (applies to the whole payment) -->
       <div class="g4" style="margin-bottom:9px">
         <div class="f"><label data-i18n="date">Date</label><input type="date" id="exp-tab-date"></div>
-        <div class="f"><label data-i18n="paid_from">Paid from bank</label><select id="exp-tab-bank"></select></div>
-        <div class="f"><label data-i18n="type">Type</label><select id="exp-tab-type" onchange="updExpTabCats()"></select></div>
-        <div class="f"><label data-i18n="category">Category</label><select id="exp-tab-cat"></select></div>
+        <div class="f"><label data-i18n="exp_pay_by">Payment by (bank)</label><select id="exp-tab-bank" onchange="refreshExpBankBal()"></select></div>
+        <div class="f"><label data-i18n="exp_bank_bal_now">Bank balance</label><div id="exp-tab-bankbal" style="height:34px;display:flex;align-items:center;padding:0 9px;font-weight:700;background:var(--bg3);border:1px solid var(--bdr2);border-radius:var(--r);color:var(--gr)">RM —</div></div>
+        <div class="f"><label data-i18n="exp_voucher_no">Voucher no. (auto)</label><input type="text" id="exp-tab-ref" readonly style="background:var(--bg3);color:var(--txt2);font-family:monospace"></div>
       </div>
       <div class="g3" style="margin-bottom:9px">
-        <div class="f"><label data-i18n="amount">Amount (MYR)</label><input type="number" id="exp-tab-amt" placeholder="0.00" step="0.01"></div>
-        <div class="f"><label data-i18n="note">Note / Vendor</label><input type="text" id="exp-tab-note" placeholder="e.g. invoice no, supplier name"></div>
-        <div class="f"><label data-i18n="ref">Reference no. (auto)</label><input type="text" id="exp-tab-ref" readonly style="background:var(--bg3);color:var(--txt2);font-family:monospace"></div>
+        <div class="f"><label data-i18n="exp_pay_to">Payment to (payee)</label><input type="text" id="exp-tab-payee" placeholder="e.g. supplier / payee name"></div>
+        <div class="f"><label data-i18n="exp_cheque">Cheque / transfer no. (optional)</label><input type="text" id="exp-tab-cheque" placeholder="optional"></div>
+        <div class="f"><label data-i18n="exp_bank_charge">Bank charge (optional)</label><input type="number" id="exp-tab-bankcharge" placeholder="0.00" step="0.01"></div>
       </div>
-      <div class="g2" style="margin-bottom:9px">
+      <hr class="divider">
+      <div class="sl" style="margin-top:0" data-i18n="exp_lines_label">Lines — add one or more</div>
+      <!-- Line entry -->
+      <div class="g3" style="margin-bottom:9px">
+        <div class="f"><label data-i18n="type">Type</label><select id="exp-tab-type" onchange="updExpTabCats()"></select></div>
+        <div class="f"><label data-i18n="category">Category (G/L)</label><select id="exp-tab-cat"></select></div>
+        <div class="f"><label data-i18n="amount">Amount (MYR)</label><input type="number" id="exp-tab-amt" placeholder="0.00" step="0.01"></div>
+      </div>
+      <div class="g3" style="margin-bottom:9px">
+        <div class="f"><label data-i18n="note">Description / note</label><input type="text" id="exp-tab-note" placeholder="e.g. invoice no, detail"></div>
         <div class="f"><label data-i18n="exp_platform">Platform (optional)</label><select id="exp-tab-platform"></select></div>
-        <div class="f"><label data-i18n="exp_accrual">Expense month (optional — if different from payment date)</label><input type="month" id="exp-tab-accrual"></div>
+        <div class="f"><label data-i18n="exp_accrual">Expense month (optional)</label><input type="month" id="exp-tab-accrual"></div>
       </div>
       <div class="f" style="margin-bottom:9px"><label data-i18n="attach">Attach receipt / invoice / PDF</label>
         <input type="file" id="exp-tab-file" accept="image/*,.pdf" style="display:none" onchange="handleExpTabFile(this)">
@@ -908,6 +918,9 @@ const LANG = {
     exp_save:'💾 Save expense', exp_all:'All expenses',
     exp_add_line:'+ Add another line (same payment)', exp_lines_pending:'Lines in this payment', exp_lines_saved:'lines saved ✓',
     exp_add_more:'➕ Add another expense (same date & bank)', exp_add_line_hint:'Add the next line, then press Save expense.',
+    exp_pay_by:'Payment by (bank)', exp_bank_bal_now:'Bank balance', exp_voucher_no:'Voucher no. (auto)',
+    exp_pay_to:'Payment to (payee)', exp_cheque:'Cheque / transfer no. (optional)',
+    exp_bank_charge:'Bank charge (optional)', exp_bank_charge_cat:'Bank charge', exp_lines_label:'Lines — add one or more',
     cf_bank_bal:'🏦 Bank balances (computed)', cf_balance:'Balance',
     cf_bank_bal_note:'Balance = opening (last month’s statement) + in − out for this period. Book figure — confirm against the bank statement in the Reconciliation tab.',
     exp_search_ph:'🔍 Search ref, category, note...',
@@ -1152,6 +1165,9 @@ const LANG = {
     exp_save:'💾 保存费用', exp_all:'所有费用',
     exp_add_line:'+ 添加另一笔（同一付款）', exp_lines_pending:'本次付款的明细', exp_lines_saved:'笔已保存 ✓',
     exp_add_more:'➕ 添加另一笔费用（同日期和银行）', exp_add_line_hint:'填写下一笔，然后按“保存费用”。',
+    exp_pay_by:'付款银行', exp_bank_bal_now:'银行余额', exp_voucher_no:'凭证号（自动）',
+    exp_pay_to:'收款方', exp_cheque:'支票/转账号（可选）',
+    exp_bank_charge:'银行手续费（可选）', exp_bank_charge_cat:'银行手续费', exp_lines_label:'明细 — 添加一条或多条',
     cf_bank_bal:'🏦 银行余额（计算）', cf_balance:'余额',
     cf_bank_bal_note:'余额 = 期初（上月对账单）+ 本期收入 − 支出。账面数字 — 请在对账标签页与银行对账单核对。',
     exp_search_ph:'🔍 搜索参考号、类别、备注...',
@@ -2176,6 +2192,21 @@ function renderExpTabPending(){
 }
 let pendingExpTabFile=null;
 
+function bankBalanceNow(bankName){
+  // Anchor at the latest entered statement balance for this bank, then add ledger movements after that month.
+  let anchorMonth='',bal=0;
+  Object.keys(S.stmtBalances||{}).forEach(k=>{const i=k.indexOf('||');if(i<0)return;const b=k.slice(0,i),m=k.slice(i+2);if(b===bankName&&m>anchorMonth){anchorMonth=m;bal=S.stmtBalances[k];}});
+  S.dayEntries.forEach(d=>{if(anchorMonth&&mk(d.date)<=anchorMonth)return;buildLedger(d.date,d).forEach(t=>{if(t.bank===bankName)bal+=t.in-t.out;});});
+  return bal;
+}
+function refreshExpBankBal(){
+  const el=document.getElementById('exp-tab-bankbal');if(!el)return;
+  const bank=document.getElementById('exp-tab-bank')?.value||'';
+  if(!bank){el.textContent='RM —';return;}
+  const b=bankBalanceNow(bank);
+  el.textContent='RM '+fmt(b);
+  el.style.color=b>=0?'var(--gr)':'var(--rd)';
+}
 function initExpTab(){
   const today=new Date().toISOString().slice(0,10);
   ['exp-tab-date','exp-tab-date-f'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.value)el.value=today;});
@@ -2186,6 +2217,7 @@ function initExpTab(){
   setSel('exp-tab-platform',[{v:'',l:tr('exp_no_platform')},...S.platforms.map(p=>({v:p.name,l:p.name}))]);
   setSel('exp-tab-platform-f',[{v:'',l:tr('exp_no_platform')},...S.platforms.map(p=>({v:p.name,l:p.name}))]);
   updExpTabCats();updExpTabCatsF();
+  refreshExpBankBal();
   // auto refs
   const refEl=document.getElementById('exp-tab-ref');if(refEl)refEl.value=genRef('EXP');
   const refElF=document.getElementById('exp-tab-ref-f');if(refElF)refElF.value=genRef('EXP');
@@ -2248,6 +2280,14 @@ function saveExpTxn(){
     if(cat&&amt){const t=S.expTypes.find(t=>t.id===tid);exps.push({paySource:'bank',bank,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform,accrualMonth:accrual});}
     if(!exps.length){showToast('Add at least one line (category & amount)',true);return;}
     if(pendingExpTabFile)exps[0].attachment=pendingExpTabFile; // receipt attaches to the first line
+    // Voucher header: payee, cheque no, bank charge
+    const payee=document.getElementById('exp-tab-payee')?.value||'';
+    const chequeNo=document.getElementById('exp-tab-cheque')?.value||'';
+    const bankCharge=n(document.getElementById('exp-tab-bankcharge')?.value);
+    // Bank charge becomes its own line under the same voucher (keeps bank balance & P&L correct)
+    if(bankCharge>0)exps.push({paySource:'bank',bank,type:'',typeName:tr('exp_bank_charge_cat'),typeColor:'#7A7A7A',plSection:'other',cat:tr('exp_bank_charge_cat'),amt:bankCharge,note:chequeNo?('Cheque '+chequeNo):'',platform:'',accrualMonth:accrual});
+    // header fields applied to every line of the voucher
+    exps.forEach(x=>{x.payee=payee;x.chequeNo=chequeNo;});
     // ONE shared reference for the whole payment; each line keeps its own unique id
     const payRef=genRef('EXP');
     exps.forEach((x,i)=>{x.ref=payRef;x.id='XID-'+Date.now().toString(36)+i+Math.random().toString(36).slice(2,5);});
@@ -2283,6 +2323,7 @@ function saveExpTxn(){
   document.getElementById(isFunder?'exp-tab-note-f':'exp-tab-note').value='';
   const acEl=document.getElementById(isFunder?'exp-tab-accrual-f':'exp-tab-accrual');if(acEl)acEl.value='';
   document.getElementById(isFunder?'exp-tab-file-preview-f':'exp-tab-file-preview').innerHTML='';
+  if(!isFunder){['exp-tab-payee','exp-tab-cheque','exp-tab-bankcharge'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});refreshExpBankBal();}
   // Refresh ref
   const newRef=genRef('EXP');
   const re=document.getElementById('exp-tab-ref');if(re)re.value=newRef;
@@ -2320,7 +2361,7 @@ function renderExpListing(){
   tbody.innerHTML=filtered.map(e=>`<tr class="row-tap" style="cursor:pointer" onclick="openExpEditModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">
     <td class="hide-sm" style="font-family:monospace;font-size:11px;color:var(--bl);font-weight:600">${e.ref||'—'}</td>
     <td>${fD(e.date)}${e.accrualMonth&&e.accrualMonth!==mk(e.date)?` <span class="pl-badge">📅 ${tr('exp_for')} ${ml(e.accrualMonth)}</span>`:''}</td>
-    <td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:${e.typeColor||'#888'};display:inline-block"></span>${e.cat}${e.platform?` <span class="pl-badge">🎮 ${e.platform}</span>`:''}</span></td>
+    <td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:${e.typeColor||'#888'};display:inline-block"></span>${e.cat}${e.platform?` <span class="pl-badge">🎮 ${e.platform}</span>`:''}${e.payee?` <span style="color:var(--txt2);font-size:11px">→ ${e.payee}</span>`:''}</span></td>
     <td class="hide-sm" style="color:var(--txt2);font-size:11px">${e.typeName||'-'}</td>
     <td style="font-weight:700;color:var(--rd)">-RM ${fmt(e.amt)}</td>
     <td>${e.paySource==='funder'?`<span style="font-size:10px;color:#7B1FA2;font-weight:600;background:#F3E5F5;padding:2px 7px;border-radius:20px">👤 ${e.funderName}</span>`:(bDot(e.bank)+' <span style="font-size:11px">'+e.bank+'</span>')}</td>
@@ -2344,6 +2385,8 @@ function openExpEditModal(e){
       <div class="f"><label data-i18n="exp_accrual_short">Expense month (optional)</label><input type="month" id="edit-exp-accrual" value="${e.accrualMonth||''}"></div>
       <div class="f"><label data-i18n="exp_platform">Platform (optional)</label><select id="edit-exp-platform"><option value="">${tr('exp_no_platform')}</option>${S.platforms.map(p=>`<option value="${p.name}" ${p.name===e.platform?'selected':''}>${p.name}</option>`).join('')}</select></div>
       ${e.paySource==='bank'?`<div class="f"><label>Paid from bank</label><select id="edit-exp-bank">${S.myrBanks.map(b=>`<option value="${b.name}" ${b.name===e.bank?'selected':''}>${b.name}</option>`).join('')}</select></div>`:`<div class="f"><label>Funder</label><select id="edit-exp-funder">${S.funders.map(f=>`<option value="${f.name}" ${f.name===e.funderName?'selected':''}>${f.name}</option>`).join('')}</select></div>`}
+      <div class="f"><label data-i18n="exp_pay_to">Payment to (payee)</label><input type="text" id="edit-exp-payee" value="${(e.payee||'').replace(/"/g,'&quot;')}"></div>
+      <div class="f"><label data-i18n="exp_cheque">Cheque / transfer no.</label><input type="text" id="edit-exp-cheque" value="${(e.chequeNo||'').replace(/"/g,'&quot;')}"></div>
     </div>
     ${e.attachment?`<div class="modal-section">Current attachment</div>
       ${isImg?`<img src="${e.attachment.data}" class="modal-img" style="cursor:pointer" onclick="viewAttachment(${JSON.stringify(e.attachment).replace(/"/g,'&quot;')})">`:
@@ -2386,6 +2429,8 @@ function saveExpEdit(orig){
     note:document.getElementById('edit-exp-note')?.value||'',
     accrualMonth:document.getElementById('edit-exp-accrual')?.value||'',
     platform:document.getElementById('edit-exp-platform')?.value||'',
+    payee:document.getElementById('edit-exp-payee')?.value||'',
+    chequeNo:document.getElementById('edit-exp-cheque')?.value||'',
     bank:orig.paySource==='bank'?(document.getElementById('edit-exp-bank')?.value||orig.bank):null,
     funderName:orig.paySource==='funder'?(document.getElementById('edit-exp-funder')?.value||orig.funderName):null
   };
@@ -2423,8 +2468,8 @@ function deleteExpTxn(dayIdx,expIdx){
 function exportExpCSV(){
   const all=S.dayEntries.flatMap(d=>(d.expenses||[]).map(e=>({...e,date:d.date}))).sort((a,b)=>b.date.localeCompare(a.date));
   if(!all.length){showToast('No data',true);return;}
-  let csv='Ref,Date,Type,Category,Platform,Amount MYR,Paid By,Note\n';
-  all.forEach(e=>{csv+=`${e.ref||''},${e.date},${e.typeName||''},${e.cat},${e.platform||''},${e.amt},${e.paySource==='funder'?e.funderName:e.bank||''},${(e.note||'').replace(/,/g,' ')}\n`;});
+  let csv='Ref,Date,Type,Category,Platform,Payee,Cheque,Amount MYR,Paid By,Note\n';
+  all.forEach(e=>{csv+=`${e.ref||''},${e.date},${e.typeName||''},${e.cat},${e.platform||''},${(e.payee||'').replace(/,/g,' ')},${(e.chequeNo||'').replace(/,/g,' ')},${e.amt},${e.paySource==='funder'?e.funderName:e.bank||''},${(e.note||'').replace(/,/g,' ')}\n`;});
   dlFile(csv,'text/csv','expenses.csv');showToast('CSV exported ✓');
 }
 function exportExpPDF(){
