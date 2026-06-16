@@ -374,6 +374,8 @@ details.collapse-card[open]>summary:before{content:'▾'}
         <button class="attach-btn" onclick="document.getElementById('exp-tab-file').click()" style="height:36px" data-i18n="attach">📎 Attach file</button>
       </div>
       <div id="exp-tab-file-preview" style="margin-bottom:9px"></div>
+      <div id="exp-tab-pending" style="margin-bottom:9px"></div>
+      <button class="btn-add" onclick="addExpLine()" data-i18n="exp_add_line">+ Add another line (same payment)</button>
     </div>
 
     <!-- Funder direct fields -->
@@ -487,6 +489,10 @@ details.collapse-card[open]>summary:before{content:'▾'}
   </div>
   <div id="cf-metrics" class="metrics"></div>
   <div class="card"><div class="ct" data-i18n="cf_chart_title">Daily trend - deposit (bars) &amp; win/lose (line)</div><div id="cf-chart"></div></div>
+  <div class="card"><div class="ct" data-i18n="cf_bank_bal">🏦 Bank balances (computed)</div>
+    <div class="tw"><table><thead><tr><th data-i18n="bank">Bank</th><th style="text-align:right" data-i18n="bank_open">Opening</th><th style="text-align:right" data-i18n="cf_in">In</th><th style="text-align:right" data-i18n="cf_out">Out</th><th style="text-align:right" data-i18n="cf_balance">Balance</th><th style="text-align:right" data-i18n="rc_col_stmt">Statement</th></tr></thead><tbody id="cf-bankbal-body"><tr><td colspan="6" class="empty">No data yet</td></tr></tbody></table></div>
+    <div style="font-size:10px;color:var(--txt2);margin-top:6px" data-i18n="cf_bank_bal_note">Balance = opening (last month's statement) + in − out for this period. Book figure — confirm against the bank statement in the Reconciliation tab.</div>
+  </div>
   <div class="card"><div class="ct" data-i18n="lbl_plat_perf">Platform performance (PGK)</div>
     <div class="tw"><table><thead><tr><th data-i18n="pgk_platform">Platform</th><th data-i18n="col_deposit">Deposit</th><th data-i18n="col_withdraw">Withdraw</th><th data-i18n="win_lose">Win / Lose</th><th data-i18n="cf_count">Count</th><th></th></tr></thead><tbody id="cf-plat-body"><tr><td colspan="6" class="empty">No data yet</td></tr></tbody></table></div>
   </div>
@@ -720,11 +726,13 @@ details.collapse-card[open]>summary:before{content:'▾'}
     <div id="s-accounts"></div>
     <hr class="divider">
     <div class="sl" style="margin-top:0" data-i18n="st_add_edit_acct">Add / edit account</div>
-    <div class="g3" style="margin-bottom:9px">
+    <div class="g4" style="margin-bottom:9px">
       <div class="f"><label data-i18n="st_name">Name</label><input type="text" id="acct-name" placeholder="e.g. Operator 1"></div>
-      <div class="f"><label data-i18n="st_pin">PIN (4–6 digits)</label><input type="text" id="acct-pin" inputmode="numeric" placeholder="e.g. 1234"></div>
+      <div class="f"><label data-i18n="st_email">Login email (online)</label><input type="email" id="acct-email" placeholder="e.g. operator@you.com"></div>
+      <div class="f"><label data-i18n="st_pin">PIN (offline, optional)</label><input type="text" id="acct-pin" inputmode="numeric" placeholder="e.g. 1234"></div>
       <div class="f"><label data-i18n="st_role">Role</label><select id="acct-role" onchange="acctRolePreset()"><option value="operator" data-i18n="st_role_op">Operator (entry only)</option><option value="manager" data-i18n="st_role_mgr">Manager (entry + reports)</option><option value="funder" data-i18n="st_role_funder">Funder (view only)</option><option value="admin" data-i18n="st_role_admin">Admin (everything)</option><option value="custom" data-i18n="st_role_custom">Custom</option></select></div>
     </div>
+    <div style="font-size:10px;color:var(--txt2);margin-bottom:8px" data-i18n="st_email_hint">💡 Online: the Login email must match the email you created in Supabase — that person then gets this role &amp; tabs. Leave your OWN email blank/unlisted to stay Admin.</div>
     <div style="font-size:10px;color:var(--txt2);margin-bottom:5px" data-i18n="st_allowed_tabs">Allowed tabs (role sets these; adjust for custom):</div>
     <div id="acct-tabs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:5px;margin-bottom:10px"></div>
     <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:10px"><input type="checkbox" id="acct-viewonly"> <span data-i18n="st_viewonly">View only — can see the allowed tabs but cannot add, edit or delete data</span></label>
@@ -893,6 +901,9 @@ const LANG = {
     exp_title:'Expenses', exp_info:'Record all MYR expenses. Attach receipts per transaction.',
     exp_bank_src:'🏦 Paid from MYR bank', exp_funder_src:'👤 Paid by funder (direct)',
     exp_save:'💾 Save expense', exp_all:'All expenses',
+    exp_add_line:'+ Add another line (same payment)', exp_lines_pending:'Lines in this payment', exp_lines_saved:'lines saved ✓',
+    cf_bank_bal:'🏦 Bank balances (computed)', cf_balance:'Balance',
+    cf_bank_bal_note:'Balance = opening (last month’s statement) + in − out for this period. Book figure — confirm against the bank statement in the Reconciliation tab.',
     exp_search_ph:'🔍 Search ref, category, note...',
     exp_funder_note:'Funder pays vendor directly — auto-creates a matching capital injection. No bank movement.',
     paid_from:'Bank Paid', paid_by_funder:'Paid by funder',
@@ -956,7 +967,8 @@ const LANG = {
     ex_pgk_myr:'Exchange PGK→MYR', ex_myr_pgk:'Exchange MYR→PGK', ex_pay_received:'Payment received',
     st_users:'Users & Access', st_banks_platforms:'Banks & Platforms', st_exch_rates:'Exchange & Rates', st_general:'General & Data',
     st_users_desc:'Create accounts and choose which tabs each can see. Operators see only entry tabs; managers see reports; admins see everything. Note: role separation, not bulletproof security for a single HTML file.',
-    st_add_edit_acct:'Add / edit account', st_name:'Name', st_pin:'PIN (4-6 digits)', st_role:'Role',
+    st_add_edit_acct:'Add / edit account', st_name:'Name', st_pin:'PIN (offline, optional)', st_role:'Role',
+    st_email:'Login email (online)', st_email_hint:'💡 Online: the Login email must match the email you created in Supabase — that person then gets this role & tabs. Leave your OWN email blank/unlisted to stay Admin.',
     st_role_op:'Operator (entry only)', st_role_mgr:'Manager (entry + reports)', st_role_funder:'Funder (view only)', st_role_admin:'Admin (everything)', st_role_custom:'Custom',
     st_viewonly:'View only — can see the allowed tabs but cannot add, edit or delete data', st_viewonly_tag:'view only',
     st_allowed_tabs:'Allowed tabs (role sets these; adjust for custom):', st_create_acct:'+ Create account', st_update_acct:'Update account', st_clear:'Clear',
@@ -1132,6 +1144,9 @@ const LANG = {
     exp_title:'费用', exp_info:'记录所有MYR费用。每笔交易可附上收据。',
     exp_bank_src:'🏦 从MYR银行支付', exp_funder_src:'👤 资金方直接支付',
     exp_save:'💾 保存费用', exp_all:'所有费用',
+    exp_add_line:'+ 添加另一笔（同一付款）', exp_lines_pending:'本次付款的明细', exp_lines_saved:'笔已保存 ✓',
+    cf_bank_bal:'🏦 银行余额（计算）', cf_balance:'余额',
+    cf_bank_bal_note:'余额 = 期初（上月对账单）+ 本期收入 − 支出。账面数字 — 请在对账标签页与银行对账单核对。',
     exp_search_ph:'🔍 搜索参考号、类别、备注...',
     exp_funder_note:'资金方直接向供应商付款 — 自动创建对应的资本注入记录。无银行转账。',
     paid_from:'从银行支付', paid_by_funder:'资金方支付',
@@ -1195,7 +1210,8 @@ const LANG = {
     ex_pgk_myr:'兑换 PGK→MYR', ex_myr_pgk:'兑换 MYR→PGK', ex_pay_received:'已收款',
     st_users:'用户与权限', st_banks_platforms:'银行与平台', st_exch_rates:'兑换与汇率', st_general:'通用与数据',
     st_users_desc:'创建账户并选择每个账户可见的标签页。操作员只见录入页；经理见报表；管理员见全部。注意：仅为权限分隔，单文件网页非绝对安全。',
-    st_add_edit_acct:'添加 / 编辑账户', st_name:'名称', st_pin:'PIN（4-6位数字）', st_role:'角色',
+    st_add_edit_acct:'添加 / 编辑账户', st_name:'名称', st_pin:'PIN（离线，可选）', st_role:'角色',
+    st_email:'登录邮箱（在线）', st_email_hint:'💡 在线模式：登录邮箱必须与你在 Supabase 创建的邮箱一致 — 该用户即获得此角色和标签页权限。把你自己的邮箱留空/不填即可保持管理员权限。',
     st_role_op:'操作员（仅录入）', st_role_mgr:'经理（录入+报表）', st_role_funder:'投资人（只看）', st_role_admin:'管理员（全部）', st_role_custom:'自定义',
     st_viewonly:'只看 — 可查看允许的标签页，但不能新增、编辑或删除数据', st_viewonly_tag:'只看',
     st_allowed_tabs:'允许的标签页（角色已预设；自定义可调整）：', st_create_acct:'+ 创建账户', st_update_acct:'更新账户', st_clear:'清除',
@@ -1667,7 +1683,7 @@ function renderAccounts(){
   if(card)card.style.display=isAdminCtx()?'':'none';
   const list=document.getElementById('s-accounts');if(!list)return;
   list.innerHTML=(S.accounts||[]).length?S.accounts.map(a=>`<div class="setting-row">
-    <span><b>${a.name}</b> <span style="font-size:10px;color:var(--txt2)">${a.role} · ${a.role==='admin'?'all tabs':(a.tabs||[]).length+' tabs'}${a.viewOnly?' · 👁 '+tr('st_viewonly_tag'):''}</span></span>
+    <span><b>${a.name}</b> <span style="font-size:10px;color:var(--txt2)">${a.role} · ${a.role==='admin'?'all tabs':(a.tabs||[]).length+' tabs'}${a.viewOnly?' · 👁 '+tr('st_viewonly_tag'):''}${a.email?' · ✉ '+a.email:''}</span></span>
     <span><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="editAccount('${a.id}')">✏️</button><button class="del" onclick="deleteAccount('${a.id}')">🗑</button></span>
   </div>`).join(''):`<div class="empty">No accounts yet — app opens with no login. Create an Admin account to enable sign-in.</div>`;
   const tabBox=document.getElementById('acct-tabs');
@@ -1678,30 +1694,33 @@ function renderAccounts(){
 }
 function clearAcctForm(){
   acctEditId=null;
-  const n=document.getElementById('acct-name'),p=document.getElementById('acct-pin'),r=document.getElementById('acct-role');
-  if(n)n.value='';if(p)p.value='';if(r)r.value='operator';acctRolePreset();
+  const n=document.getElementById('acct-name'),p=document.getElementById('acct-pin'),r=document.getElementById('acct-role'),em=document.getElementById('acct-email');
+  if(n)n.value='';if(p)p.value='';if(em)em.value='';if(r)r.value='operator';acctRolePreset();
   const btn=document.getElementById('acct-save-btn');if(btn)btn.textContent='+ Create account';
 }
 function saveAccount(){
   const name=document.getElementById('acct-name')?.value.trim();
   const pin=document.getElementById('acct-pin')?.value.trim();
+  const email=(document.getElementById('acct-email')?.value||'').trim().toLowerCase();
   const role=document.getElementById('acct-role')?.value||'operator';
   if(!name){showToast('Enter a name',true);return;}
-  if(!/^\d{4,6}$/.test(pin)){showToast('PIN must be 4–6 digits',true);return;}
+  if(pin&&!/^\d{4,6}$/.test(pin)){showToast('PIN must be 4–6 digits (or leave blank for online-only)',true);return;}
+  if(email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){showToast('Enter a valid email',true);return;}
   const tabs=ALL_TABS.filter(t=>document.getElementById('acct-tab-'+t.id)?.checked).map(t=>t.id);
   const viewOnly=!!document.getElementById('acct-viewonly')?.checked;
   const others=(S.accounts||[]).filter(a=>a.id!==acctEditId);
   if(others.some(a=>a.name.toLowerCase()===name.toLowerCase())){showToast('Name already exists',true);return;}
+  if(email&&others.some(a=>(a.email||'').toLowerCase()===email)){showToast('That email is already assigned',true);return;}
   if(!acctEditId&&!others.length&&role!=='admin'){showToast('The first account must be Admin (so you can manage users)',true);return;}
   if(acctEditId){
     const a=S.accounts.find(x=>x.id===acctEditId);
     // prevent removing the last admin
     if(a.role==='admin'&&role!=='admin'&&S.accounts.filter(x=>x.role==='admin').length===1){showToast('Cannot demote the only Admin',true);return;}
-    Object.assign(a,{name,pin,role,tabs,viewOnly});
+    Object.assign(a,{name,pin,email,role,tabs,viewOnly});
   }else{
     if(!S.accounts)S.accounts=[];
     const uid='USR-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-    S.accounts.push({id:uid,name,pin,role,tabs,viewOnly});
+    S.accounts.push({id:uid,name,pin,email,role,tabs,viewOnly});
   }
   persist();clearAcctForm();renderAccounts();
   showToast('Account saved ✓');
@@ -1710,7 +1729,8 @@ function editAccount(id){
   const a=(S.accounts||[]).find(x=>x.id===id);if(!a)return;
   acctEditId=id;
   document.getElementById('acct-name').value=a.name;
-  document.getElementById('acct-pin').value=a.pin;
+  document.getElementById('acct-pin').value=a.pin||'';
+  const em=document.getElementById('acct-email');if(em)em.value=a.email||'';
   document.getElementById('acct-role').value=a.role;
   ALL_TABS.forEach(t=>{const cb=document.getElementById('acct-tab-'+t.id);if(cb)cb.checked=(a.role==='admin'?true:(a.tabs||[]).includes(t.id));});
   const vo=document.getElementById('acct-viewonly');if(vo)vo.checked=!!a.viewOnly;
@@ -2118,6 +2138,34 @@ function exportFndPDF(){
 // ── EXPENSES TAB ──
 // ══════════════════════════════════════════════════
 let expTabSrc='bank';
+let expTabPending=[];
+function addExpLine(){
+  const bank=document.getElementById('exp-tab-bank')?.value||'';
+  const tid=document.getElementById('exp-tab-type')?.value||'';
+  const cat=document.getElementById('exp-tab-cat')?.value||'';
+  const amt=n(document.getElementById('exp-tab-amt')?.value);
+  const note=document.getElementById('exp-tab-note')?.value||'';
+  const platform=document.getElementById('exp-tab-platform')?.value||'';
+  if(!cat||!amt){showToast('Select category & enter amount',true);return;}
+  const t=S.expTypes.find(t=>t.id===tid);
+  expTabPending.push({bank,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform});
+  document.getElementById('exp-tab-amt').value='';document.getElementById('exp-tab-note').value='';
+  renderExpTabPending();
+}
+function removeExpLine(i){expTabPending.splice(i,1);renderExpTabPending();}
+function renderExpTabPending(){
+  const el=document.getElementById('exp-tab-pending');if(!el)return;
+  if(!expTabPending.length){el.innerHTML='';return;}
+  const tot=expTabPending.reduce((s,e)=>s+e.amt,0);
+  el.innerHTML=`<div style="border:1px solid var(--bdr);border-radius:var(--r);padding:8px">
+    <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:6px">${tr('exp_lines_pending')}</div>
+    ${expTabPending.map((e,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:3px 0;font-size:12px">
+      <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="width:8px;height:8px;border-radius:2px;background:${e.typeColor};display:inline-block;margin-right:5px"></span>${e.cat}${e.platform?` <span class="pl-badge">🎮 ${e.platform}</span>`:''}${e.note?' — '+e.note:''}</span>
+      <span style="display:flex;align-items:center;gap:8px;flex-shrink:0"><b style="color:var(--rd)">-RM ${fmt(e.amt)}</b><button class="del" onclick="removeExpLine(${i})">🗑</button></span>
+    </div>`).join('')}
+    <div style="display:flex;justify-content:flex-end;border-top:1px solid var(--bdr);margin-top:5px;padding-top:5px;font-size:12px;font-weight:700">${tr('lbl_total')}: <span style="color:var(--rd);margin-left:6px">-RM ${fmt(tot)}</span></div>
+  </div>`;
+}
 let pendingExpTabFile=null;
 
 function initExpTab(){
@@ -2177,20 +2225,23 @@ function saveExpTxn(){
   const date=document.getElementById(dateId)?.value;if(!date){showToast('Select date',true);return;}
   if(lockBlocked(date))return;
   const accrual=document.getElementById(isFunder?'exp-tab-accrual-f':'exp-tab-accrual')?.value||'';
-  const ref=document.getElementById(isFunder?'exp-tab-ref-f':'exp-tab-ref')?.value||genRef('EXP');
-  let exp;
+  // Build the list of expense lines to save (bank branch supports multiple lines in one payment).
+  const exps=[];
   if(!isFunder){
     const bank=document.getElementById('exp-tab-bank')?.value||'';
+    // queued lines first
+    expTabPending.forEach(p=>exps.push({paySource:'bank',bank:p.bank||bank,type:p.type,typeName:p.typeName,typeColor:p.typeColor,plSection:p.plSection,cat:p.cat,amt:p.amt,note:p.note,platform:p.platform,accrualMonth:accrual}));
+    // plus the current form line, if it's filled in
     const tid=document.getElementById('exp-tab-type')?.value||'';
     const cat=document.getElementById('exp-tab-cat')?.value||'';
     const amt=n(document.getElementById('exp-tab-amt')?.value);
     const note=document.getElementById('exp-tab-note')?.value||'';
     const platform=document.getElementById('exp-tab-platform')?.value||'';
-    if(!cat||!amt){showToast('Select category & enter amount',true);return;}
-    const t=S.expTypes.find(t=>t.id===tid);
-    exp={paySource:'bank',bank,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform,ref,accrualMonth:accrual};
-    if(pendingExpTabFile){exp.attachment=pendingExpTabFile;}
+    if(cat&&amt){const t=S.expTypes.find(t=>t.id===tid);exps.push({paySource:'bank',bank,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform,accrualMonth:accrual});}
+    if(!exps.length){showToast('Add at least one line (category & amount)',true);return;}
+    if(pendingExpTabFile)exps[0].attachment=pendingExpTabFile; // receipt attaches to the first line
   }else{
+    const ref=document.getElementById('exp-tab-ref-f')?.value||genRef('EXP');
     const funderName=document.getElementById('exp-tab-funder')?.value||'';
     const tid=document.getElementById('exp-tab-type-f')?.value||'';
     const cat=document.getElementById('exp-tab-cat-f')?.value||'';
@@ -2199,27 +2250,24 @@ function saveExpTxn(){
     const platform=document.getElementById('exp-tab-platform-f')?.value||'';
     if(!funderName||!cat||!amt){showToast('Select funder, category & amount',true);return;}
     const t=S.expTypes.find(t=>t.id===tid);
-    exp={paySource:'funder',funderName,bank:null,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform,ref,accrualMonth:accrual};
+    const exp={paySource:'funder',funderName,bank:null,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform,ref,accrualMonth:accrual};
     if(pendingExpTabFile)exp.attachment=pendingExpTabFile;
+    exps.push(exp);
   }
-  // Save to day entry
-  const idx=S.dayEntries.findIndex(e=>e.date===date);
-  if(idx>=0){
-    if(!S.dayEntries[idx].expenses)S.dayEntries[idx].expenses=[];
-    S.dayEntries[idx].expenses.push(exp);
-    S.dayEntries[idx].totalExp=(S.dayEntries[idx].expenses||[]).reduce((s,e)=>s+e.amt,0);
-    // Auto-inject funder txn if funder-paid
-    if(isFunder){
-      if(!S.dayEntries[idx].funderTxns)S.dayEntries[idx].funderTxns=[];
-      S.dayEntries[idx].funderTxns.push({funder:exp.funderName,type:'injection',amount:exp.amt,bank:'direct',desc:'Direct payment — '+exp.cat+(exp.note?' ('+exp.note+')':''),isAutoFromExpense:true,ref:'AUTO-'+ref});
-    }
-  }else{
-    const autoTxns=isFunder?[{funder:exp.funderName,type:'injection',amount:exp.amt,bank:'direct',desc:'Direct payment — '+exp.cat+(exp.note?' ('+exp.note+')':''),isAutoFromExpense:true,ref:'AUTO-'+ref}]:[];
-    S.dayEntries.push({date,exchanges:[],myrBanks:[],funderTxns:autoTxns,expenses:[exp],totalExp:exp.amt});
-    S.dayEntries.sort((a,b)=>a.date.localeCompare(b.date));
-  }
+  // Save all lines to the day entry
+  let day=S.dayEntries.find(e=>e.date===date);
+  if(!day){day={date,exchanges:[],myrBanks:[],funderTxns:[],expenses:[],totalExp:0};S.dayEntries.push(day);S.dayEntries.sort((a,b)=>a.date.localeCompare(b.date));}
+  if(!day.expenses)day.expenses=[];
+  if(!day.funderTxns)day.funderTxns=[];
+  exps.forEach(exp=>{
+    if(!exp.ref)exp.ref=genRef('EXP'); // unique ref per line (computed after prior lines are in)
+    day.expenses.push(exp);
+    if(exp.paySource==='funder')day.funderTxns.push({funder:exp.funderName,type:'injection',amount:exp.amt,bank:'direct',desc:'Direct payment — '+exp.cat+(exp.note?' ('+exp.note+')':''),isAutoFromExpense:true,ref:'AUTO-'+exp.ref});
+  });
+  day.totalExp=day.expenses.reduce((s,e)=>s+e.amt,0);
   persist();
   pendingExpTabFile=null;
+  expTabPending=[];renderExpTabPending();
   // Clear form fields
   document.getElementById(isFunder?'exp-tab-amt-f':'exp-tab-amt').value='';
   document.getElementById(isFunder?'exp-tab-note-f':'exp-tab-note').value='';
@@ -2230,7 +2278,7 @@ function saveExpTxn(){
   const re=document.getElementById('exp-tab-ref');if(re)re.value=newRef;
   const reF=document.getElementById('exp-tab-ref-f');if(reF)reF.value=newRef;
   renderExpListing();
-  showToast(ref+' saved ✓');
+  showToast(exps.length>1?(exps.length+' '+tr('exp_lines_saved')):(exps[0].ref+' saved ✓'));
 }
 function renderExpListing(){
   const search=(document.getElementById('exp-search')?.value||'').toLowerCase();
@@ -3020,6 +3068,18 @@ function renderCF(){
   const typeKeys=Object.keys(typeG);
   setHTML('cf-myr-body',!typeKeys.length?`<tr><td colspan="6" class="empty">${tr('no_entries')} — ${rangeLabel}</td></tr>`:
     typeKeys.map(k=>{const g=typeG[k];const net=g.in-g.out;return`<tr style="cursor:pointer" onclick="cfMyrDetail('${k}')"><td><span class="tag ${k==='exchange'?'tag-exch':k==='funder'?'tag-fund':'tag-exp'}">${tr('cf_type_'+k)||k}</span></td><td style="color:var(--gr)">RM ${fmt(g.in)}</td><td style="color:var(--rd)">RM ${fmt(g.out)}</td><td style="font-weight:700;color:${net>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(net)}</td><td><span class="pl-badge">${g.n}</span></td><td style="text-align:right"><span class="pl-chev">›</span></td></tr>`;}).join(''));
+  // Per-bank balances: opening (prev-month statement) + in − out within range
+  const cfFromM=mk(from),cfToM=mk(to);
+  const balRows=S.myrBanks.map(b=>{
+    const open=getStmtBalance(b.name,prevMonth(cfFromM))||0;
+    let bi=0,bo=0;dayRows.forEach(d=>buildLedger(d.date,d).forEach(t=>{if(t.bank===b.name){bi+=t.in;bo+=t.out;}}));
+    return{b,open,bi,bo,bal:open+bi-bo,stmt:getStmtBalance(b.name,cfToM)};
+  }).filter(r=>r.open||r.bi||r.bo||r.stmt!=null);
+  if(!balRows.length){setHTML('cf-bankbal-body',`<tr><td colspan="6" class="empty">${tr('no_entries')} — ${rangeLabel}</td></tr>`);}
+  else{
+    const tO=balRows.reduce((s,r)=>s+r.open,0),tI=balRows.reduce((s,r)=>s+r.bi,0),tOut=balRows.reduce((s,r)=>s+r.bo,0),tBal=balRows.reduce((s,r)=>s+r.bal,0);
+    setHTML('cf-bankbal-body',balRows.map(r=>`<tr><td><span class="bdot" style="background:${r.b.color}"></span> ${r.b.name}</td><td style="text-align:right">RM ${fmt(r.open)}</td><td style="text-align:right;color:var(--gr)">${r.bi?'RM '+fmt(r.bi):'-'}</td><td style="text-align:right;color:var(--rd)">${r.bo?'RM '+fmt(r.bo):'-'}</td><td style="text-align:right;font-weight:700">RM ${fmt(r.bal)}</td><td style="text-align:right;color:var(--txt2)">${r.stmt!=null?'RM '+fmt(r.stmt):'—'}</td></tr>`).join('')+`<tr style="font-weight:700;background:var(--bg3)"><td>${tr('lbl_total')}</td><td style="text-align:right">RM ${fmt(tO)}</td><td style="text-align:right;color:var(--gr)">RM ${fmt(tI)}</td><td style="text-align:right;color:var(--rd)">RM ${fmt(tOut)}</td><td style="text-align:right">RM ${fmt(tBal)}</td><td></td></tr>`);
+  }
   const totDep=platRows.reduce((s,e)=>s+e.dep,0),totWL=platRows.reduce((s,e)=>s+e.winLose,0);
   const myrIn=allExch.filter(x=>x.dir==='out').reduce((s,x)=>s+x.myr,0),myrOut=allExch.filter(x=>x.dir==='in').reduce((s,x)=>s+(x.paid||0),0);
   const lastDay=dayRows[dayRows.length-1];const myrBal=lastDay?.myrBanks?lastDay.myrBanks.reduce((s,b)=>s+(b.close||0),0):0;
@@ -5190,9 +5250,12 @@ async function cloudAfterLogin(user){
   hideCloudLogin();
   await cloudPull(true);
   cloudReady=true;
-  const role=CLOUD_ROLES[cloudEmail]||'admin';
-  const tabs=role==='admin'?ALL_TABS.map(t=>t.id):(ROLE_PRESETS[role]||ALL_TABS.map(t=>t.id));
-  currentUser={id:'cloud',name:cloudEmail,role,tabs,viewOnly:false};
+  // Role comes from the matching account (Setup → user access), then CLOUD_ROLES, else admin.
+  const acct=(S.accounts||[]).find(a=>(a.email||'').toLowerCase()===cloudEmail.toLowerCase());
+  let role,tabs,viewOnly,name;
+  if(acct){role=acct.role;tabs=role==='admin'?ALL_TABS.map(t=>t.id):(acct.tabs||[]);viewOnly=!!acct.viewOnly;name=acct.name;}
+  else{role=CLOUD_ROLES[cloudEmail]||'admin';tabs=role==='admin'?ALL_TABS.map(t=>t.id):(ROLE_PRESETS[role]||ALL_TABS.map(t=>t.id));viewOnly=false;name=cloudEmail;}
+  currentUser={id:acct?acct.id:'cloud',name,email:cloudEmail,role,tabs,viewOnly};
   applyAccess();
   cloudSubscribe();
   showToast('Signed in as '+cloudEmail+' ✓');
