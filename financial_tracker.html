@@ -904,6 +904,7 @@ const LANG = {
     exp_bank_src:'🏦 Paid from MYR bank', exp_funder_src:'👤 Paid by funder (direct)',
     exp_save:'💾 Save expense', exp_all:'All expenses',
     exp_add_line:'+ Add another line (same payment)', exp_lines_pending:'Lines in this payment', exp_lines_saved:'lines saved ✓',
+    exp_add_more:'➕ Add another expense (same date & bank)', exp_add_line_hint:'Add the next line, then press Save expense.',
     cf_bank_bal:'🏦 Bank balances (computed)', cf_balance:'Balance',
     cf_bank_bal_note:'Balance = opening (last month’s statement) + in − out for this period. Book figure — confirm against the bank statement in the Reconciliation tab.',
     exp_search_ph:'🔍 Search ref, category, note...',
@@ -1147,6 +1148,7 @@ const LANG = {
     exp_bank_src:'🏦 从MYR银行支付', exp_funder_src:'👤 资金方直接支付',
     exp_save:'💾 保存费用', exp_all:'所有费用',
     exp_add_line:'+ 添加另一笔（同一付款）', exp_lines_pending:'本次付款的明细', exp_lines_saved:'笔已保存 ✓',
+    exp_add_more:'➕ 添加另一笔费用（同日期和银行）', exp_add_line_hint:'填写下一笔，然后按“保存费用”。',
     cf_bank_bal:'🏦 银行余额（计算）', cf_balance:'余额',
     cf_bank_bal_note:'余额 = 期初（上月对账单）+ 本期收入 − 支出。账面数字 — 请在对账标签页与银行对账单核对。',
     exp_search_ph:'🔍 搜索参考号、类别、备注...',
@@ -2342,11 +2344,28 @@ function openExpEditModal(e){
         `<a href="${e.attachment.data}" target="_blank" class="attach-thumb">📄 ${e.attachment.name}</a>`}
       <div style="margin-top:7px"><input type="file" id="edit-exp-reattach" accept="image/*,.pdf" style="display:none" onchange="reattachExpTab(this,'${e.ref||''}','${e.date}')"><button class="attach-btn" onclick="document.getElementById('edit-exp-reattach').click()">📎 Replace attachment</button></div>`:
       `<div style="margin-bottom:9px"><input type="file" id="edit-exp-reattach" accept="image/*,.pdf" style="display:none" onchange="reattachExpTab(this,'${e.ref||''}','${e.date}')"><button class="attach-btn" onclick="document.getElementById('edit-exp-reattach').click()">📎 Attach now</button></div>`}
-    <div style="display:flex;gap:8px;margin-top:10px">
+    <button class="btn-sec" style="width:100%;margin-top:10px" onclick="addLineFromEdit(${JSON.stringify(e).replace(/"/g,'&quot;')})">${tr('exp_add_more')}</button>
+    <div style="display:flex;gap:8px;margin-top:8px">
       <button class="btn-pri" style="flex:1" onclick="saveExpEdit(${JSON.stringify(e).replace(/"/g,'&quot;')})">💾 Save changes</button>
       <button class="btn-danger" onclick="deleteExpTxn(${e._dayIdx},${e._expIdx});closeModal()">🗑 Delete</button>
     </div>`;
   openModal('Edit Expense',body);
+}
+function addLineFromEdit(e){
+  closeModal();
+  const isFunder=e.paySource==='funder';
+  const btn=[...document.querySelectorAll('.nav .nb')].find(b=>(b.getAttribute('onclick')||'').includes("doNav('exp-tab'"));
+  if(btn)doNav('exp-tab',btn); else initExpTab();
+  // set fields after the tab has finished (re)building its selects
+  setTimeout(()=>{
+    setExpTabSrc(isFunder?'funder':'bank');
+    const dEl=document.getElementById(isFunder?'exp-tab-date-f':'exp-tab-date');if(dEl)dEl.value=e.date;
+    if(isFunder){const f=document.getElementById('exp-tab-funder');if(f&&e.funderName)f.value=e.funderName;}
+    else{const b=document.getElementById('exp-tab-bank');if(b&&e.bank)b.value=e.bank;}
+    const form=document.getElementById(isFunder?'exp-tab-funder-fields':'exp-tab-bank-fields');
+    if(form)form.scrollIntoView({behavior:'smooth',block:'center'});
+    showToast(tr('exp_add_line_hint'));
+  },60);
 }
 function saveExpEdit(orig){
   const dIdx=S.dayEntries.findIndex(e=>e.date===orig.date);if(dIdx<0){closeModal();return;}
