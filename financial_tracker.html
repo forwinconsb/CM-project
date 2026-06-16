@@ -352,7 +352,10 @@ details.collapse-card[open]>summary:before{content:'▾'}
         <div class="f"><label data-i18n="note">Note / Vendor</label><input type="text" id="exp-tab-note" placeholder="e.g. invoice no, supplier name"></div>
         <div class="f"><label data-i18n="ref">Reference no. (auto)</label><input type="text" id="exp-tab-ref" readonly style="background:var(--bg3);color:var(--txt2);font-family:monospace"></div>
       </div>
-      <div class="f" style="max-width:260px;margin-bottom:9px"><label data-i18n="exp_accrual">Expense month (optional — if different from payment date)</label><input type="month" id="exp-tab-accrual"></div>
+      <div class="g2" style="margin-bottom:9px">
+        <div class="f"><label data-i18n="exp_platform">Platform (optional)</label><select id="exp-tab-platform"></select></div>
+        <div class="f"><label data-i18n="exp_accrual">Expense month (optional — if different from payment date)</label><input type="month" id="exp-tab-accrual"></div>
+      </div>
       <div class="f" style="margin-bottom:9px"><label data-i18n="attach">Attach receipt / invoice / PDF</label>
         <input type="file" id="exp-tab-file" accept="image/*,.pdf" style="display:none" onchange="handleExpTabFile(this)">
         <button class="attach-btn" onclick="document.getElementById('exp-tab-file').click()" style="height:36px" data-i18n="attach">📎 Attach file</button>
@@ -376,7 +379,10 @@ details.collapse-card[open]>summary:before{content:'▾'}
         <div class="f"><label data-i18n="note">Note / Vendor name</label><input type="text" id="exp-tab-note-f" placeholder="e.g. supplier, vendor name"></div>
         <div class="f"><label data-i18n="ref">Reference no. (auto)</label><input type="text" id="exp-tab-ref-f" readonly style="background:var(--bg3);color:var(--txt2);font-family:monospace"></div>
       </div>
-      <div class="f" style="max-width:260px;margin-bottom:9px"><label data-i18n="exp_accrual">Expense month (optional — if different from payment date)</label><input type="month" id="exp-tab-accrual-f"></div>
+      <div class="g2" style="margin-bottom:9px">
+        <div class="f"><label data-i18n="exp_platform">Platform (optional)</label><select id="exp-tab-platform-f"></select></div>
+        <div class="f"><label data-i18n="exp_accrual">Expense month (optional — if different from payment date)</label><input type="month" id="exp-tab-accrual-f"></div>
+      </div>
       <div class="f" style="margin-bottom:9px"><label>Attach receipt / invoice / PDF</label>
         <input type="file" id="exp-tab-file-f" accept="image/*,.pdf" style="display:none" onchange="handleExpTabFile(this)">
         <button class="attach-btn" onclick="document.getElementById('exp-tab-file-f').click()" style="height:36px">📎 Attach file</button>
@@ -394,6 +400,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <input type="text" id="exp-search" data-i18n="exp_search_ph" data-i18n-prop="placeholder" placeholder="🔍 Search ref, category, note..." oninput="renderExpListing()" style="padding:7px 10px;font-size:12px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--txt);min-width:220px">
       <select id="exp-filter-cat" onchange="renderExpListing()"><option value="" data-i18n="all_categories">All categories</option></select>
       <select id="exp-filter-src" onchange="renderExpListing()"><option value="" data-i18n="all_sources">All sources</option><option value="bank" data-i18n="paid_from">Bank paid</option><option value="funder" data-i18n="paid_by_funder">Funder paid</option></select>
+      <select id="exp-filter-plat" onchange="renderExpListing()"><option value="" data-i18n="all_platforms">All platforms</option></select>
       <select id="exp-filter-month" onchange="renderExpListing()"><option value="" data-i18n="all_months">All months</option></select>
       <button class="btn-sec" onclick="exportExpCSV()">⬇ CSV</button>
     </div>
@@ -480,22 +487,34 @@ details.collapse-card[open]>summary:before{content:'▾'}
 
 <!-- P&L -->
 <div id="pg-pl" class="pg">
+  <div style="display:inline-flex;gap:3px;background:var(--bg3);padding:3px;border-radius:var(--r);border:1px solid var(--bdr);margin-bottom:10px">
+    <button id="pl-view-statement" class="ttb on" onclick="setPLView('statement')" data-i18n="pl_view_statement">📊 Statement</button>
+    <button id="pl-view-compare" class="ttb" onclick="setPLView('compare')" data-i18n="pl_view_compare">📈 Monthly comparison</button>
+  </div>
   <div class="filter-row">
-    <select id="pl-range" onchange="togglePLCustom();renderPL()">
-      <option value="month" selected data-i18n="pl_month">This month</option>
-      <option value="today" data-i18n="pl_today">Today</option>
-      <option value="year" data-i18n="pl_year">This year</option>
-      <option value="custom" data-i18n="pl_custom">Custom range</option>
-    </select>
-    <span id="pl-custom-wrap" style="display:none;gap:5px;align-items:center">
-      <input type="date" id="pl-from" onchange="renderPL()" style="padding:5px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--txt)">
-      <span style="font-size:11px;color:var(--txt2)">to</span>
-      <input type="date" id="pl-to" onchange="renderPL()" style="padding:5px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--txt)">
+    <select id="pl-plat" onchange="renderPLActive()"><option value="" data-i18n="all_platforms">All platforms</option></select>
+    <span id="pl-statement-controls" style="display:contents">
+      <select id="pl-range" onchange="togglePLCustom();renderPL()">
+        <option value="month" selected data-i18n="pl_month">This month</option>
+        <option value="today" data-i18n="pl_today">Today</option>
+        <option value="year" data-i18n="pl_year">This year</option>
+        <option value="custom" data-i18n="pl_custom">Custom range</option>
+      </select>
+      <span id="pl-custom-wrap" style="display:none;gap:5px;align-items:center">
+        <input type="date" id="pl-from" onchange="renderPL()" style="padding:5px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--txt)">
+        <span style="font-size:11px;color:var(--txt2)">to</span>
+        <input type="date" id="pl-to" onchange="renderPL()" style="padding:5px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--txt)">
+      </span>
     </span>
     <button class="btn-sec" onclick="exportCSV('pl')">⬇ CSV</button>
   </div>
-  <div id="pl-metrics" class="metrics"></div>
-  <div class="card"><div id="pl-content"><div class="empty">No data yet</div></div></div>
+  <div id="pl-statement-wrap">
+    <div id="pl-metrics" class="metrics"></div>
+    <div class="card"><div id="pl-content"><div class="empty">No data yet</div></div></div>
+  </div>
+  <div id="pl-compare-wrap" style="display:none">
+    <div class="card"><div id="pl-compare"><div class="empty">No data yet</div></div></div>
+  </div>
 </div>
 
 <!-- FUNDERS -->
@@ -866,6 +885,11 @@ const LANG = {
     // P&L
     pl_title:'P&L', pl_today:'Today', pl_month:'This month', pl_year:'This year', pl_custom:'Custom range',
     pl_revenue:'Revenue — MYR received via exchange', pl_gross:'Gross Profit',
+    exp_platform:'Platform (optional)', exp_no_platform:'— (no platform)',
+    pl_view_statement:'📊 Statement', pl_view_compare:'📈 Monthly comparison',
+    pl_plat_filtered:'Showing only', pl_plat_note:'untagged expenses and PGK write-offs are excluded from a single-platform view.',
+    cmp_title:'Monthly comparison', cmp_metric:'Metric', cmp_delta:'Δ latest', cmp_wl:'Win/Lose (PGK)',
+    cmp_note:'Δ = change vs the previous month (green = better). Showing up to the last 12 months.',
     pl_net:'Net Profit / (Loss)', pl_margin:'Margin', pl_myr_out:'MYR sent to top up PGK',
     pl_fxgl:'FX gain/loss', pl_rev_wl:'Revenue (net win/lose @ monthly rate)', pl_rates:'Rates',
     pl_norate:'No rate set for', pl_norate2:"these months' PGK figures are excluded — set rates in Setup",
@@ -1100,6 +1124,11 @@ const LANG = {
     // P&L
     pl_title:'损益表', pl_today:'今天', pl_month:'本月', pl_year:'本年', pl_custom:'自定义',
     pl_revenue:'收入 — MYR兑换所得', pl_gross:'毛利润',
+    exp_platform:'平台（可选）', exp_no_platform:'—（无平台）',
+    pl_view_statement:'📊 损益表', pl_view_compare:'📈 月度对比',
+    pl_plat_filtered:'仅显示', pl_plat_note:'未标记平台的支出及PGK冲销不计入单一平台视图。',
+    cmp_title:'月度对比', cmp_metric:'指标', cmp_delta:'Δ 最近', cmp_wl:'输赢 (PGK)',
+    cmp_note:'Δ = 与上月相比的变化（绿色=更好）。最多显示最近12个月。',
     pl_net:'净利润 / （亏损）', pl_margin:'利润率', pl_myr_out:'MYR转出用于PGK充值',
     pl_fxgl:'FX汇兑盈亏', pl_rev_wl:'收入（净输赢 @ 月度汇率）', pl_rates:'汇率',
     pl_norate:'未设定汇率：', pl_norate2:'这些月份的PGK数据已排除 — 请到设置中设定汇率',
@@ -1718,7 +1747,7 @@ function renderPage(p){
   if(p==='exp-tab'){initExpTab();return;}
   if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);setSel('rc-pgk-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);rcDetailOpen=false;renderRecon();renderPGKRecon();renderFrozen();setReconCur(rcCur);renderLockBtn();}
   if(p==='cashflow'){toggleCFCustom();setSel('cf-plat',[{v:'',l:'All platforms'},...S.platforms.map(q=>({v:q.name,l:q.name}))]);renderCF();}
-  if(p==='pl'){togglePLCustom();renderPL();}
+  if(p==='pl'){setSel('pl-plat',[{v:'',l:tr('all_platforms')},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);togglePLCustom();renderPLActive();}
   if(p==='funders'){toggleFNCustom();renderFundersTab();}
   if(p==='settings'){renderSettings();renderExpTypeSetup();renderSetupRail();}
   if(p==='funder-review'){initFunderReview();renderFunderReview();}
@@ -2070,6 +2099,8 @@ function initExpTab(){
   setSel('exp-tab-type',S.expTypes.map(t=>({v:t.id,l:t.name})));
   setSel('exp-tab-type-f',S.expTypes.map(t=>({v:t.id,l:t.name})));
   setSel('exp-tab-funder',S.funders.map(f=>({v:f.name,l:f.name})));
+  setSel('exp-tab-platform',[{v:'',l:tr('exp_no_platform')},...S.platforms.map(p=>({v:p.name,l:p.name}))]);
+  setSel('exp-tab-platform-f',[{v:'',l:tr('exp_no_platform')},...S.platforms.map(p=>({v:p.name,l:p.name}))]);
   updExpTabCats();updExpTabCatsF();
   // auto refs
   const refEl=document.getElementById('exp-tab-ref');if(refEl)refEl.value=genRef('EXP');
@@ -2077,6 +2108,7 @@ function initExpTab(){
   // filters
   const cats=[...new Set(S.expTypes.flatMap(t=>t.cats))].sort();
   setSel('exp-filter-cat',[{v:'',l:'All categories'},...cats.map(c=>({v:c,l:c}))]);
+  setSel('exp-filter-plat',[{v:'',l:tr('all_platforms')},{v:'__none__',l:tr('exp_no_platform')},...S.platforms.map(p=>({v:p.name,l:p.name}))]);
   setSel('exp-filter-month',[{v:'',l:'All months'},...mopts()]);
   renderExpListing();
 }
@@ -2125,9 +2157,10 @@ function saveExpTxn(){
     const cat=document.getElementById('exp-tab-cat')?.value||'';
     const amt=n(document.getElementById('exp-tab-amt')?.value);
     const note=document.getElementById('exp-tab-note')?.value||'';
+    const platform=document.getElementById('exp-tab-platform')?.value||'';
     if(!cat||!amt){showToast('Select category & enter amount',true);return;}
     const t=S.expTypes.find(t=>t.id===tid);
-    exp={paySource:'bank',bank,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,ref,accrualMonth:accrual};
+    exp={paySource:'bank',bank,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform,ref,accrualMonth:accrual};
     if(pendingExpTabFile){exp.attachment=pendingExpTabFile;}
   }else{
     const funderName=document.getElementById('exp-tab-funder')?.value||'';
@@ -2135,9 +2168,10 @@ function saveExpTxn(){
     const cat=document.getElementById('exp-tab-cat-f')?.value||'';
     const amt=n(document.getElementById('exp-tab-amt-f')?.value);
     const note=document.getElementById('exp-tab-note-f')?.value||'';
+    const platform=document.getElementById('exp-tab-platform-f')?.value||'';
     if(!funderName||!cat||!amt){showToast('Select funder, category & amount',true);return;}
     const t=S.expTypes.find(t=>t.id===tid);
-    exp={paySource:'funder',funderName,bank:null,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,ref,accrualMonth:accrual};
+    exp={paySource:'funder',funderName,bank:null,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform,ref,accrualMonth:accrual};
     if(pendingExpTabFile)exp.attachment=pendingExpTabFile;
   }
   // Save to day entry
@@ -2174,11 +2208,13 @@ function renderExpListing(){
   const search=(document.getElementById('exp-search')?.value||'').toLowerCase();
   const filterCat=document.getElementById('exp-filter-cat')?.value||'';
   const filterSrc=document.getElementById('exp-filter-src')?.value||'';
+  const filterPlat=document.getElementById('exp-filter-plat')?.value||'';
   const filterMonth=document.getElementById('exp-filter-month')?.value||'';
   const all=S.dayEntries.flatMap((d,dayIdx)=>(d.expenses||[]).map((e,expIdx)=>({...e,date:d.date,_dayIdx:dayIdx,_expIdx:expIdx})));
   const filtered=all.filter(e=>{
     if(filterCat&&e.cat!==filterCat)return false;
     if(filterSrc&&e.paySource!==filterSrc)return false;
+    if(filterPlat==='__none__'){if(e.platform)return false;}else if(filterPlat&&e.platform!==filterPlat)return false;
     if(filterMonth&&mk(e.date)!==filterMonth)return false;
     if(search&&!(
       (e.ref||'').toLowerCase().includes(search)||
@@ -2198,7 +2234,7 @@ function renderExpListing(){
   tbody.innerHTML=filtered.map(e=>`<tr style="cursor:pointer" onclick="openExpEditModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">
     <td style="font-family:monospace;font-size:11px;color:var(--bl);font-weight:600">${e.ref||'—'}</td>
     <td>${fD(e.date)}${e.accrualMonth&&e.accrualMonth!==mk(e.date)?` <span class="pl-badge">📅 ${tr('exp_for')} ${ml(e.accrualMonth)}</span>`:''}</td>
-    <td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:${e.typeColor||'#888'};display:inline-block"></span>${e.cat}</span></td>
+    <td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:${e.typeColor||'#888'};display:inline-block"></span>${e.cat}${e.platform?` <span class="pl-badge">🎮 ${e.platform}</span>`:''}</span></td>
     <td style="color:var(--txt2);font-size:11px">${e.typeName||'-'}</td>
     <td style="font-weight:700;color:var(--rd)">-RM ${fmt(e.amt)}</td>
     <td>${e.paySource==='funder'?`<span style="font-size:10px;color:#7B1FA2;font-weight:600;background:#F3E5F5;padding:2px 7px;border-radius:20px">👤 ${e.funderName}</span>`:(bDot(e.bank)+' <span style="font-size:11px">'+e.bank+'</span>')}</td>
@@ -2220,6 +2256,7 @@ function openExpEditModal(e){
       <div class="f"><label>Amount (MYR)</label><input type="number" id="edit-exp-amt" value="${e.amt}" step="0.01"></div>
       <div class="f"><label>Note / Vendor</label><input type="text" id="edit-exp-note" value="${e.note||''}"></div>
       <div class="f"><label data-i18n="exp_accrual_short">Expense month (optional)</label><input type="month" id="edit-exp-accrual" value="${e.accrualMonth||''}"></div>
+      <div class="f"><label data-i18n="exp_platform">Platform (optional)</label><select id="edit-exp-platform"><option value="">${tr('exp_no_platform')}</option>${S.platforms.map(p=>`<option value="${p.name}" ${p.name===e.platform?'selected':''}>${p.name}</option>`).join('')}</select></div>
       ${e.paySource==='bank'?`<div class="f"><label>Paid from bank</label><select id="edit-exp-bank">${S.myrBanks.map(b=>`<option value="${b.name}" ${b.name===e.bank?'selected':''}>${b.name}</option>`).join('')}</select></div>`:`<div class="f"><label>Funder</label><select id="edit-exp-funder">${S.funders.map(f=>`<option value="${f.name}" ${f.name===e.funderName?'selected':''}>${f.name}</option>`).join('')}</select></div>`}
     </div>
     ${e.attachment?`<div class="modal-section">Current attachment</div>
@@ -2244,6 +2281,7 @@ function saveExpEdit(orig){
     amt:n(document.getElementById('edit-exp-amt')?.value),
     note:document.getElementById('edit-exp-note')?.value||'',
     accrualMonth:document.getElementById('edit-exp-accrual')?.value||'',
+    platform:document.getElementById('edit-exp-platform')?.value||'',
     bank:orig.paySource==='bank'?(document.getElementById('edit-exp-bank')?.value||orig.bank):null,
     funderName:orig.paySource==='funder'?(document.getElementById('edit-exp-funder')?.value||orig.funderName):null
   };
@@ -2281,8 +2319,8 @@ function deleteExpTxn(dayIdx,expIdx){
 function exportExpCSV(){
   const all=S.dayEntries.flatMap(d=>(d.expenses||[]).map(e=>({...e,date:d.date}))).sort((a,b)=>b.date.localeCompare(a.date));
   if(!all.length){showToast('No data',true);return;}
-  let csv='Ref,Date,Type,Category,Amount MYR,Paid By,Note\n';
-  all.forEach(e=>{csv+=`${e.ref||''},${e.date},${e.typeName||''},${e.cat},${e.amt},${e.paySource==='funder'?e.funderName:e.bank||''},${(e.note||'').replace(/,/g,' ')}\n`;});
+  let csv='Ref,Date,Type,Category,Platform,Amount MYR,Paid By,Note\n';
+  all.forEach(e=>{csv+=`${e.ref||''},${e.date},${e.typeName||''},${e.cat},${e.platform||''},${e.amt},${e.paySource==='funder'?e.funderName:e.bank||''},${(e.note||'').replace(/,/g,' ')}\n`;});
   dlFile(csv,'text/csv','expenses.csv');showToast('CSV exported ✓');
 }
 function exportExpPDF(){
@@ -2506,7 +2544,8 @@ function addExp(){
     const note=document.getElementById('e-exp-note').value;
     if(!cat||!amt){showToast('Select category & enter amount',true);return;}
     const t=S.expTypes.find(t=>t.id===tid);
-    const exp={paySource:'bank',bank,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note};
+    const platform=document.getElementById('e-exp-platform')?.value||'';
+    const exp={paySource:'bank',bank,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform};
     if(pendingExpFile)exp.attachment=pendingExpFile;
     pendingExp.push(exp);
     document.getElementById('e-exp-amt').value='';document.getElementById('e-exp-note').value='';
@@ -2518,7 +2557,8 @@ function addExp(){
     const note=document.getElementById('e-exp-note-f').value;
     if(!funderName||!cat||!amt){showToast('Select funder, category & amount',true);return;}
     const t=S.expTypes.find(t=>t.id===tid);
-    const exp={paySource:'funder',funderName,bank:null,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note};
+    const platform=document.getElementById('e-exp-platform-f')?.value||'';
+    const exp={paySource:'funder',funderName,bank:null,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform};
     if(pendingExpFile)exp.attachment=pendingExpFile;
     pendingExp.push(exp);
     document.getElementById('e-exp-amt-f').value='';document.getElementById('e-exp-note-f').value='';
@@ -3040,6 +3080,64 @@ function renderWeekly(){
 
 // ── P&L ──
 function togglePLCustom(){const v=document.getElementById('pl-range')?.value;const wrap=document.getElementById('pl-custom-wrap');if(wrap)wrap.style.display=v==='custom'?'flex':'none';}
+let plView='statement';
+function setPLView(v){
+  plView=v;
+  document.getElementById('pl-view-statement')?.classList.toggle('on',v==='statement');
+  document.getElementById('pl-view-compare')?.classList.toggle('on',v==='compare');
+  const sw=document.getElementById('pl-statement-wrap'),cw=document.getElementById('pl-compare-wrap'),sc=document.getElementById('pl-statement-controls');
+  if(sw)sw.style.display=v==='statement'?'':'none';
+  if(cw)cw.style.display=v==='compare'?'':'none';
+  if(sc)sc.style.display=v==='statement'?'contents':'none';
+  renderPLActive();
+}
+function renderPLActive(){if(plView==='compare')renderPLCompare();else renderPL();}
+function plMonthStats(m,pf){
+  const from=m+'-01',to=m+'-31';
+  const st=plFixedStats(from,to,pf);
+  const accrualExps=S.dayEntries.flatMap(d=>(d.expenses||[]).map(x=>({...x,date:d.date}))).filter(x=>{const am=x.accrualMonth||mk(x.date);return am===m&&(!pf||x.platform===pf);});
+  const bySec={};
+  accrualExps.forEach(x=>{const sec=x.plSection||'other';bySec[sec]=(bySec[sec]||0)+x.amt;});
+  const opCost=Object.values(bySec).reduce((s,v)=>s+v,0);
+  const rev=st.revMYR,fxGL=st.fxGL,pgkCost=st.pgkCostMYR;
+  const totExp=opCost+pgkCost;
+  const net=rev-totExp+fxGL;
+  return{m,rev,fxGL,pgkCost,opCost,bySec,totExp,net,margin:rev?net/rev:0,wl:st.revPGK};
+}
+function renderPLCompare(){
+  const pf=document.getElementById('pl-plat')?.value||'';
+  const months=aMo().filter(Boolean).slice(0,12).reverse(); // oldest → newest, max 12
+  if(!months.length){setHTML('pl-compare',`<div class="empty">${tr('no_data')}</div>`);return;}
+  const cols=months.map(m=>plMonthStats(m,pf));
+  const secs=S.expTypes.map(t=>({id:t.plSection,name:t.name,color:t.color})).filter((v,i,a)=>a.findIndex(x=>x.id===v.id)===i).filter(s=>cols.some(c=>c.bySec[s.id]));
+  const nM=cols.length,showD=nM>=2,prev=showD?cols[nM-2]:null,last=cols[nM-1];
+  const dMoney=get=>{if(!showD)return'';const d=get(last)-get(prev),base=get(prev);const pct=base?` (${d>=0?'+':''}${((d/Math.abs(base))*100).toFixed(0)}%)`:'';return`<span style="color:${d>=0?'var(--gr)':'var(--rd)'}">${d>=0?'+':'-'}RM ${fmt(Math.abs(d))}${pct}</span>`;};
+  const dCost=get=>{if(!showD)return'';const d=get(last)-get(prev);return`<span style="color:${d<=0?'var(--gr)':'var(--rd)'}">${d>=0?'+':'-'}RM ${fmt(Math.abs(d))}</span>`;};
+  const dPP=get=>{if(!showD)return'';const d=(get(last)-get(prev))*100;return`<span style="color:${d>=0?'var(--gr)':'var(--rd)'}">${d>=0?'+':''}${d.toFixed(1)} pp</span>`;};
+  const moneyRow=(label,get,opt={})=>{
+    const cells=cols.map(c=>{const v=get(c);let txt,col='';
+      if(opt.neg){txt=`-RM ${fmt(Math.abs(v))}`;col='var(--rd)';}
+      else if(opt.color){col=v>=0?'var(--gr)':'var(--rd)';txt=`${v<0?'-':''}RM ${fmt(Math.abs(v))}`;}
+      else txt=`RM ${fmt(v)}`;
+      return`<td style="text-align:right;white-space:nowrap;font-weight:${opt.bold?'700':'400'};${col?`color:${col}`:''}">${txt}</td>`;}).join('');
+    return`<tr><td style="font-weight:${opt.bold?'700':'400'}">${label}</td>${cells}${showD?`<td style="text-align:right">${opt.cost?dCost(get):dMoney(get)}</td>`:''}</tr>`;
+  };
+  const th=`<th style="text-align:left">${tr('cmp_metric')}</th>`+cols.map(c=>`<th style="text-align:right;white-space:nowrap">${ml(c.m)}</th>`).join('')+(showD?`<th style="text-align:right;white-space:nowrap">${tr('cmp_delta')}</th>`:'');
+  let html=`<div class="sl" style="margin-bottom:8px">${tr('cmp_title')}${pf?' · '+pf:''}</div>`;
+  html+=`<div class="tw"><table><thead><tr>${th}</tr></thead><tbody>`;
+  html+=`<tr style="color:var(--txt2)"><td>${tr('cmp_wl')}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap">${fmt(c.wl)}</td>`).join('')}${showD?'<td></td>':''}</tr>`;
+  html+=moneyRow(tr('pl_revenue'),c=>c.rev,{color:true,bold:true});
+  secs.forEach(s=>{html+=`<tr><td style="padding-left:14px"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};display:inline-block;margin-right:5px"></span>${s.name}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap;color:var(--rd)">-RM ${fmt(c.bySec[s.id]||0)}</td>`).join('')}${showD?`<td style="text-align:right">${dCost(c=>c.bySec[s.id]||0)}</td>`:''}</tr>`;});
+  html+=moneyRow(tr('pl_pgk_costs'),c=>c.pgkCost,{neg:true,cost:true});
+  html+=`<tr><td>${tr('pl_fxgl')}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap;color:${c.fxGL>=0?'var(--gr)':'var(--rd)'}">${c.fxGL>=0?'+':'-'}RM ${fmt(Math.abs(c.fxGL))}</td>`).join('')}${showD?`<td style="text-align:right">${dMoney(c=>c.fxGL)}</td>`:''}</tr>`;
+  html+=moneyRow(tr('lbl_total_exp'),c=>c.totExp,{neg:true,cost:true,bold:true});
+  html+=`<tr style="border-top:2px solid #999"><td style="font-weight:700">${tr('lbl_net_profit')}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap;font-weight:700;color:${c.net>=0?'var(--gr)':'var(--rd)'}">${c.net<0?'-':''}RM ${fmt(Math.abs(c.net))}</td>`).join('')}${showD?`<td style="text-align:right">${dMoney(c=>c.net)}</td>`:''}</tr>`;
+  html+=`<tr><td>${tr('pl_margin')}</td>${cols.map(c=>`<td style="text-align:right;color:${c.net>=0?'var(--gr)':'var(--rd)'}">${(c.margin*100).toFixed(1)}%</td>`).join('')}${showD?`<td style="text-align:right">${dPP(c=>c.margin)}</td>`:''}</tr>`;
+  html+=`</tbody></table></div>`;
+  if(pf)html+=`<div style="font-size:11px;color:var(--bl2);background:#E6F1FB;border:1px solid #B5D4F4;border-radius:var(--r);padding:6px 10px;margin-top:8px">🎮 ${tr('pl_plat_filtered')} <b>${pf}</b> — ${tr('pl_plat_note')}</div>`;
+  html+=`<div style="font-size:10px;color:var(--txt2);margin-top:6px">${tr('cmp_note')}</div>`;
+  setHTML('pl-compare',html);
+}
 function getPLDates(){
   const range=document.getElementById('pl-range')?.value||'month';
   const today=new Date();const pad=n=>String(n).padStart(2,'0');
@@ -3053,13 +3151,14 @@ function getPLDates(){
 }
 function renderPL(){
   const{from,to}=getPLDates();
-  const platRows=S.platEntries.filter(e=>e.date>=from&&e.date<=to),dayRows=S.dayEntries.filter(e=>e.date>=from&&e.date<=to);
+  const pf=document.getElementById('pl-plat')?.value||'';
+  const platRows=S.platEntries.filter(e=>e.date>=from&&e.date<=to&&(!pf||e.platform===pf)),dayRows=S.dayEntries.filter(e=>e.date>=from&&e.date<=to);
   const rangeLabel=from===to?fD(from):`${fD(from)} – ${fD(to)}`;
   // Expenses are recognised by their accrual month (belongs-to), not the payment date.
   const mFrom=mk(from),mTo=mk(to);
-  const accrualExps=S.dayEntries.flatMap(d=>(d.expenses||[]).map(x=>({...x,date:d.date}))).filter(x=>{const am=x.accrualMonth||mk(x.date);return am>=mFrom&&am<=mTo;});
+  const accrualExps=S.dayEntries.flatMap(d=>(d.expenses||[]).map(x=>({...x,date:d.date}))).filter(x=>{const am=x.accrualMonth||mk(x.date);return am>=mFrom&&am<=mTo&&(!pf||x.platform===pf);});
   if(!platRows.length&&!dayRows.length&&!accrualExps.length){setHTML('pl-content',`<div class="empty">No entries for ${rangeLabel}.</div>`);setHTML('pl-metrics','');setHTML('pl-exch','<div class="empty">No data</div>');setHTML('pl-funder-summary','<div class="empty">No data</div>');return;}
-  const allExch=dayRows.flatMap(d=>(d.exchanges||[]).map(x=>({...x,date:d.date})));
+  const allExch=dayRows.flatMap(d=>(d.exchanges||[]).filter(x=>!pf||x.platform===pf).map(x=>({...x,date:d.date})));
   const myrIn=allExch.filter(x=>x.dir==='out').reduce((s,x)=>s+(x.paid||0),0),myrOut=allExch.filter(x=>x.dir==='in').reduce((s,x)=>s+(x.paid||0),0);
   const secMap={};
   accrualExps.forEach(x=>{
@@ -3068,17 +3167,17 @@ function renderPL(){
     if(!secMap[sec].cats[x.cat])secMap[sec].cats[x.cat]=[];
     secMap[sec].cats[x.cat].push(x);
   });
-  const cashExpPaid=dayRows.flatMap(d=>(d.expenses||[])).filter(e=>e.paySource!=='funder').reduce((s,e)=>s+e.amt,0);
+  const cashExpPaid=dayRows.flatMap(d=>(d.expenses||[])).filter(e=>e.paySource!=='funder'&&(!pf||e.platform===pf)).reduce((s,e)=>s+e.amt,0);
   const ordSec=S.expTypes.map(t=>({id:t.plSection,name:t.name,color:t.color})).filter((v,i,a)=>a.findIndex(x=>x.id===v.id)===i);
   const sumSec=id=>Object.values(secMap[id]?.cats||{}).reduce((s,arr)=>s+arr.reduce((ss,e)=>ss+e.amt,0),0);
   const totalCost=Object.values(secMap).reduce((s,sec)=>s+Object.values(sec.cats).reduce((ss,arr)=>ss+arr.reduce((sss,e)=>sss+e.amt,0),0),0);
   const totWL=platRows.reduce((s,e)=>s+e.winLose,0);
   // ── Fixed-rate translation per month (S.fxRates) ──
-  const{revMYR,fxGL,pgkChargesPGK,pgkLossPGK,pgkRecPGK,pgkChargesMYR,pgkLossMYR,pgkRecMYR,pgkCostMYR,rateNotes,noRateMonths,fxRows}=plFixedStats(from,to);
+  const{revMYR,fxGL,pgkChargesPGK,pgkLossPGK,pgkRecPGK,pgkChargesMYR,pgkLossMYR,pgkRecMYR,pgkCostMYR,rateNotes,noRateMonths,fxRows}=plFixedStats(from,to,pf);
   const rev=revMYR,gross=rev-sumSec('direct'),net=rev-pgkCostMYR-totalCost+fxGL;
   const pct=v=>rev?((v/rev)*100).toFixed(1)+'%':'—';
   setHTML('pl-metrics',`<div class="mc"><div class="ml">${tr('lbl_period')}</div><div class="mv" style="font-size:11px">${rangeLabel}</div></div><div class="mc"><div class="ml">${tr('pl_revenue')} (PGK @ rate)</div><div class="mv pos">RM ${fmt(rev)}</div></div><div class="mc"><div class="ml">${tr('pl_fxgl')}</div><div class="mv ${fxGL>=0?'pos':'neg'}">${fxGL>=0?'+':'-'}RM ${fmt(Math.abs(fxGL))}</div></div><div class="mc"><div class="ml" >${tr('lbl_total_exp')}</div><div class="mv neg">-RM ${fmt(totalCost+pgkCostMYR)}</div></div><div class="mc"><div class="ml">${tr('pl_net')}</div><div class="mv ${net>=0?'pos':'neg'}">${net>=0?'':'('}RM ${fmt(Math.abs(net))}${net>=0?'':')'}</div></div><div class="mc"><div class="ml">${tr('pl_margin')}</div><div class="mv ${net>=0?'pos':'neg'}">${pct(net)}</div></div>`);
-  let plHtml=`<div class="sl">P&L — ${rangeLabel}</div>
+  let plHtml=`${pf?`<div style="font-size:11px;color:var(--bl2);background:#E6F1FB;border:1px solid #B5D4F4;border-radius:var(--r);padding:6px 10px;margin-bottom:8px">🎮 ${tr('pl_plat_filtered')} <b>${pf}</b> — ${tr('pl_plat_note')}</div>`:''}<div class="sl">P&L — ${rangeLabel}${pf?' · '+pf:''}</div>
   <div class="pr">
     <span style="font-weight:700">${tr('pl_rev_wl')} — ${fmt(totWL)} PGK</span>
     <span style="font-weight:700;color:${rev>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(rev)}</span>
@@ -3480,8 +3579,8 @@ function fxRateFor(month){
   if(r==null)r=avg(S.dayEntries.flatMap(d=>(d.exchanges||[]).filter(x=>x.dir==='out')));
   return r!=null?{rate:r,src:'auto'}:{rate:null,src:null};
 }
-function plFixedStats(from,to){
-  const platRows=S.platEntries.filter(e=>e.date>=from&&e.date<=to);
+function plFixedStats(from,to,pf){
+  const platRows=S.platEntries.filter(e=>e.date>=from&&e.date<=to&&(!pf||e.platform===pf));
   const dayRows=S.dayEntries.filter(e=>e.date>=from&&e.date<=to);
   const months=[...new Set([...platRows.map(e=>mk(e.date)),...dayRows.map(d=>mk(d.date)),
     ...(S.pgkFrozen||[]).filter(f=>f.dateResolved&&f.dateResolved>=from&&f.dateResolved<=to).map(f=>mk(f.dateResolved)),
@@ -3496,12 +3595,13 @@ function plFixedStats(from,to){
     const wl=platRows.filter(e=>mk(e.date)===m).reduce((s,e)=>s+e.winLose,0);
     o.revMYR+=wl*rate;
     const ch=platRows.filter(e=>mk(e.date)===m).reduce((s,e)=>s+(e.bankCharges||0),0);
-    const lo=(S.pgkFrozen||[]).filter(f=>f.dateResolved&&f.dateResolved>=from&&f.dateResolved<=to&&mk(f.dateResolved)===m).reduce((s,f)=>s+f.amount,0);
-    const re=(S.pgkFrozen||[]).filter(f=>f.dateRecovered&&f.dateRecovered>=from&&f.dateRecovered<=to&&mk(f.dateRecovered)===m).reduce((s,f)=>s+(f.recoveredAmount||0),0);
+    // Write-offs / recoveries key off a bank, not a platform — not allocable to a single platform.
+    const lo=pf?0:(S.pgkFrozen||[]).filter(f=>f.dateResolved&&f.dateResolved>=from&&f.dateResolved<=to&&mk(f.dateResolved)===m).reduce((s,f)=>s+f.amount,0);
+    const re=pf?0:(S.pgkFrozen||[]).filter(f=>f.dateRecovered&&f.dateRecovered>=from&&f.dateRecovered<=to&&mk(f.dateRecovered)===m).reduce((s,f)=>s+(f.recoveredAmount||0),0);
     o.pgkChargesPGK+=ch;o.pgkLossPGK+=lo;o.pgkRecPGK+=re;
     o.pgkChargesMYR+=ch*rate;o.pgkLossMYR+=lo*rate;o.pgkRecMYR+=re*rate;
     o.pgkCostMYR+=(ch+lo-re)*rate;
-    dayRows.filter(d=>mk(d.date)===m).forEach(d=>(d.exchanges||[]).forEach(x=>{
+    dayRows.filter(d=>mk(d.date)===m).forEach(d=>(d.exchanges||[]).filter(x=>!pf||x.platform===pf).forEach(x=>{
       // FX gain/loss vs the fixed monthly rate, always in MYR (positive = better than fixed):
       //  PGK→MYR: real MYR received − fixed-rate value of PGK = myr − pgk*rate
       //  MYR→PGK: fixed-rate value of PGK received − MYR paid = pgk*rate − myr
