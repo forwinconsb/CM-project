@@ -131,6 +131,8 @@ details.collapse-card[open]>summary:before{content:'▾'}
   .tw td::before{content:attr(data-label);font-weight:700;color:var(--txt2);font-size:11px;text-align:left;flex:0 0 auto;white-space:nowrap}
   .tw td.empty{display:block;text-align:center;color:var(--txt2)}
   .tw td.empty::before{content:none}
+  .tw td.hide-sm{display:none!important}
+  .tw tr.row-tap::after{content:'👆 ⋯';display:block;width:100%;text-align:right;font-size:11px;color:var(--bl);margin-top:2px}
 }
 
 /* ── EXPENSE ROW with detail expand ── */
@@ -2024,15 +2026,15 @@ function renderFndListing(){
     const tagLabel=isExp?tr('tag_expense'):t.type==='injection'?tr('tag_injection'):t.type==='return'?tr('tag_return'):tr('tag_profit');
     const amtColor=isExp?'var(--rd)':t.type==='injection'?'var(--pu)':t.type==='return'?'var(--am)':'var(--gr)';
     const tJson=JSON.stringify(t).replace(/"/g,'&quot;');
-    return`<tr style="cursor:${isExp?'default':'pointer'};${isExp?'background:#fdf6ff':''}" onclick="${isExp?`openExpEditByRef('${t._expRef||''}','${t.date}')`:`openFndEditModal(${tJson})`}">
-      <td style="font-family:monospace;font-size:11px;color:var(--bl);font-weight:600">${t.ref||'—'}</td>
+    return`<tr class="${isExp?'':'row-tap'}" style="cursor:${isExp?'default':'pointer'};${isExp?'background:#fdf6ff':''}" onclick="${isExp?`openExpEditByRef('${t._expRef||''}','${t.date}')`:`openFndEditModal(${tJson})`}">
+      <td class="hide-sm" style="font-family:monospace;font-size:11px;color:var(--bl);font-weight:600">${t.ref||'—'}</td>
       <td>${fD(t.date)}</td>
       <td style="font-weight:500">${t.funder}</td>
       <td><span class="tag ${tagClass}">${tagLabel}</span></td>
       <td style="font-weight:700;color:${amtColor}">${isExp?'-':''}RM ${fmt(t.amount)}</td>
-      <td>${isExp?'<span style="font-size:10px;color:#7B1FA2">👤 direct</span>':(bDot(t.bank||'')+' '+(t.bank||'-'))}</td>
-      <td style="color:var(--txt2)">${t.desc||'-'}</td>
-      <td style="display:flex;gap:5px;white-space:nowrap">
+      <td class="hide-sm">${isExp?'<span style="font-size:10px;color:#7B1FA2">👤 direct</span>':(bDot(t.bank||'')+' '+(t.bank||'-'))}</td>
+      <td class="hide-sm" style="color:var(--txt2)">${t.desc||'-'}</td>
+      <td class="hide-sm" style="display:flex;gap:5px;white-space:nowrap">
         ${isExp
           ?`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();openExpEditByRef('${t._expRef||''}','${t.date}')">✏️ Edit</button>
             <button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteExpTxnAndRefresh(${t._dayIdx},${t._expIdx})">🗑</button>`
@@ -2307,16 +2309,16 @@ function renderExpListing(){
   const totBank=filtered.filter(e=>e.paySource!=='funder').reduce((s,e)=>s+e.amt,0);
   const totFunder=filtered.filter(e=>e.paySource==='funder').reduce((s,e)=>s+e.amt,0);
   setHTML('exp-listing-metrics',`<div class="mc"><div class="ml">${tr('lbl_total_txns')}</div><div class="mv">${filtered.length}</div></div><div class="mc"><div class="ml">${tr('lbl_total')}</div><div class="mv neg">RM ${fmt(totBank+totFunder)}</div></div><div class="mc"><div class="ml">${tr('paid_from')}</div><div class="mv neg">RM ${fmt(totBank)}</div></div><div class="mc"><div class="ml">${tr('paid_by_funder')}</div><div class="mv" style="color:var(--pu)">RM ${fmt(totFunder)}</div></div>`);
-  tbody.innerHTML=filtered.map(e=>`<tr style="cursor:pointer" onclick="openExpEditModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">
-    <td style="font-family:monospace;font-size:11px;color:var(--bl);font-weight:600">${e.ref||'—'}</td>
+  tbody.innerHTML=filtered.map(e=>`<tr class="row-tap" style="cursor:pointer" onclick="openExpEditModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">
+    <td class="hide-sm" style="font-family:monospace;font-size:11px;color:var(--bl);font-weight:600">${e.ref||'—'}</td>
     <td>${fD(e.date)}${e.accrualMonth&&e.accrualMonth!==mk(e.date)?` <span class="pl-badge">📅 ${tr('exp_for')} ${ml(e.accrualMonth)}</span>`:''}</td>
     <td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:${e.typeColor||'#888'};display:inline-block"></span>${e.cat}${e.platform?` <span class="pl-badge">🎮 ${e.platform}</span>`:''}</span></td>
-    <td style="color:var(--txt2);font-size:11px">${e.typeName||'-'}</td>
+    <td class="hide-sm" style="color:var(--txt2);font-size:11px">${e.typeName||'-'}</td>
     <td style="font-weight:700;color:var(--rd)">-RM ${fmt(e.amt)}</td>
     <td>${e.paySource==='funder'?`<span style="font-size:10px;color:#7B1FA2;font-weight:600;background:#F3E5F5;padding:2px 7px;border-radius:20px">👤 ${e.funderName}</span>`:(bDot(e.bank)+' <span style="font-size:11px">'+e.bank+'</span>')}</td>
-    <td style="color:var(--txt2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.note||'-'}</td>
-    <td>${e.attachment?`<span class="attach-badge" onclick="event.stopPropagation();viewAttachment(${JSON.stringify(e.attachment).replace(/"/g,'&quot;')})">📎</span>`:'-'}</td>
-    <td style="display:flex;gap:5px;white-space:nowrap">
+    <td class="hide-sm" style="color:var(--txt2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.note||'-'}</td>
+    <td class="hide-sm">${e.attachment?`<span class="attach-badge" onclick="event.stopPropagation();viewAttachment(${JSON.stringify(e.attachment).replace(/"/g,'&quot;')})">📎</span>`:'-'}</td>
+    <td class="hide-sm" style="display:flex;gap:5px;white-space:nowrap">
       <button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();openExpEditModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">✏️ Edit</button>
       <button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteExpTxn(${e._dayIdx},${e._expIdx})">🗑</button>
     </td>
@@ -4314,8 +4316,8 @@ function renderPGKListing(){
       <td>${fD(e.date)}</td><td style="font-weight:500">${e.platform}</td>
       <td>${fmt(e.dep)}</td><td>${fmt(e.with)}</td>
       <td style="color:${e.winLose>=0?'var(--gr)':'var(--rd)'};font-weight:500">${fmt(e.winLose)}</td>
-      <td>${e.bonus?fmt(e.bonus):'-'}</td><td>${e.active||'-'}</td>
-      <td>${fmt(e.pgkOpen||0)}</td><td>${fmt(e.pgkClose)}</td>
+      <td class="hide-sm">${e.bonus?fmt(e.bonus):'-'}</td><td class="hide-sm">${e.active||'-'}</td>
+      <td class="hide-sm">${fmt(e.pgkOpen||0)}</td><td>${fmt(e.pgkClose)}</td>
       <td style="color:${ok?'var(--gr)':Math.abs(e.pgkDiff)<1?'var(--am)':'var(--rd)'}; font-weight:700">${ok?'✓ OK':fmt(e.pgkDiff||0)}</td>
       <td><span style="font-size:10px;color:${ok?'#0F6E56':'#854F0B'};font-weight:700">${ok?'✓ Recon':'⚠ Diff'}</span></td>
       <td style="white-space:nowrap"><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="editPlatEntry(${JSON.stringify(e).replace(/"/g,'&quot;')})">✏️ Edit</button> <button class="del" onclick="deletePlatEntry('${e.date}','${(e.platform||'').replace(/'/g,"\\'")}')">🗑</button></td>
@@ -4539,16 +4541,16 @@ function renderExchTab(){
     const rawOwed=Math.max(0,(x.myr||0)-(x.paid||0));
     const k=`${x.date}|${x.exchanger}|${x.pgk}|${x.myr}|${x.paid}`;
     const owed=x.dir==='out'&&owedByKey[k]!==undefined?owedByKey[k]:rawOwed;
-    return`<tr style="cursor:pointer" onclick="viewEditExch(${JSON.stringify(x).replace(/"/g,'&quot;')})">
+    return`<tr class="row-tap" style="cursor:pointer" onclick="viewEditExch(${JSON.stringify(x).replace(/"/g,'&quot;')})">
       <td>${fD(x.date)}</td>
       <td><span class="tag ${x.dir==='out'?'tag-out':'tag-in'}">${x.dir==='out'?'PGK→MYR':'MYR→PGK'}</span></td>
-      <td>${x.platform?`<span style="background:#E6F1FB;color:#0C447C;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700">${x.platform}</span>`:'-'}</td>
-      <td>${x.exchanger||'-'}</td><td>${fmt(x.pgk)}</td><td>${x.rate}</td>
-      <td>${fmt(x.myr||0)}</td>
+      <td class="hide-sm">${x.platform?`<span style="background:#E6F1FB;color:#0C447C;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700">${x.platform}</span>`:'-'}</td>
+      <td>${x.exchanger||'-'}</td><td>${fmt(x.pgk)}</td><td class="hide-sm">${x.rate}</td>
+      <td class="hide-sm">${fmt(x.myr||0)}</td>
       <td style="color:${x.dir==='out'?'var(--gr)':'var(--rd)'}">${fmt(x.paid||0)}</td>
       <td style="color:${owed>0.01?'var(--am)':'var(--gr)'};font-weight:700">${fmt(owed)}</td>
-      <td>${bDot(x.myrBank||'')} ${x.myrBank||'-'}</td>
-      <td><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();viewEditExch(${JSON.stringify(x).replace(/"/g,'&quot;')})">✏️ Edit/View</button></td>
+      <td class="hide-sm">${bDot(x.myrBank||'')} ${x.myrBank||'-'}</td>
+      <td class="hide-sm"><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();viewEditExch(${JSON.stringify(x).replace(/"/g,'&quot;')})">✏️ Edit/View</button></td>
     </tr>`;
   }).join('');
   const myrIn=filtered.filter(x=>x.dir==='out').reduce((s,x)=>s+(x.paid||0),0);
