@@ -352,6 +352,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
         <div class="f"><label data-i18n="note">Note / Vendor</label><input type="text" id="exp-tab-note" placeholder="e.g. invoice no, supplier name"></div>
         <div class="f"><label data-i18n="ref">Reference no. (auto)</label><input type="text" id="exp-tab-ref" readonly style="background:var(--bg3);color:var(--txt2);font-family:monospace"></div>
       </div>
+      <div class="f" style="max-width:260px;margin-bottom:9px"><label data-i18n="exp_accrual">Expense month (optional — if different from payment date)</label><input type="month" id="exp-tab-accrual"></div>
       <div class="f" style="margin-bottom:9px"><label data-i18n="attach">Attach receipt / invoice / PDF</label>
         <input type="file" id="exp-tab-file" accept="image/*,.pdf" style="display:none" onchange="handleExpTabFile(this)">
         <button class="attach-btn" onclick="document.getElementById('exp-tab-file').click()" style="height:36px" data-i18n="attach">📎 Attach file</button>
@@ -375,6 +376,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
         <div class="f"><label data-i18n="note">Note / Vendor name</label><input type="text" id="exp-tab-note-f" placeholder="e.g. supplier, vendor name"></div>
         <div class="f"><label data-i18n="ref">Reference no. (auto)</label><input type="text" id="exp-tab-ref-f" readonly style="background:var(--bg3);color:var(--txt2);font-family:monospace"></div>
       </div>
+      <div class="f" style="max-width:260px;margin-bottom:9px"><label data-i18n="exp_accrual">Expense month (optional — if different from payment date)</label><input type="month" id="exp-tab-accrual-f"></div>
       <div class="f" style="margin-bottom:9px"><label>Attach receipt / invoice / PDF</label>
         <input type="file" id="exp-tab-file-f" accept="image/*,.pdf" style="display:none" onchange="handleExpTabFile(this)">
         <button class="attach-btn" onclick="document.getElementById('exp-tab-file-f').click()" style="height:36px">📎 Attach file</button>
@@ -882,6 +884,7 @@ const LANG = {
     bl_title:'Saved bank balances', bl_none:'No balances saved yet', bl_closing:'Closing (MYR)', bl_allmonths:'All months',
     pl_txn:'txn', pl_txns:'txns', pl_view_all:'view all', pl_tap_hint:'Tap any expense line to see its individual transactions',
     cf_count:'Count', cf_net:'Net',
+    exp_accrual:'Expense month (optional — if different from payment date)', exp_accrual_short:'Expense month (optional)', exp_for:'for',
     lk_lock:'Lock month', lk_unlock:'Unlock', lk_closed:'closed', lk_locked_toast:'is now locked ✓', lk_unlocked_toast:'unlocked — editing allowed again',
     lk_confirm_lock:'Lock {m}?\n\nTransactions dated in this month will be protected — no adding, editing or deleting until you unlock it.', lk_confirm_unlock:'Unlock {m}?\n\nThis allows transactions in that month to be edited again.',
     lk_blocked:'🔒 {m} is locked — unlock it in Reconciliation to make changes', lk_admin_only:'Only an Admin can lock or unlock months',
@@ -1115,6 +1118,7 @@ const LANG = {
     bl_title:'已保存的银行余额', bl_none:'暂无已保存的余额', bl_closing:'期末（MYR）', bl_allmonths:'所有月份',
     pl_txn:'笔', pl_txns:'笔', pl_view_all:'查看全部', pl_tap_hint:'点击任意支出行查看明细交易',
     cf_count:'数量', cf_net:'净额',
+    exp_accrual:'支出所属月份（可选 — 如与付款日期不同）', exp_accrual_short:'所属月份（可选）', exp_for:'属',
     lk_lock:'锁定本月', lk_unlock:'解锁', lk_closed:'已锁定', lk_locked_toast:'已锁定 ✓', lk_unlocked_toast:'已解锁 — 可再次编辑',
     lk_confirm_lock:'锁定 {m}？\n\n该月的交易将被保护 — 在解锁前无法新增、编辑或删除。', lk_confirm_unlock:'解锁 {m}？\n\n将允许再次编辑该月的交易。',
     lk_blocked:'🔒 {m} 已锁定 — 请在对账页解锁后再修改', lk_admin_only:'只有管理员可以锁定或解锁月份',
@@ -2112,6 +2116,7 @@ function saveExpTxn(){
   const dateId=isFunder?'exp-tab-date-f':'exp-tab-date';
   const date=document.getElementById(dateId)?.value;if(!date){showToast('Select date',true);return;}
   if(lockBlocked(date))return;
+  const accrual=document.getElementById(isFunder?'exp-tab-accrual-f':'exp-tab-accrual')?.value||'';
   const ref=document.getElementById(isFunder?'exp-tab-ref-f':'exp-tab-ref')?.value||genRef('EXP');
   let exp;
   if(!isFunder){
@@ -2122,7 +2127,7 @@ function saveExpTxn(){
     const note=document.getElementById('exp-tab-note')?.value||'';
     if(!cat||!amt){showToast('Select category & enter amount',true);return;}
     const t=S.expTypes.find(t=>t.id===tid);
-    exp={paySource:'bank',bank,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,ref};
+    exp={paySource:'bank',bank,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,ref,accrualMonth:accrual};
     if(pendingExpTabFile){exp.attachment=pendingExpTabFile;}
   }else{
     const funderName=document.getElementById('exp-tab-funder')?.value||'';
@@ -2132,7 +2137,7 @@ function saveExpTxn(){
     const note=document.getElementById('exp-tab-note-f')?.value||'';
     if(!funderName||!cat||!amt){showToast('Select funder, category & amount',true);return;}
     const t=S.expTypes.find(t=>t.id===tid);
-    exp={paySource:'funder',funderName,bank:null,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,ref};
+    exp={paySource:'funder',funderName,bank:null,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,ref,accrualMonth:accrual};
     if(pendingExpTabFile)exp.attachment=pendingExpTabFile;
   }
   // Save to day entry
@@ -2156,6 +2161,7 @@ function saveExpTxn(){
   // Clear form fields
   document.getElementById(isFunder?'exp-tab-amt-f':'exp-tab-amt').value='';
   document.getElementById(isFunder?'exp-tab-note-f':'exp-tab-note').value='';
+  const acEl=document.getElementById(isFunder?'exp-tab-accrual-f':'exp-tab-accrual');if(acEl)acEl.value='';
   document.getElementById(isFunder?'exp-tab-file-preview-f':'exp-tab-file-preview').innerHTML='';
   // Refresh ref
   const newRef=genRef('EXP');
@@ -2191,7 +2197,7 @@ function renderExpListing(){
   setHTML('exp-listing-metrics',`<div class="mc"><div class="ml">${tr('lbl_total_txns')}</div><div class="mv">${filtered.length}</div></div><div class="mc"><div class="ml">${tr('lbl_total')}</div><div class="mv neg">RM ${fmt(totBank+totFunder)}</div></div><div class="mc"><div class="ml">${tr('paid_from')}</div><div class="mv neg">RM ${fmt(totBank)}</div></div><div class="mc"><div class="ml">${tr('paid_by_funder')}</div><div class="mv" style="color:var(--pu)">RM ${fmt(totFunder)}</div></div>`);
   tbody.innerHTML=filtered.map(e=>`<tr style="cursor:pointer" onclick="openExpEditModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">
     <td style="font-family:monospace;font-size:11px;color:var(--bl);font-weight:600">${e.ref||'—'}</td>
-    <td>${fD(e.date)}</td>
+    <td>${fD(e.date)}${e.accrualMonth&&e.accrualMonth!==mk(e.date)?` <span class="pl-badge">📅 ${tr('exp_for')} ${ml(e.accrualMonth)}</span>`:''}</td>
     <td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:${e.typeColor||'#888'};display:inline-block"></span>${e.cat}</span></td>
     <td style="color:var(--txt2);font-size:11px">${e.typeName||'-'}</td>
     <td style="font-weight:700;color:var(--rd)">-RM ${fmt(e.amt)}</td>
@@ -2213,6 +2219,7 @@ function openExpEditModal(e){
       <div class="f"><label>Category</label><input type="text" id="edit-exp-cat" value="${e.cat||''}"></div>
       <div class="f"><label>Amount (MYR)</label><input type="number" id="edit-exp-amt" value="${e.amt}" step="0.01"></div>
       <div class="f"><label>Note / Vendor</label><input type="text" id="edit-exp-note" value="${e.note||''}"></div>
+      <div class="f"><label data-i18n="exp_accrual_short">Expense month (optional)</label><input type="month" id="edit-exp-accrual" value="${e.accrualMonth||''}"></div>
       ${e.paySource==='bank'?`<div class="f"><label>Paid from bank</label><select id="edit-exp-bank">${S.myrBanks.map(b=>`<option value="${b.name}" ${b.name===e.bank?'selected':''}>${b.name}</option>`).join('')}</select></div>`:`<div class="f"><label>Funder</label><select id="edit-exp-funder">${S.funders.map(f=>`<option value="${f.name}" ${f.name===e.funderName?'selected':''}>${f.name}</option>`).join('')}</select></div>`}
     </div>
     ${e.attachment?`<div class="modal-section">Current attachment</div>
@@ -2236,6 +2243,7 @@ function saveExpEdit(orig){
     cat:document.getElementById('edit-exp-cat')?.value||orig.cat,
     amt:n(document.getElementById('edit-exp-amt')?.value),
     note:document.getElementById('edit-exp-note')?.value||'',
+    accrualMonth:document.getElementById('edit-exp-accrual')?.value||'',
     bank:orig.paySource==='bank'?(document.getElementById('edit-exp-bank')?.value||orig.bank):null,
     funderName:orig.paySource==='funder'?(document.getElementById('edit-exp-funder')?.value||orig.funderName):null
   };
@@ -3047,16 +3055,20 @@ function renderPL(){
   const{from,to}=getPLDates();
   const platRows=S.platEntries.filter(e=>e.date>=from&&e.date<=to),dayRows=S.dayEntries.filter(e=>e.date>=from&&e.date<=to);
   const rangeLabel=from===to?fD(from):`${fD(from)} – ${fD(to)}`;
-  if(!platRows.length&&!dayRows.length){setHTML('pl-content',`<div class="empty">No entries for ${rangeLabel}.</div>`);setHTML('pl-metrics','');setHTML('pl-exch','<div class="empty">No data</div>');setHTML('pl-funder-summary','<div class="empty">No data</div>');return;}
+  // Expenses are recognised by their accrual month (belongs-to), not the payment date.
+  const mFrom=mk(from),mTo=mk(to);
+  const accrualExps=S.dayEntries.flatMap(d=>(d.expenses||[]).map(x=>({...x,date:d.date}))).filter(x=>{const am=x.accrualMonth||mk(x.date);return am>=mFrom&&am<=mTo;});
+  if(!platRows.length&&!dayRows.length&&!accrualExps.length){setHTML('pl-content',`<div class="empty">No entries for ${rangeLabel}.</div>`);setHTML('pl-metrics','');setHTML('pl-exch','<div class="empty">No data</div>');setHTML('pl-funder-summary','<div class="empty">No data</div>');return;}
   const allExch=dayRows.flatMap(d=>(d.exchanges||[]).map(x=>({...x,date:d.date})));
   const myrIn=allExch.filter(x=>x.dir==='out').reduce((s,x)=>s+(x.paid||0),0),myrOut=allExch.filter(x=>x.dir==='in').reduce((s,x)=>s+(x.paid||0),0);
   const secMap={};
-  dayRows.forEach(d=>(d.expenses||[]).forEach(x=>{
+  accrualExps.forEach(x=>{
     const sec=x.plSection||'other';
     if(!secMap[sec])secMap[sec]={name:x.typeName||sec,cats:{}};
     if(!secMap[sec].cats[x.cat])secMap[sec].cats[x.cat]=[];
-    secMap[sec].cats[x.cat].push({...x,date:d.date});
-  }));
+    secMap[sec].cats[x.cat].push(x);
+  });
+  const cashExpPaid=dayRows.flatMap(d=>(d.expenses||[])).filter(e=>e.paySource!=='funder').reduce((s,e)=>s+e.amt,0);
   const ordSec=S.expTypes.map(t=>({id:t.plSection,name:t.name,color:t.color})).filter((v,i,a)=>a.findIndex(x=>x.id===v.id)===i);
   const sumSec=id=>Object.values(secMap[id]?.cats||{}).reduce((s,arr)=>s+arr.reduce((ss,e)=>ss+e.amt,0),0);
   const totalCost=Object.values(secMap).reduce((s,sec)=>s+Object.values(sec.cats).reduce((ss,arr)=>ss+arr.reduce((sss,e)=>sss+e.amt,0),0),0);
@@ -3115,8 +3127,8 @@ function renderPL(){
     <div style="margin-top:6px">
       <div class="pr pi"><span>${tr('pl_myr_from_exch')}</span><span style="color:var(--gr)">RM ${fmt(myrIn)}</span></div>
       ${myrOut?`<div class="pr pi"><span>${tr("lbl_myr_topup")}</span><span style="color:var(--rd)">-RM ${fmt(myrOut)}</span></div>`:''}
-      <div class="pr pi"><span>${tr('pl_myr_exp_paid')}</span><span style="color:var(--rd)">-RM ${fmt(totalCost)}</span></div>
-      <div class="pr ptot"><span>${tr('pl_net_cash')}</span><span style="font-weight:700;color:${(myrIn-myrOut-totalCost)>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(myrIn-myrOut-totalCost)}</span></div>
+      <div class="pr pi"><span>${tr('pl_myr_exp_paid')}</span><span style="color:var(--rd)">-RM ${fmt(cashExpPaid)}</span></div>
+      <div class="pr ptot"><span>${tr('pl_net_cash')}</span><span style="font-weight:700;color:${(myrIn-myrOut-cashExpPaid)>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(myrIn-myrOut-cashExpPaid)}</span></div>
       <div style="font-size:10px;color:var(--txt2);margin-top:4px">${tr('pl_cash_note')}</div>
     </div>
   </details>`;
