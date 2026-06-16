@@ -2150,9 +2150,10 @@ function addExpLine(){
   const amt=n(document.getElementById('exp-tab-amt')?.value);
   const note=document.getElementById('exp-tab-note')?.value||'';
   const platform=document.getElementById('exp-tab-platform')?.value||'';
+  const accrualMonth=document.getElementById('exp-tab-accrual')?.value||'';
   if(!cat||!amt){showToast('Select category & enter amount',true);return;}
   const t=S.expTypes.find(t=>t.id===tid);
-  expTabPending.push({bank,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform});
+  expTabPending.push({bank,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform,accrualMonth});
   document.getElementById('exp-tab-amt').value='';document.getElementById('exp-tab-note').value='';
   renderExpTabPending();
 }
@@ -2164,7 +2165,7 @@ function renderExpTabPending(){
   el.innerHTML=`<div style="border:1px solid var(--bdr);border-radius:var(--r);padding:8px">
     <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:6px">${tr('exp_lines_pending')}</div>
     ${expTabPending.map((e,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:3px 0;font-size:12px">
-      <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="width:8px;height:8px;border-radius:2px;background:${e.typeColor};display:inline-block;margin-right:5px"></span>${e.cat}${e.platform?` <span class="pl-badge">🎮 ${e.platform}</span>`:''}${e.note?' — '+e.note:''}</span>
+      <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="width:8px;height:8px;border-radius:2px;background:${e.typeColor};display:inline-block;margin-right:5px"></span>${e.cat}${e.platform?` <span class="pl-badge">🎮 ${e.platform}</span>`:''}${e.accrualMonth?` <span class="pl-badge">📅 ${ml(e.accrualMonth)}</span>`:''}${e.note?' — '+e.note:''}</span>
       <span style="display:flex;align-items:center;gap:8px;flex-shrink:0"><b style="color:var(--rd)">-RM ${fmt(e.amt)}</b><button class="del" onclick="removeExpLine(${i})">🗑</button></span>
     </div>`).join('')}
     <div style="display:flex;justify-content:flex-end;border-top:1px solid var(--bdr);margin-top:5px;padding-top:5px;font-size:12px;font-weight:700">${tr('lbl_total')}: <span style="color:var(--rd);margin-left:6px">-RM ${fmt(tot)}</span></div>
@@ -2233,8 +2234,8 @@ function saveExpTxn(){
   const exps=[];
   if(!isFunder){
     const bank=document.getElementById('exp-tab-bank')?.value||'';
-    // queued lines first
-    expTabPending.forEach(p=>exps.push({paySource:'bank',bank:p.bank||bank,type:p.type,typeName:p.typeName,typeColor:p.typeColor,plSection:p.plSection,cat:p.cat,amt:p.amt,note:p.note,platform:p.platform,accrualMonth:accrual}));
+    // queued lines keep the expense-month captured when they were added
+    expTabPending.forEach(p=>exps.push({paySource:'bank',bank:p.bank||bank,type:p.type,typeName:p.typeName,typeColor:p.typeColor,plSection:p.plSection,cat:p.cat,amt:p.amt,note:p.note,platform:p.platform,accrualMonth:p.accrualMonth||''}));
     // plus the current form line, if it's filled in
     const tid=document.getElementById('exp-tab-type')?.value||'';
     const cat=document.getElementById('exp-tab-cat')?.value||'';
@@ -2244,6 +2245,9 @@ function saveExpTxn(){
     if(cat&&amt){const t=S.expTypes.find(t=>t.id===tid);exps.push({paySource:'bank',bank,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform,accrualMonth:accrual});}
     if(!exps.length){showToast('Add at least one line (category & amount)',true);return;}
     if(pendingExpTabFile)exps[0].attachment=pendingExpTabFile; // receipt attaches to the first line
+    // ONE shared reference for the whole payment; each line keeps its own unique id
+    const payRef=genRef('EXP');
+    exps.forEach((x,i)=>{x.ref=payRef;x.id='XID-'+Date.now().toString(36)+i+Math.random().toString(36).slice(2,5);});
   }else{
     const ref=document.getElementById('exp-tab-ref-f')?.value||genRef('EXP');
     const funderName=document.getElementById('exp-tab-funder')?.value||'';
@@ -2254,7 +2258,7 @@ function saveExpTxn(){
     const platform=document.getElementById('exp-tab-platform-f')?.value||'';
     if(!funderName||!cat||!amt){showToast('Select funder, category & amount',true);return;}
     const t=S.expTypes.find(t=>t.id===tid);
-    const exp={paySource:'funder',funderName,bank:null,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform,ref,accrualMonth:accrual};
+    const exp={paySource:'funder',funderName,bank:null,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform,ref,accrualMonth:accrual,id:'XID-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)};
     if(pendingExpTabFile)exp.attachment=pendingExpTabFile;
     exps.push(exp);
   }
@@ -2264,7 +2268,6 @@ function saveExpTxn(){
   if(!day.expenses)day.expenses=[];
   if(!day.funderTxns)day.funderTxns=[];
   exps.forEach(exp=>{
-    if(!exp.ref)exp.ref=genRef('EXP'); // unique ref per line (computed after prior lines are in)
     day.expenses.push(exp);
     if(exp.paySource==='funder')day.funderTxns.push({funder:exp.funderName,type:'injection',amount:exp.amt,bank:'direct',desc:'Direct payment — '+exp.cat+(exp.note?' ('+exp.note+')':''),isAutoFromExpense:true,ref:'AUTO-'+exp.ref});
   });
@@ -2342,8 +2345,8 @@ function openExpEditModal(e){
     ${e.attachment?`<div class="modal-section">Current attachment</div>
       ${isImg?`<img src="${e.attachment.data}" class="modal-img" style="cursor:pointer" onclick="viewAttachment(${JSON.stringify(e.attachment).replace(/"/g,'&quot;')})">`:
         `<a href="${e.attachment.data}" target="_blank" class="attach-thumb">📄 ${e.attachment.name}</a>`}
-      <div style="margin-top:7px"><input type="file" id="edit-exp-reattach" accept="image/*,.pdf" style="display:none" onchange="reattachExpTab(this,'${e.ref||''}','${e.date}')"><button class="attach-btn" onclick="document.getElementById('edit-exp-reattach').click()">📎 Replace attachment</button></div>`:
-      `<div style="margin-bottom:9px"><input type="file" id="edit-exp-reattach" accept="image/*,.pdf" style="display:none" onchange="reattachExpTab(this,'${e.ref||''}','${e.date}')"><button class="attach-btn" onclick="document.getElementById('edit-exp-reattach').click()">📎 Attach now</button></div>`}
+      <div style="margin-top:7px"><input type="file" id="edit-exp-reattach" accept="image/*,.pdf" style="display:none" onchange="reattachExpTab(this,'${e.id||e.ref||''}','${e.date}')"><button class="attach-btn" onclick="document.getElementById('edit-exp-reattach').click()">📎 Replace attachment</button></div>`:
+      `<div style="margin-bottom:9px"><input type="file" id="edit-exp-reattach" accept="image/*,.pdf" style="display:none" onchange="reattachExpTab(this,'${e.id||e.ref||''}','${e.date}')"><button class="attach-btn" onclick="document.getElementById('edit-exp-reattach').click()">📎 Attach now</button></div>`}
     <button class="btn-sec" style="width:100%;margin-top:10px" onclick="addLineFromEdit(${JSON.stringify(e).replace(/"/g,'&quot;')})">${tr('exp_add_more')}</button>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="btn-pri" style="flex:1" onclick="saveExpEdit(${JSON.stringify(e).replace(/"/g,'&quot;')})">💾 Save changes</button>
@@ -2369,7 +2372,8 @@ function addLineFromEdit(e){
 }
 function saveExpEdit(orig){
   const dIdx=S.dayEntries.findIndex(e=>e.date===orig.date);if(dIdx<0){closeModal();return;}
-  const eIdx=S.dayEntries[dIdx].expenses.findIndex(e=>e.ref===orig.ref);if(eIdx<0){closeModal();return;}
+  // Find by unique id (lines can share a ref); fall back to ref for old data
+  const eIdx=S.dayEntries[dIdx].expenses.findIndex(e=>orig.id?e.id===orig.id:e.ref===orig.ref);if(eIdx<0){closeModal();return;}
   const newDate=document.getElementById('edit-exp-date')?.value||orig.date;
   if(lockBlocked(orig.date)){closeModal();return;}
   if(newDate!==orig.date&&lockBlocked(newDate))return;
@@ -2395,12 +2399,12 @@ function saveExpEdit(orig){
   }
   persist();closeModal();renderExpListing();renderPL();showToast(tr('toast_updated'));
 }
-async function reattachExpTab(input,ref,date){
+async function reattachExpTab(input,key,date){
   const file=input.files[0];if(!file)return;
   if(file.size>3*1024*1024){showToast('File too large (max 3MB)',true);return;}
   const f=await fileToBase64(file);
   const dIdx=S.dayEntries.findIndex(e=>e.date===date);if(dIdx<0)return;
-  const eIdx=S.dayEntries[dIdx].expenses.findIndex(e=>e.ref===ref);if(eIdx<0)return;
+  const eIdx=S.dayEntries[dIdx].expenses.findIndex(e=>e.id===key||e.ref===key);if(eIdx<0)return;
   S.dayEntries[dIdx].expenses[eIdx].attachment=f;
   persist();closeModal();renderExpListing();showToast('Attachment updated ✓');
 }
