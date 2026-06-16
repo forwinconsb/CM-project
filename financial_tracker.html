@@ -357,20 +357,17 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <button id="exp-tab-src-funder" onclick="setExpTabSrc('funder')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid var(--bdr2);background:none;color:var(--txt2);cursor:pointer" data-i18n="exp_funder_src">👤 Paid by funder (direct)</button>
     </div>
 
-    <!-- Bank expense fields — Payment Voucher style: header + line grid -->
-    <div id="exp-tab-bank-fields">
+    <!-- Unified Payment Voucher entry: header + line grid (bank OR funder) -->
+    <div id="exp-tab-fields">
+      <div id="exp-tab-funder-note" style="display:none;background:#F3E5F5;border:.5px solid #CE93D8;border-radius:var(--r);padding:8px 11px;margin-bottom:9px;font-size:11px;color:#6A1B9A">&#128101; <span data-i18n="exp_funder_note">Funder pays the vendor directly — each line auto-creates a matching capital injection. No bank movement.</span></div>
       <!-- Voucher header (applies to the whole payment) -->
       <div class="g4" style="margin-bottom:9px">
         <div class="f"><label data-i18n="date">Date</label><input type="date" id="exp-tab-date"></div>
-        <div class="f"><label data-i18n="exp_pay_by">Payment by (bank)</label><select id="exp-tab-bank" onchange="refreshExpBankBal()"></select></div>
-        <div class="f"><label data-i18n="exp_bank_bal_now">Bank balance</label><div id="exp-tab-bankbal" style="height:34px;display:flex;align-items:center;padding:0 9px;font-weight:700;background:var(--bg3);border:1px solid var(--bdr2);border-radius:var(--r);color:var(--gr)">RM —</div></div>
+        <div class="f"><label id="exp-tab-payby-label" data-i18n="exp_pay_by">Payment by (bank)</label><select id="exp-tab-bank" onchange="refreshExpBankBal()"></select><select id="exp-tab-funder" style="display:none"></select></div>
+        <div class="f" id="exp-tab-bankbal-wrap"><label data-i18n="exp_bank_bal_now">Bank balance</label><div id="exp-tab-bankbal" style="height:34px;display:flex;align-items:center;padding:0 9px;font-weight:700;background:var(--bg3);border:1px solid var(--bdr2);border-radius:var(--r);color:var(--gr)">RM —</div></div>
         <div class="f"><label data-i18n="exp_voucher_no">Voucher no. (auto)</label><input type="text" id="exp-tab-ref" readonly style="background:var(--bg3);color:var(--txt2);font-family:monospace"></div>
       </div>
-      <div class="g3" style="margin-bottom:9px">
-        <div class="f"><label data-i18n="exp_pay_to">Payment to (payee)</label><input type="text" id="exp-tab-payee" placeholder="e.g. supplier / payee name"></div>
-        <div class="f"><label data-i18n="exp_cheque">Cheque / transfer no. (optional)</label><input type="text" id="exp-tab-cheque" placeholder="optional"></div>
-        <div class="f"><label data-i18n="exp_bank_charge">Bank charge (optional)</label><input type="number" id="exp-tab-bankcharge" placeholder="0.00" step="0.01"></div>
-      </div>
+      <div class="f" style="margin-bottom:9px;max-width:340px"><label data-i18n="exp_pay_to">Payment to (payee)</label><input type="text" id="exp-tab-payee" placeholder="e.g. supplier / payee name"></div>
       <hr class="divider">
       <div class="sl" style="margin-top:0" data-i18n="exp_lines_label">Lines — add one or more</div>
       <!-- Line entry -->
@@ -391,33 +388,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <div id="exp-tab-file-preview" style="margin-bottom:9px"></div>
       <div id="exp-tab-pending" style="margin-bottom:9px"></div>
       <button class="btn-add" onclick="addExpLine()" data-i18n="exp_add_line">+ Add another line (same payment)</button>
-    </div>
-
-    <!-- Funder direct fields -->
-    <div id="exp-tab-funder-fields" style="display:none">
-      <div style="background:#F3E5F5;border:.5px solid #CE93D8;border-radius:var(--r);padding:8px 11px;margin-bottom:9px;font-size:11px;color:#6A1B9A">
-        &#128101; Funder pays vendor directly — auto-creates a matching capital injection. No bank movement.
-      </div>
-      <div class="g4" style="margin-bottom:9px">
-        <div class="f"><label data-i18n="date">Date</label><input type="date" id="exp-tab-date-f"></div>
-        <div class="f"><label data-i18n="fnd_funder">Which funder paid</label><select id="exp-tab-funder"></select></div>
-        <div class="f"><label data-i18n="type">Type</label><select id="exp-tab-type-f" onchange="updExpTabCatsF()"></select></div>
-        <div class="f"><label data-i18n="category">Category</label><select id="exp-tab-cat-f"></select></div>
-      </div>
-      <div class="g3" style="margin-bottom:9px">
-        <div class="f"><label data-i18n="amount">Amount (MYR)</label><input type="number" id="exp-tab-amt-f" placeholder="0.00" step="0.01"></div>
-        <div class="f"><label data-i18n="note">Note / Vendor name</label><input type="text" id="exp-tab-note-f" placeholder="e.g. supplier, vendor name"></div>
-        <div class="f"><label data-i18n="ref">Reference no. (auto)</label><input type="text" id="exp-tab-ref-f" readonly style="background:var(--bg3);color:var(--txt2);font-family:monospace"></div>
-      </div>
-      <div class="g2" style="margin-bottom:9px">
-        <div class="f"><label data-i18n="exp_platform">Platform (optional)</label><select id="exp-tab-platform-f"></select></div>
-        <div class="f"><label data-i18n="exp_accrual">Expense month (optional — if different from payment date)</label><input type="month" id="exp-tab-accrual-f"></div>
-      </div>
-      <div class="f" style="margin-bottom:9px"><label>Attach receipt / invoice / PDF</label>
-        <input type="file" id="exp-tab-file-f" accept="image/*,.pdf" style="display:none" onchange="handleExpTabFile(this)">
-        <button class="attach-btn" onclick="document.getElementById('exp-tab-file-f').click()" style="height:36px">📎 Attach file</button>
-      </div>
-      <div id="exp-tab-file-preview-f" style="margin-bottom:9px"></div>
     </div>
 
     <button class="btn-pri" style="max-width:200px" onclick="saveExpTxn()" data-i18n="exp_save">💾 Save expense</button>
@@ -918,7 +888,8 @@ const LANG = {
     exp_save:'💾 Save expense', exp_all:'All expenses',
     exp_add_line:'+ Add another line (same payment)', exp_lines_pending:'Lines in this payment', exp_lines_saved:'lines saved ✓',
     exp_add_more:'➕ Add another expense (same date & bank)', exp_add_line_hint:'Add the next line, then press Save expense.',
-    exp_pay_by:'Payment by (bank)', exp_bank_bal_now:'Bank balance', exp_voucher_no:'Voucher no. (auto)',
+    exp_pay_by:'Payment by (bank)', exp_pay_by_fnd:'Payment by (funder)', exp_bank_bal_now:'Bank balance', exp_voucher_no:'Voucher no. (auto)',
+    exp_lines_word:'lines', exp_funder_note:'Funder pays the vendor directly — each line auto-creates a matching capital injection. No bank movement.',
     exp_pay_to:'Payment to (payee)', exp_cheque:'Cheque / transfer no. (optional)',
     exp_bank_charge:'Bank charge (optional)', exp_bank_charge_cat:'Bank charge', exp_lines_label:'Lines — add one or more',
     cf_bank_bal:'🏦 Bank balances (computed)', cf_balance:'Balance',
@@ -1165,7 +1136,8 @@ const LANG = {
     exp_save:'💾 保存费用', exp_all:'所有费用',
     exp_add_line:'+ 添加另一笔（同一付款）', exp_lines_pending:'本次付款的明细', exp_lines_saved:'笔已保存 ✓',
     exp_add_more:'➕ 添加另一笔费用（同日期和银行）', exp_add_line_hint:'填写下一笔，然后按“保存费用”。',
-    exp_pay_by:'付款银行', exp_bank_bal_now:'银行余额', exp_voucher_no:'凭证号（自动）',
+    exp_pay_by:'付款银行', exp_pay_by_fnd:'付款资金方', exp_bank_bal_now:'银行余额', exp_voucher_no:'凭证号（自动）',
+    exp_lines_word:'项', exp_funder_note:'资金方直接支付供应商 — 每一项自动生成对应的资本注入。不涉及银行流动。',
     exp_pay_to:'收款方', exp_cheque:'支票/转账号（可选）',
     exp_bank_charge:'银行手续费（可选）', exp_bank_charge_cat:'银行手续费', exp_lines_label:'明细 — 添加一条或多条',
     cf_bank_bal:'🏦 银行余额（计算）', cf_balance:'余额',
@@ -2209,18 +2181,16 @@ function refreshExpBankBal(){
 }
 function initExpTab(){
   const today=new Date().toISOString().slice(0,10);
-  ['exp-tab-date','exp-tab-date-f'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.value)el.value=today;});
+  const dEl=document.getElementById('exp-tab-date');if(dEl&&!dEl.value)dEl.value=today;
   setSel('exp-tab-bank',S.myrBanks.map(b=>({v:b.name,l:b.name})));
   setSel('exp-tab-type',S.expTypes.map(t=>({v:t.id,l:t.name})));
-  setSel('exp-tab-type-f',S.expTypes.map(t=>({v:t.id,l:t.name})));
   setSel('exp-tab-funder',S.funders.map(f=>({v:f.name,l:f.name})));
   setSel('exp-tab-platform',[{v:'',l:tr('exp_no_platform')},...S.platforms.map(p=>({v:p.name,l:p.name}))]);
-  setSel('exp-tab-platform-f',[{v:'',l:tr('exp_no_platform')},...S.platforms.map(p=>({v:p.name,l:p.name}))]);
-  updExpTabCats();updExpTabCatsF();
+  updExpTabCats();
+  setExpTabSrc(expTabSrc||'bank');
   refreshExpBankBal();
-  // auto refs
+  // auto ref
   const refEl=document.getElementById('exp-tab-ref');if(refEl)refEl.value=genRef('EXP');
-  const refElF=document.getElementById('exp-tab-ref-f');if(refElF)refElF.value=genRef('EXP');
   // filters
   const cats=[...new Set(S.expTypes.flatMap(t=>t.cats))].sort();
   setSel('exp-filter-cat',[{v:'',l:'All categories'},...cats.map(c=>({v:c,l:c}))]);
@@ -2231,25 +2201,23 @@ function initExpTab(){
 function setExpTabSrc(src){
   expTabSrc=src;
   const bb=document.getElementById('exp-tab-src-bank'),bf=document.getElementById('exp-tab-src-funder');
-  const bankF=document.getElementById('exp-tab-bank-fields'),funderF=document.getElementById('exp-tab-funder-fields');
-  if(src==='bank'){
-    if(bb){bb.style.background='#378ADD';bb.style.color='#fff';bb.style.borderColor='#378ADD';}
-    if(bf){bf.style.background='none';bf.style.color='var(--txt2)';bf.style.borderColor='var(--bdr2)';}
-    if(bankF)bankF.style.display='block';if(funderF)funderF.style.display='none';
-  }else{
-    if(bf){bf.style.background='#7B1FA2';bf.style.color='#fff';bf.style.borderColor='#7B1FA2';}
-    if(bb){bb.style.background='none';bb.style.color='var(--txt2)';bb.style.borderColor='var(--bdr2)';}
-    if(bankF)bankF.style.display='none';if(funderF)funderF.style.display='block';
-  }
+  const bankSel=document.getElementById('exp-tab-bank'),funderSel=document.getElementById('exp-tab-funder');
+  const balWrap=document.getElementById('exp-tab-bankbal-wrap'),note=document.getElementById('exp-tab-funder-note'),lbl=document.getElementById('exp-tab-payby-label');
+  const isBank=src==='bank';
+  if(bb){bb.style.background=isBank?'#378ADD':'none';bb.style.color=isBank?'#fff':'var(--txt2)';bb.style.borderColor=isBank?'#378ADD':'var(--bdr2)';}
+  if(bf){bf.style.background=isBank?'none':'#7B1FA2';bf.style.color=isBank?'var(--txt2)':'#fff';bf.style.borderColor=isBank?'var(--bdr2)':'#7B1FA2';}
+  if(bankSel)bankSel.style.display=isBank?'':'none';
+  if(funderSel)funderSel.style.display=isBank?'none':'';
+  if(balWrap)balWrap.style.visibility=isBank?'visible':'hidden';
+  if(note)note.style.display=isBank?'none':'block';
+  if(lbl)lbl.textContent=isBank?tr('exp_pay_by'):tr('exp_pay_by_fnd');
 }
 function updExpTabCats(){const tid=document.getElementById('exp-tab-type')?.value;const t=S.expTypes.find(t=>t.id===tid);setSel('exp-tab-cat',(t?.cats||[]).map(c=>({v:c,l:c})));}
-function updExpTabCatsF(){const tid=document.getElementById('exp-tab-type-f')?.value;const t=S.expTypes.find(t=>t.id===tid);setSel('exp-tab-cat-f',(t?.cats||[]).map(c=>({v:c,l:c})));}
 async function handleExpTabFile(input){
   const file=input.files[0];if(!file)return;
   if(file.size>3*1024*1024){showToast('File too large (max 3MB)',true);input.value='';return;}
   pendingExpTabFile=await fileToBase64(file);
-  const isBank=expTabSrc==='bank';
-  const pvId=isBank?'exp-tab-file-preview':'exp-tab-file-preview-f';
+  const pvId='exp-tab-file-preview';
   const el=document.getElementById(pvId);if(!el)return;
   const isImg=pendingExpTabFile.type.startsWith('image/');
   el.innerHTML=`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#f0faf5;border:1px solid #9FE1CB;border-radius:var(--r);font-size:11px">
@@ -2261,50 +2229,32 @@ async function handleExpTabFile(input){
 }
 function saveExpTxn(){
   const isFunder=expTabSrc==='funder';
-  const dateId=isFunder?'exp-tab-date-f':'exp-tab-date';
-  const date=document.getElementById(dateId)?.value;if(!date){showToast('Select date',true);return;}
+  const date=document.getElementById('exp-tab-date')?.value;if(!date){showToast('Select date',true);return;}
   if(lockBlocked(date))return;
-  const accrual=document.getElementById(isFunder?'exp-tab-accrual-f':'exp-tab-accrual')?.value||'';
-  // Build the list of expense lines to save (bank branch supports multiple lines in one payment).
+  const accrual=document.getElementById('exp-tab-accrual')?.value||'';
+  const payee=document.getElementById('exp-tab-payee')?.value||'';
+  const bank=document.getElementById('exp-tab-bank')?.value||'';
+  const funderName=document.getElementById('exp-tab-funder')?.value||'';
+  if(isFunder&&!funderName){showToast('Select funder',true);return;}
+  // Build the list of expense lines (queued lines + the current form line)
   const exps=[];
-  if(!isFunder){
-    const bank=document.getElementById('exp-tab-bank')?.value||'';
-    // queued lines keep the expense-month captured when they were added
-    expTabPending.forEach(p=>exps.push({paySource:'bank',bank:p.bank||bank,type:p.type,typeName:p.typeName,typeColor:p.typeColor,plSection:p.plSection,cat:p.cat,amt:p.amt,note:p.note,platform:p.platform,accrualMonth:p.accrualMonth||''}));
-    // plus the current form line, if it's filled in
-    const tid=document.getElementById('exp-tab-type')?.value||'';
-    const cat=document.getElementById('exp-tab-cat')?.value||'';
-    const amt=n(document.getElementById('exp-tab-amt')?.value);
-    const note=document.getElementById('exp-tab-note')?.value||'';
-    const platform=document.getElementById('exp-tab-platform')?.value||'';
-    if(cat&&amt){const t=S.expTypes.find(t=>t.id===tid);exps.push({paySource:'bank',bank,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform,accrualMonth:accrual});}
-    if(!exps.length){showToast('Add at least one line (category & amount)',true);return;}
-    if(pendingExpTabFile)exps[0].attachment=pendingExpTabFile; // receipt attaches to the first line
-    // Voucher header: payee, cheque no, bank charge
-    const payee=document.getElementById('exp-tab-payee')?.value||'';
-    const chequeNo=document.getElementById('exp-tab-cheque')?.value||'';
-    const bankCharge=n(document.getElementById('exp-tab-bankcharge')?.value);
-    // Bank charge becomes its own line under the same voucher (keeps bank balance & P&L correct)
-    if(bankCharge>0)exps.push({paySource:'bank',bank,type:'',typeName:tr('exp_bank_charge_cat'),typeColor:'#7A7A7A',plSection:'other',cat:tr('exp_bank_charge_cat'),amt:bankCharge,note:chequeNo?('Cheque '+chequeNo):'',platform:'',accrualMonth:accrual});
-    // header fields applied to every line of the voucher
-    exps.forEach(x=>{x.payee=payee;x.chequeNo=chequeNo;});
-    // ONE shared reference for the whole payment; each line keeps its own unique id
-    const payRef=genRef('EXP');
-    exps.forEach((x,i)=>{x.ref=payRef;x.id='XID-'+Date.now().toString(36)+i+Math.random().toString(36).slice(2,5);});
-  }else{
-    const ref=document.getElementById('exp-tab-ref-f')?.value||genRef('EXP');
-    const funderName=document.getElementById('exp-tab-funder')?.value||'';
-    const tid=document.getElementById('exp-tab-type-f')?.value||'';
-    const cat=document.getElementById('exp-tab-cat-f')?.value||'';
-    const amt=n(document.getElementById('exp-tab-amt-f')?.value);
-    const note=document.getElementById('exp-tab-note-f')?.value||'';
-    const platform=document.getElementById('exp-tab-platform-f')?.value||'';
-    if(!funderName||!cat||!amt){showToast('Select funder, category & amount',true);return;}
-    const t=S.expTypes.find(t=>t.id===tid);
-    const exp={paySource:'funder',funderName,bank:null,type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform,ref,accrualMonth:accrual,id:'XID-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)};
-    if(pendingExpTabFile)exp.attachment=pendingExpTabFile;
-    exps.push(exp);
-  }
+  expTabPending.forEach(p=>exps.push({type:p.type,typeName:p.typeName,typeColor:p.typeColor,plSection:p.plSection,cat:p.cat,amt:p.amt,note:p.note,platform:p.platform,accrualMonth:p.accrualMonth||''}));
+  const tid=document.getElementById('exp-tab-type')?.value||'';
+  const cat=document.getElementById('exp-tab-cat')?.value||'';
+  const amt=n(document.getElementById('exp-tab-amt')?.value);
+  const note=document.getElementById('exp-tab-note')?.value||'';
+  const platform=document.getElementById('exp-tab-platform')?.value||'';
+  if(cat&&amt){const t=S.expTypes.find(t=>t.id===tid);exps.push({type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,amt,note,platform,accrualMonth:accrual});}
+  if(!exps.length){showToast('Add at least one line (category & amount)',true);return;}
+  // Apply the voucher header (source + payee) to every line; one shared ref, unique id each
+  exps.forEach((x,i)=>{
+    if(isFunder){x.paySource='funder';x.funderName=funderName;x.bank=null;}
+    else{x.paySource='bank';x.bank=bank;}
+    x.payee=payee;
+  });
+  if(pendingExpTabFile)exps[0].attachment=pendingExpTabFile; // receipt attaches to the first line
+  const payRef=genRef('EXP');
+  exps.forEach((x,i)=>{x.ref=payRef;x.id='XID-'+Date.now().toString(36)+i+Math.random().toString(36).slice(2,5);});
   // Save all lines to the day entry
   let day=S.dayEntries.find(e=>e.date===date);
   if(!day){day={date,exchanges:[],myrBanks:[],funderTxns:[],expenses:[],totalExp:0};S.dayEntries.push(day);S.dayEntries.sort((a,b)=>a.date.localeCompare(b.date));}
@@ -2319,15 +2269,11 @@ function saveExpTxn(){
   pendingExpTabFile=null;
   expTabPending=[];renderExpTabPending();
   // Clear form fields
-  document.getElementById(isFunder?'exp-tab-amt-f':'exp-tab-amt').value='';
-  document.getElementById(isFunder?'exp-tab-note-f':'exp-tab-note').value='';
-  const acEl=document.getElementById(isFunder?'exp-tab-accrual-f':'exp-tab-accrual');if(acEl)acEl.value='';
-  document.getElementById(isFunder?'exp-tab-file-preview-f':'exp-tab-file-preview').innerHTML='';
-  if(!isFunder){['exp-tab-payee','exp-tab-cheque','exp-tab-bankcharge'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});refreshExpBankBal();}
+  ['exp-tab-amt','exp-tab-note','exp-tab-accrual','exp-tab-payee'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('exp-tab-file-preview').innerHTML='';
+  refreshExpBankBal();
   // Refresh ref
-  const newRef=genRef('EXP');
-  const re=document.getElementById('exp-tab-ref');if(re)re.value=newRef;
-  const reF=document.getElementById('exp-tab-ref-f');if(reF)reF.value=newRef;
+  const re=document.getElementById('exp-tab-ref');if(re)re.value=genRef('EXP');
   renderExpListing();
   showToast(exps.length>1?(exps.length+' '+tr('exp_lines_saved')):(exps[0].ref+' saved ✓'));
 }
@@ -2357,11 +2303,38 @@ function renderExpListing(){
   if(!filtered.length){tbody.innerHTML=`<tr><td colspan="9" class="empty">No expenses found</td></tr>`;setHTML('exp-listing-metrics','');return;}
   const totBank=filtered.filter(e=>e.paySource!=='funder').reduce((s,e)=>s+e.amt,0);
   const totFunder=filtered.filter(e=>e.paySource==='funder').reduce((s,e)=>s+e.amt,0);
-  setHTML('exp-listing-metrics',`<div class="mc"><div class="ml">${tr('lbl_total_txns')}</div><div class="mv">${filtered.length}</div></div><div class="mc"><div class="ml">${tr('lbl_total')}</div><div class="mv neg">RM ${fmt(totBank+totFunder)}</div></div><div class="mc"><div class="ml">${tr('paid_from')}</div><div class="mv neg">RM ${fmt(totBank)}</div></div><div class="mc"><div class="ml">${tr('paid_by_funder')}</div><div class="mv" style="color:var(--pu)">RM ${fmt(totFunder)}</div></div>`);
-  tbody.innerHTML=filtered.map(e=>`<tr class="row-tap" style="cursor:pointer" onclick="openExpEditModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">
+  // Group lines by voucher reference — one row per payment, expandable to its lines
+  const groups=[],gmap={};
+  filtered.forEach(e=>{const k=e.ref||('id-'+(e.id||(e._dayIdx+'-'+e._expIdx)));if(!gmap[k]){gmap[k]={key:k,lines:[]};groups.push(gmap[k]);}gmap[k].lines.push(e);});
+  setHTML('exp-listing-metrics',`<div class="mc"><div class="ml">${tr('lbl_total_txns')}</div><div class="mv">${groups.length}</div></div><div class="mc"><div class="ml">${tr('lbl_total')}</div><div class="mv neg">RM ${fmt(totBank+totFunder)}</div></div><div class="mc"><div class="ml">${tr('paid_from')}</div><div class="mv neg">RM ${fmt(totBank)}</div></div><div class="mc"><div class="ml">${tr('paid_by_funder')}</div><div class="mv" style="color:var(--pu)">RM ${fmt(totFunder)}</div></div>`);
+  let html='';
+  groups.forEach(g=>{
+    if(g.lines.length===1){html+=expRowHtml(g.lines[0],false);return;}
+    const tot=g.lines.reduce((s,e)=>s+e.amt,0),e0=g.lines[0];
+    const safe=(g.key||'').replace(/[^A-Za-z0-9_-]/g,'')||('g'+Math.random().toString(36).slice(2,7));
+    const cats=g.lines.map(l=>l.cat).filter(Boolean).slice(0,3).join(', ')+(g.lines.length>3?'…':'');
+    html+=`<tr class="row-tap" style="cursor:pointer;background:var(--bg3)" onclick="toggleExpGroup('${safe}')">
+      <td class="hide-sm" style="font-family:monospace;font-size:11px;color:var(--bl);font-weight:600">${e0.ref||'—'}</td>
+      <td>${fD(e0.date)}</td>
+      <td><span class="pl-badge">🧾 ${g.lines.length} ${tr('exp_lines_word')}</span> <span style="color:var(--txt2);font-size:11px">${cats}</span>${e0.payee?` <span style="color:var(--txt2);font-size:11px">→ ${e0.payee}</span>`:''}</td>
+      <td class="hide-sm"></td>
+      <td style="font-weight:700;color:var(--rd)">-RM ${fmt(tot)}</td>
+      <td>${e0.paySource==='funder'?`<span style="font-size:10px;color:#7B1FA2;font-weight:600;background:#F3E5F5;padding:2px 7px;border-radius:20px">👤 ${e0.funderName}</span>`:(bDot(e0.bank)+' <span style="font-size:11px">'+e0.bank+'</span>')}</td>
+      <td class="hide-sm"></td>
+      <td class="hide-sm"></td>
+      <td class="hide-sm" style="text-align:right"><span class="pl-chev">›</span></td>
+    </tr>`;
+    g.lines.forEach(l=>{html+=expRowHtml(l,true,safe);});
+  });
+  tbody.innerHTML=html;
+}
+function expRowHtml(e,isDetail,grpKey){
+  const cls=isDetail?('exp-grp-det grp-'+grpKey):'row-tap';
+  const sty=isDetail?'display:none;cursor:pointer;background:var(--bg2)':'cursor:pointer';
+  return `<tr class="${cls}" style="${sty}" onclick="openExpEditModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">
     <td class="hide-sm" style="font-family:monospace;font-size:11px;color:var(--bl);font-weight:600">${e.ref||'—'}</td>
-    <td>${fD(e.date)}${e.accrualMonth&&e.accrualMonth!==mk(e.date)?` <span class="pl-badge">📅 ${tr('exp_for')} ${ml(e.accrualMonth)}</span>`:''}</td>
-    <td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:${e.typeColor||'#888'};display:inline-block"></span>${e.cat}${e.platform?` <span class="pl-badge">🎮 ${e.platform}</span>`:''}${e.payee?` <span style="color:var(--txt2);font-size:11px">→ ${e.payee}</span>`:''}</span></td>
+    <td>${isDetail?'<span style="color:var(--txt2)">↳</span> ':''}${fD(e.date)}${e.accrualMonth&&e.accrualMonth!==mk(e.date)?` <span class="pl-badge">📅 ${tr('exp_for')} ${ml(e.accrualMonth)}</span>`:''}</td>
+    <td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:${e.typeColor||'#888'};display:inline-block"></span>${e.cat}${e.platform?` <span class="pl-badge">🎮 ${e.platform}</span>`:''}${(!isDetail&&e.payee)?` <span style="color:var(--txt2);font-size:11px">→ ${e.payee}</span>`:''}</span></td>
     <td class="hide-sm" style="color:var(--txt2);font-size:11px">${e.typeName||'-'}</td>
     <td style="font-weight:700;color:var(--rd)">-RM ${fmt(e.amt)}</td>
     <td>${e.paySource==='funder'?`<span style="font-size:10px;color:#7B1FA2;font-weight:600;background:#F3E5F5;padding:2px 7px;border-radius:20px">👤 ${e.funderName}</span>`:(bDot(e.bank)+' <span style="font-size:11px">'+e.bank+'</span>')}</td>
@@ -2371,8 +2344,9 @@ function renderExpListing(){
       <button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();openExpEditModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">✏️ Edit</button>
       <button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteExpTxn(${e._dayIdx},${e._expIdx})">🗑</button>
     </td>
-  </tr>`).join('');
+  </tr>`;
 }
+function toggleExpGroup(key){document.querySelectorAll('.grp-'+key).forEach(r=>{r.style.display=r.style.display==='none'?'':'none';});}
 function openExpEditModal(e){
   const isImg=e.attachment&&e.attachment.type&&e.attachment.type.startsWith('image/');
   const body=`
@@ -2386,7 +2360,6 @@ function openExpEditModal(e){
       <div class="f"><label data-i18n="exp_platform">Platform (optional)</label><select id="edit-exp-platform"><option value="">${tr('exp_no_platform')}</option>${S.platforms.map(p=>`<option value="${p.name}" ${p.name===e.platform?'selected':''}>${p.name}</option>`).join('')}</select></div>
       ${e.paySource==='bank'?`<div class="f"><label>Paid from bank</label><select id="edit-exp-bank">${S.myrBanks.map(b=>`<option value="${b.name}" ${b.name===e.bank?'selected':''}>${b.name}</option>`).join('')}</select></div>`:`<div class="f"><label>Funder</label><select id="edit-exp-funder">${S.funders.map(f=>`<option value="${f.name}" ${f.name===e.funderName?'selected':''}>${f.name}</option>`).join('')}</select></div>`}
       <div class="f"><label data-i18n="exp_pay_to">Payment to (payee)</label><input type="text" id="edit-exp-payee" value="${(e.payee||'').replace(/"/g,'&quot;')}"></div>
-      <div class="f"><label data-i18n="exp_cheque">Cheque / transfer no.</label><input type="text" id="edit-exp-cheque" value="${(e.chequeNo||'').replace(/"/g,'&quot;')}"></div>
     </div>
     ${e.attachment?`<div class="modal-section">Current attachment</div>
       ${isImg?`<img src="${e.attachment.data}" class="modal-img" style="cursor:pointer" onclick="viewAttachment(${JSON.stringify(e.attachment).replace(/"/g,'&quot;')})">`:
@@ -2408,10 +2381,11 @@ function addLineFromEdit(e){
   // set fields after the tab has finished (re)building its selects
   setTimeout(()=>{
     setExpTabSrc(isFunder?'funder':'bank');
-    const dEl=document.getElementById(isFunder?'exp-tab-date-f':'exp-tab-date');if(dEl)dEl.value=e.date;
+    const dEl=document.getElementById('exp-tab-date');if(dEl)dEl.value=e.date;
     if(isFunder){const f=document.getElementById('exp-tab-funder');if(f&&e.funderName)f.value=e.funderName;}
-    else{const b=document.getElementById('exp-tab-bank');if(b&&e.bank)b.value=e.bank;}
-    const form=document.getElementById(isFunder?'exp-tab-funder-fields':'exp-tab-bank-fields');
+    else{const b=document.getElementById('exp-tab-bank');if(b&&e.bank)b.value=e.bank;refreshExpBankBal();}
+    if(e.payee){const p=document.getElementById('exp-tab-payee');if(p)p.value=e.payee;}
+    const form=document.getElementById('exp-tab-fields');
     if(form)form.scrollIntoView({behavior:'smooth',block:'center'});
     showToast(tr('exp_add_line_hint'));
   },60);
@@ -2430,7 +2404,6 @@ function saveExpEdit(orig){
     accrualMonth:document.getElementById('edit-exp-accrual')?.value||'',
     platform:document.getElementById('edit-exp-platform')?.value||'',
     payee:document.getElementById('edit-exp-payee')?.value||'',
-    chequeNo:document.getElementById('edit-exp-cheque')?.value||'',
     bank:orig.paySource==='bank'?(document.getElementById('edit-exp-bank')?.value||orig.bank):null,
     funderName:orig.paySource==='funder'?(document.getElementById('edit-exp-funder')?.value||orig.funderName):null
   };
