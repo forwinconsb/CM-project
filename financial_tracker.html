@@ -659,17 +659,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
   </div>
   <div class="card">
     <details class="collapse-card">
-      <summary><span class="step-lbl" style="margin-bottom:0" data-i18n="pe_step2">② Exchange Transactions — for this date, tag MYR bank</span></summary>
-      <div style="margin-top:11px">
-        <div id="pgk-tab-exch-list"></div>
-        <button class="btn-add" onclick="addExch2()" style="margin-top:7px" data-i18n="pe_add_exch">+ Add exchange transaction</button>
-        <button class="btn-pri" onclick="saveExchDay()" style="margin-top:10px" data-i18n="pgk_save_exch">💾 Save exchanges for this date</button>
-      </div>
-    </details>
-  </div>
-
-  <div class="card">
-    <details class="collapse-card">
       <summary><span class="ct" style="margin-bottom:0" data-i18n="pgk_listing">PGK platform entries — full listing</span></summary>
       <div style="margin-top:12px">
         <div class="filter-row">
@@ -693,7 +682,28 @@ details.collapse-card[open]>summary:before{content:'▾'}
 
 <!-- EXCHANGE TAB -->
 <div id="pg-exchange-tab" class="pg">
-  <div class="info-box">💱 <span data-i18n="ex_info">Exchange Transactions — full listing. Click a row to edit or delete.</span></div>
+  <div class="info-box">💱 <span data-i18n="ex_info">Exchange Transactions — record a transaction below; full listing further down. Tap a row to edit or delete.</span></div>
+  <!-- Entry form -->
+  <div class="card op-only">
+    <div class="step-lbl pu" data-i18n="ex_new">New exchange transaction</div>
+    <div style="display:flex;gap:6px;margin-bottom:9px">
+      <button id="exch-ent-dir-out" onclick="setExchEntryDir('out')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid #0F6E56;background:#0F6E56;color:#fff;cursor:pointer" data-i18n="ex_dir_out">⬆ PGK → MYR (receive RM)</button>
+      <button id="exch-ent-dir-in" onclick="setExchEntryDir('in')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid var(--bdr2);background:none;color:var(--txt2);cursor:pointer" data-i18n="ex_dir_in">⬇ MYR → PGK (top up)</button>
+    </div>
+    <div class="g4" style="margin-bottom:9px">
+      <div class="f"><label data-i18n="date">Date</label><input type="date" id="exch-ent-date"></div>
+      <div class="f"><label data-i18n="pgk_platform">Platform</label><select id="exch-ent-platform"></select></div>
+      <div class="f"><label data-i18n="exch_exchanger">Exchanger</label><select id="exch-ent-exchanger"></select></div>
+      <div class="f"><label id="exch-ent-pgk-label">PGK sent</label><input type="number" id="exch-ent-pgk" placeholder="0.00" step="0.01" oninput="exchEntryCalc()"></div>
+    </div>
+    <div class="g4" style="margin-bottom:9px">
+      <div class="f"><label data-i18n="exch_rate">Rate (PGK:MYR)</label><input type="number" id="exch-ent-rate" placeholder="0.885" step="0.001" oninput="exchEntryCalc()"></div>
+      <div class="f"><label data-i18n="exch_myr_equiv">MYR equiv (auto)</label><input type="number" id="exch-ent-myr" placeholder="0.00" readonly style="background:var(--bg3);color:var(--txt2)"></div>
+      <div class="f"><label id="exch-ent-paid-label">MYR actually received</label><input type="number" id="exch-ent-paid" placeholder="0.00" step="0.01"></div>
+      <div class="f"><label data-i18n="bank">MYR bank</label><select id="exch-ent-bank"></select></div>
+    </div>
+    <button class="btn-pri" style="max-width:220px" onclick="saveExchangeOne()" data-i18n="ex_save">💾 Save exchange</button>
+  </div>
   <div class="card">
     <div class="ct">💰 <span data-i18n="ex_dues_title">Outstanding Dues — exchangers who still owe us (MYR)</span></div>
     <div id="exch-dues"><div class="empty">No outstanding dues</div></div>
@@ -982,7 +992,9 @@ const LANG = {
     rc_frozen_tag:'Frozen', rc_recovered_tag:'Recovered', rc_partial:'partial', rc_writtenoff_tag:'Written off', rc_writeoff_btn:'Write off', rc_recovered_btn:'Recovered', rc_recovered_afterall:'Recovered after all', rc_no_frozen:'No frozen funds — all banks healthy',
     cf_chart_title:'Daily trend - deposit (bars) & win/lose (line)', cf_dep_legend:'Deposit (PGK)', cf_wl_legend:'Win / Lose (PGK)',
     cf_paid_rcvd:'Paid/Rcvd', cf_due:'Due', cf_in:'In (MYR)', cf_out:'Out (MYR)', cf_balance:'Balance',
-    ex_info:'Exchange Transactions — full listing. Click a row to edit or delete.',
+    ex_info:'Exchange Transactions — record a transaction below; full listing further down. Tap a row to edit or delete.',
+    ex_new:'New exchange transaction', ex_save:'💾 Save exchange', ex_dir_out:'⬆ PGK → MYR (receive RM)', ex_dir_in:'⬇ MYR → PGK (top up)',
+    ex_myr_sent:'MYR sent', ex_myr_recv:'MYR actually received', ex_myr_paid:'MYR actually paid', ex_saved:'Exchange saved ✓',
     ex_dues_title:'Outstanding Dues — exchangers who still owe us (MYR)', ex_no_dues:'No outstanding dues — all exchangers settled',
     ex_pay_history:'Received payments history', ex_stmt_title:'Exchanger Statement — movement trace',
     ex_stmt_desc:'Every exchange and payment in date order with a running balance. Positive = exchanger owes us; negative = we owe the exchanger.',
@@ -1239,7 +1251,9 @@ const LANG = {
     rc_frozen_tag:'冻结', rc_recovered_tag:'已收回', rc_partial:'部分', rc_writtenoff_tag:'已核销', rc_writeoff_btn:'核销', rc_recovered_btn:'已收回', rc_recovered_afterall:'最终已收回', rc_no_frozen:'无冻结资金 — 所有银行正常',
     cf_chart_title:'每日趋势 - 存款（柱）& 输赢（线）', cf_dep_legend:'存款 (PGK)', cf_wl_legend:'输赢 (PGK)',
     cf_paid_rcvd:'已付/已收', cf_due:'欠款', cf_in:'收入 (MYR)', cf_out:'支出 (MYR)', cf_balance:'余额',
-    ex_info:'兑换交易 — 完整列表。点击行可编辑或删除。',
+    ex_info:'兑换交易 — 在下方记录交易；完整列表在下方。点击行可编辑或删除。',
+    ex_new:'新增兑换交易', ex_save:'💾 保存兑换', ex_dir_out:'⬆ PGK → MYR（收 RM）', ex_dir_in:'⬇ MYR → PGK（充值）',
+    ex_myr_sent:'MYR 转出', ex_myr_recv:'实际收到 MYR', ex_myr_paid:'实际支付 MYR', ex_saved:'兑换已保存 ✓',
     ex_dues_title:'未收欠款 — 仍欠我们的兑换商（MYR）', ex_no_dues:'无未收欠款 — 所有兑换商已结清',
     ex_pay_history:'收款历史', ex_stmt_title:'兑换商对账单 — 流水追踪',
     ex_stmt_desc:'按日期排列的所有兑换与收款及滚动余额。正数=兑换商欠我们；负数=我们欠兑换商。',
@@ -1833,7 +1847,7 @@ function renderPage(p){
     if(exSel){exSel.innerHTML='<option value="">All exchangers</option>'+S.exchangers.map(e=>`<option value="${e}">${e}</option>`).join('');}
     setSel('exch-tab-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);
     setSel('stmt-exchanger',[{v:'',l:'Select exchanger…'},...S.exchangers.map(e=>({v:e,l:e}))]);
-    renderExchTab();return;
+    initExchEntry();renderExchTab();return;
   }
   if(p==='fnd-tab'){initFndTab();return;}
   if(p==='exp-tab'){initExpTab();return;}
@@ -2511,6 +2525,53 @@ function pgkLoanNetFor(platformName,date){
     (l.repayments||[]).forEach(r=>{if(r.date===date)net+=(l.dir==='lent'?(r.amt||0):-(r.amt||0));});
   });
   return net;
+}
+
+// ══ EXCHANGE ENTRY (Exchanges tab — single transaction) ══
+let exchEntryDir='out';
+function setExchEntryDir(d){
+  exchEntryDir=d;
+  const a=document.getElementById('exch-ent-dir-out'),b=document.getElementById('exch-ent-dir-in'),isOut=d==='out';
+  if(a){a.style.background=isOut?'#0F6E56':'none';a.style.color=isOut?'#fff':'var(--txt2)';a.style.borderColor=isOut?'#0F6E56':'var(--bdr2)';}
+  if(b){b.style.background=isOut?'none':'#0C447C';b.style.color=isOut?'var(--txt2)':'#fff';b.style.borderColor=isOut?'var(--bdr2)':'#0C447C';}
+  const pl=document.getElementById('exch-ent-pgk-label');if(pl)pl.textContent=isOut?tr('lbl_pkgsent'):tr('ex_myr_sent');
+  const pdl=document.getElementById('exch-ent-paid-label');if(pdl)pdl.textContent=isOut?tr('ex_myr_recv'):tr('ex_myr_paid');
+}
+function exchEntryCalc(){
+  const pgk=parseFloat(document.getElementById('exch-ent-pgk')?.value)||0;
+  const rate=parseFloat(document.getElementById('exch-ent-rate')?.value)||0;
+  const me=document.getElementById('exch-ent-myr');if(me)me.value=(pgk&&rate)?(Math.round(pgk*rate*100)/100):'';
+}
+function initExchEntry(){
+  const d=document.getElementById('exch-ent-date');if(d&&!d.value)d.value=new Date().toISOString().slice(0,10);
+  setSel('exch-ent-platform',S.platforms.map(p=>p.name));
+  const ex=document.getElementById('exch-ent-exchanger');if(ex)ex.innerHTML=S.exchangers.map(e=>`<option>${e}</option>`).join('');
+  setSel('exch-ent-bank',S.myrBanks.map(b=>({v:b.name,l:b.name})));
+  const rt=document.getElementById('exch-ent-rate');if(rt&&!rt.value)rt.value='0.885';
+  setExchEntryDir(exchEntryDir||'out');
+  exchEntryCalc();
+}
+function saveExchangeOne(){
+  const date=document.getElementById('exch-ent-date')?.value;if(!date){showToast('Select date',true);return;}
+  if(lockBlocked(date))return;
+  const platform=document.getElementById('exch-ent-platform')?.value||'';
+  const exchanger=document.getElementById('exch-ent-exchanger')?.value||'';
+  const pgk=n(document.getElementById('exch-ent-pgk')?.value);
+  const rate=parseFloat(document.getElementById('exch-ent-rate')?.value)||0;
+  const paid=n(document.getElementById('exch-ent-paid')?.value);
+  const myrBank=document.getElementById('exch-ent-bank')?.value||'';
+  if(!pgk){showToast('Enter the amount',true);return;}
+  const myr=Math.round(pgk*rate*100)/100;
+  const ex={dir:exchEntryDir,platform,exchanger,pgk,rate,myr,paid,myrBank,ref:genRef('EXC')};
+  let day=S.dayEntries.find(e=>e.date===date);
+  if(!day){day={date,exchanges:[],myrBanks:[],funderTxns:[],expenses:[],totalExp:0};S.dayEntries.push(day);S.dayEntries.sort((a,b)=>a.date.localeCompare(b.date));}
+  if(!day.exchanges)day.exchanges=[];
+  day.exchanges.push(ex);
+  persist();
+  ['exch-ent-pgk','exch-ent-paid'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  exchEntryCalc();
+  renderExchTab();if(typeof renderExchDues==='function')renderExchDues();if(typeof renderPGKRecon==='function')renderPGKRecon();
+  showToast(tr('ex_saved'));
 }
 function openExpEditModal(e){
   const isImg=e.attachment&&e.attachment.type&&e.attachment.type.startsWith('image/');
