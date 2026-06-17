@@ -279,6 +279,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
   <button class="nb" onclick="doNav('exchange-tab',this)" data-i18n="nav_exchange">💱 Exchanges</button>
   <button class="nb" onclick="doNav('fnd-tab',this)" data-i18n="nav_fnd">💰 Funder Movements</button>
   <button class="nb" onclick="doNav('exp-tab',this)" data-i18n="nav_exp">🧾 Expenses</button>
+  <button class="nb" onclick="doNav('loans',this)" data-i18n="nav_loans">🤝 Loans / IOU</button>
   <button class="nb" onclick="doNav('recon',this)" data-i18n="nav_recon">🏦 Reconciliation</button>
   <button class="nb" onclick="doNav('cashflow',this)" data-i18n="nav_cf">↔️ Cash Flow</button>
   <button class="nb" onclick="doNav('pl',this)" data-i18n="nav_pl">📊 P&L</button>
@@ -409,6 +410,34 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <thead><tr><th data-i18n="ref">Ref</th><th data-i18n="date">Date</th><th data-i18n="category">Category</th><th data-i18n="type">Type</th><th data-i18n="amount">Amount (MYR)</th><th data-i18n="paid_from">Paid by</th><th data-i18n="note">Note</th><th>📎</th><th data-i18n="col_action">Action</th></tr></thead>
       <tbody id="exp-listing-body"><tr><td colspan="9" class="empty">No expenses yet</td></tr></tbody>
     </table></div>
+  </div>
+</div>
+
+<!-- LOANS / IOU -->
+<div id="pg-loans" class="pg">
+  <div class="info-box" data-i18n="ln_info">🤝 <b>Loans / IOU (PGK)</b> — Record PGK lent to or borrowed from third parties. Each one stays outstanding until repaid. Movements feed the PGK platform reconciliation.</div>
+  <div id="ln-metrics" class="metrics" style="margin-bottom:12px"></div>
+  <!-- Entry form -->
+  <div class="card op-only">
+    <div class="step-lbl pu" data-i18n="ln_new">New loan / IOU</div>
+    <div style="display:flex;gap:6px;margin-bottom:9px">
+      <button id="ln-dir-lent" onclick="setLoanDir('lent')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid #0F6E56;background:#0F6E56;color:#fff;cursor:pointer" data-i18n="ln_lent">⬆ Lent out (they owe you)</button>
+      <button id="ln-dir-borrowed" onclick="setLoanDir('borrowed')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid var(--bdr2);background:none;color:var(--txt2);cursor:pointer" data-i18n="ln_borrowed">⬇ Borrowed in (you owe)</button>
+    </div>
+    <div class="g4" style="margin-bottom:9px">
+      <div class="f"><label data-i18n="date">Date</label><input type="date" id="ln-date"></div>
+      <div class="f"><label data-i18n="ln_party">Third party</label><input type="text" id="ln-party" placeholder="e.g. Ah Beng"></div>
+      <div class="f"><label data-i18n="ln_platform">PGK from platform</label><select id="ln-platform"></select></div>
+      <div class="f"><label data-i18n="ln_amount">Amount (PGK)</label><input type="number" id="ln-amt" placeholder="0.00" step="0.01"></div>
+    </div>
+    <div class="f" style="margin-bottom:9px;max-width:340px"><label data-i18n="note">Note (optional)</label><input type="text" id="ln-note" placeholder="optional"></div>
+    <div id="ln-effect-note" style="font-size:11px;color:var(--bl2);background:#E6F1FB;border:1px solid #B5D4F4;border-radius:var(--r);padding:6px 10px;margin-bottom:9px"></div>
+    <button class="btn-pri" style="max-width:200px" onclick="saveLoan()" data-i18n="ln_save">💾 Save loan</button>
+  </div>
+  <!-- Outstanding + history -->
+  <div class="card">
+    <div class="ct" data-i18n="ln_outstanding">Outstanding</div>
+    <div id="ln-list"><div class="empty" data-i18n="ln_none">No loans yet</div></div>
   </div>
 </div>
 
@@ -838,7 +867,16 @@ const LANG = {
   en: {
     // Nav
     nav_entry:'✏️ Daily Entry', nav_pgk:'🎮 PGK Platforms', nav_exchange:'💱 Exchanges',
-    nav_fnd:'💰 Funder Movements', nav_exp:'🧾 Expenses', nav_recon:'🏦 Reconciliation',
+    nav_fnd:'💰 Funder Movements', nav_exp:'🧾 Expenses', nav_loans:'🤝 Loans / IOU', nav_recon:'🏦 Reconciliation',
+    ln_info:'🤝 <b>Loans / IOU (PGK)</b> — Record PGK lent to or borrowed from third parties. Each stays outstanding until repaid. Movements feed the PGK platform reconciliation.',
+    ln_new:'New loan / IOU', ln_lent:'⬆ Lent out (they owe you)', ln_borrowed:'⬇ Borrowed in (you owe)',
+    ln_party:'Third party', ln_platform:'PGK from platform', ln_amount:'Amount (PGK)', ln_save:'💾 Save loan',
+    ln_effect_lent:'Lending out reduces the platform’s PGK on this date in reconciliation; repayment adds it back.',
+    ln_effect_borrowed:'Borrowing in raises the platform’s PGK on this date; repayment reduces it.',
+    ln_outstanding:'Outstanding', ln_none:'No loans yet', ln_receivable:'Owed to you', ln_payable:'You owe', ln_net:'Net position',
+    ln_lent_tag:'Lent out', ln_borrowed_tag:'Borrowed in', ln_settled:'Settled', ln_outstanding_word:'outstanding',
+    ln_repay:'Repay', ln_saved:'Loan saved ✓', ln_repaid:'Repayment recorded ✓',
+    ln_repay_amt:'Repayment amount (PGK)', ln_repay_date:'Repayment date (YYYY-MM-DD)', ln_confirm_del:'Delete this loan? This also removes its effect on reconciliation.',
     nav_cf:'↔️ Cash Flow', nav_weekly:'📅 Weekly', nav_pl:'📊 P&L',
     nav_funders:'👥 Funders', nav_fv:'📊 Funder View', nav_settings:'⚙️ Setup',
     // Common
@@ -931,7 +969,7 @@ const LANG = {
     rc_pgk_title:'PGK Platform Reconciliation', rc_pgk_desc:'Computed book closing vs entered closing per platform. Exchanges auto-linked by platform + date.',
     rc_frozen_title:'Frozen Funds — PGK stuck in frozen banks', rc_frozen_desc:'Created when a bank with balance is deactivated. Write off = loss in P&L. Recovery (full or partial) credits back. Written-off funds can still be marked recovered later.',
     rc_all_reconciled:'All reconciled', rc_out_by:'Out by', rc_total_suffix:'total', rc_reconciled:'Reconciled', rc_oob:'Out of balance',
-    rc_opening:'Opening', rc_deposit:'Deposit', rc_withdraw:'Withdraw', rc_bank_charges:'Bank charges', rc_exch_out:'Exchange out', rc_exch_in:'Exchange in', rc_txn:'txn', rc_adjustments:'Adjustments',
+    rc_opening:'Opening', rc_deposit:'Deposit', rc_withdraw:'Withdraw', rc_bank_charges:'Bank charges', rc_exch_out:'Exchange out', rc_exch_in:'Exchange in', rc_txn:'txn', rc_adjustments:'Adjustments', rc_loans:'Loans / IOU',
     rc_computed:'Computed book closing', rc_entered:'Entered closing (actual)', rc_linked_exch:'Linked exchanges', rc_no_pgk:'No PGK platform entries',
     rc_col_month:'Statement month', rc_col_book:'Book closing', rc_col_stmt:'Statement closing', rc_col_status:'Status', rc_not_entered:'statement not entered', rc_open_btn:'Open', rc_no_daily:'No daily entries yet — reconciliation rows appear once MYR bank data is entered',
     rc_click_row:'Click a row in the summary above to open the fill-in reconciliation detail',
@@ -1086,7 +1124,16 @@ const LANG = {
   zh: {
     // Nav
     nav_entry:'✏️ 每日录入', nav_pgk:'🎮 PGK平台', nav_exchange:'💱 兑换交易',
-    nav_fnd:'💰 资金方动账', nav_exp:'🧾 费用', nav_recon:'🏦 对账',
+    nav_fnd:'💰 资金方动账', nav_exp:'🧾 费用', nav_loans:'🤝 借贷 / 欠条', nav_recon:'🏦 对账',
+    ln_info:'🤝 <b>借贷 / 欠条 (PGK)</b> — 记录借给第三方或向第三方借入的 PGK。每笔在还清前一直未结清。动账会计入 PGK 平台对账。',
+    ln_new:'新增借贷 / 欠条', ln_lent:'⬆ 借出（对方欠你）', ln_borrowed:'⬇ 借入（你欠对方）',
+    ln_party:'第三方', ln_platform:'PGK 来自平台', ln_amount:'金额 (PGK)', ln_save:'💾 保存借贷',
+    ln_effect_lent:'借出会在当日减少该平台的 PGK（对账）；还款时加回。',
+    ln_effect_borrowed:'借入会在当日增加该平台的 PGK；还款时减少。',
+    ln_outstanding:'未结清', ln_none:'暂无借贷', ln_receivable:'应收（对方欠你）', ln_payable:'应付（你欠）', ln_net:'净额',
+    ln_lent_tag:'借出', ln_borrowed_tag:'借入', ln_settled:'已结清', ln_outstanding_word:'未结清',
+    ln_repay:'还款', ln_saved:'借贷已保存 ✓', ln_repaid:'还款已记录 ✓',
+    ln_repay_amt:'还款金额 (PGK)', ln_repay_date:'还款日期 (YYYY-MM-DD)', ln_confirm_del:'删除此借贷？同时会移除其对对账的影响。',
     nav_cf:'↔️ 现金流', nav_weekly:'📅 每周汇总', nav_pl:'📊 损益表',
     nav_funders:'👥 资金方', nav_fv:'📊 资金方视图', nav_settings:'⚙️ 设置',
     // Common
@@ -1179,7 +1226,7 @@ const LANG = {
     rc_pgk_title:'PGK平台对账', rc_pgk_desc:'各平台账面计算余额 vs 录入余额。兑换按平台+日期自动关联。',
     rc_frozen_title:'冻结资金 — 卡在冻结银行的PGK', rc_frozen_desc:'当有余额的银行被停用时生成。核销=计入损益表的亏损。收回（全部或部分）可冲回。已核销资金日后仍可标记为已收回。',
     rc_all_reconciled:'全部已对账', rc_out_by:'差额', rc_total_suffix:'（合计）', rc_reconciled:'已对账', rc_oob:'不平衡',
-    rc_opening:'期初', rc_deposit:'存款', rc_withdraw:'取款', rc_bank_charges:'银行手续费', rc_exch_out:'兑出', rc_exch_in:'兑入', rc_txn:'笔', rc_adjustments:'调整',
+    rc_opening:'期初', rc_deposit:'存款', rc_withdraw:'取款', rc_bank_charges:'银行手续费', rc_exch_out:'兑出', rc_exch_in:'兑入', rc_txn:'笔', rc_adjustments:'调整', rc_loans:'借贷 / 欠条',
     rc_computed:'账面计算余额', rc_entered:'录入余额（实际）', rc_linked_exch:'关联兑换', rc_no_pgk:'无PGK平台记录',
     rc_col_month:'对账月份', rc_col_book:'账面余额', rc_col_stmt:'对账单余额', rc_col_status:'状态', rc_not_entered:'未录入对账单', rc_open_btn:'展开', rc_no_daily:'暂无每日记录 — 录入MYR银行数据后会出现对账行',
     rc_click_row:'点击上方汇总中的行以展开填写对账明细',
@@ -1353,6 +1400,7 @@ let S={
   platforms:[{name:'LUCKY888',bank:'PNG Bank 888'},{name:'LUCKY777',bank:'PNG Bank 777'}],
   myrBanks:[{name:'Bank A',color:'#3266AD'},{name:'Bank B',color:'#0F6E56'},{name:'Bank C',color:'#854F0B'}],
   pgkBanks:[],
+  pgkLoans:[],
   exchangers:['Exchanger 1','Exchanger 2'],
   funders:[{name:'Funder A',commitment:45000},{name:'Funder B',commitment:45000}],
   expTypes:[
@@ -1597,6 +1645,7 @@ const ALL_TABS=[
   {id:'exchange-tab',label:'💱 Exchanges'},
   {id:'fnd-tab',label:'💰 Funder Movements'},
   {id:'exp-tab',label:'🧾 Expenses'},
+  {id:'loans',label:'🤝 Loans / IOU'},
   {id:'recon',label:'🏦 Reconciliation'},
   {id:'cashflow',label:'↔️ Cash Flow'},
   {id:'pl',label:'📊 P&L'},
@@ -1605,9 +1654,9 @@ const ALL_TABS=[
   {id:'settings',label:'⚙️ Setup'},
 ];
 const ROLE_PRESETS={
-  operator:['pgk-entry','exchange-tab','exp-tab'],
-  manager:['pgk-entry','exchange-tab','fnd-tab','exp-tab','recon','cashflow','pl','funders','funder-review'],
-  funder:['exchange-tab','fnd-tab','exp-tab','recon','cashflow','pl','funders','funder-review'],
+  operator:['pgk-entry','exchange-tab','exp-tab','loans'],
+  manager:['pgk-entry','exchange-tab','fnd-tab','exp-tab','loans','recon','cashflow','pl','funders','funder-review'],
+  funder:['exchange-tab','fnd-tab','exp-tab','loans','recon','cashflow','pl','funders','funder-review'],
   admin:ALL_TABS.map(t=>t.id)
 };
 let currentUser=null,loginSelId=null;
@@ -1788,6 +1837,7 @@ function renderPage(p){
   }
   if(p==='fnd-tab'){initFndTab();return;}
   if(p==='exp-tab'){initExpTab();return;}
+  if(p==='loans'){initLoansTab();renderLoans();return;}
   if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);setSel('rc-pgk-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);rcDetailOpen=false;renderRecon();renderPGKRecon();renderFrozen();setReconCur(rcCur);renderLockBtn();}
   if(p==='cashflow'){toggleCFCustom();setSel('cf-plat',[{v:'',l:'All platforms'},...S.platforms.map(q=>({v:q.name,l:q.name}))]);renderCF();}
   if(p==='pl'){setSel('pl-plat',[{v:'',l:tr('all_platforms')},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);togglePLCustom();renderPLActive();}
@@ -2374,6 +2424,94 @@ function delExpLineGroup(dayIdx,expIdx,ref){
   const remain=S.dayEntries.flatMap(d=>(d.expenses||[])).filter(e=>(e.ref||'')===ref).length;
   if(remain>=2)openExpGroupModal(ref);else closeModal();
 }
+
+// ══ LOANS / IOU (PGK) ══
+let loanDir='lent';
+function setLoanDir(d){
+  loanDir=d;
+  const a=document.getElementById('ln-dir-lent'),b=document.getElementById('ln-dir-borrowed'),isLent=d==='lent';
+  if(a){a.style.background=isLent?'#0F6E56':'none';a.style.color=isLent?'#fff':'var(--txt2)';a.style.borderColor=isLent?'#0F6E56':'var(--bdr2)';}
+  if(b){b.style.background=isLent?'none':'#A32D2D';b.style.color=isLent?'var(--txt2)':'#fff';b.style.borderColor=isLent?'var(--bdr2)':'#A32D2D';}
+  const note=document.getElementById('ln-effect-note');if(note)note.textContent=isLent?tr('ln_effect_lent'):tr('ln_effect_borrowed');
+}
+function initLoansTab(){
+  const d=document.getElementById('ln-date');if(d&&!d.value)d.value=new Date().toISOString().slice(0,10);
+  setSel('ln-platform',S.platforms.map(p=>p.name));
+  setLoanDir(loanDir||'lent');
+}
+function loanOutstanding(l){return (l.pgk||0)-((l.repayments||[]).reduce((s,r)=>s+(r.amt||0),0));}
+function saveLoan(){
+  const date=document.getElementById('ln-date')?.value;if(!date){showToast('Select date',true);return;}
+  if(lockBlocked(date))return;
+  const party=(document.getElementById('ln-party')?.value||'').trim();
+  const platform=document.getElementById('ln-platform')?.value||'';
+  const pgk=n(document.getElementById('ln-amt')?.value);
+  const note=document.getElementById('ln-note')?.value||'';
+  if(!party){showToast('Enter the third party name',true);return;}
+  if(!pgk){showToast('Enter amount',true);return;}
+  if(!S.pgkLoans)S.pgkLoans=[];
+  S.pgkLoans.push({id:genRef('LN'),date,counterparty:party,dir:loanDir,platform,pgk,note,repayments:[]});
+  persist();
+  ['ln-party','ln-amt','ln-note'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderLoans();renderPGKRecon();
+  showToast(tr('ln_saved'));
+}
+function renderLoans(){
+  const all=(S.pgkLoans||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const recv=all.filter(l=>l.dir==='lent').reduce((s,l)=>s+loanOutstanding(l),0);
+  const pay=all.filter(l=>l.dir==='borrowed').reduce((s,l)=>s+loanOutstanding(l),0);
+  setHTML('ln-metrics',`<div class="mc"><div class="ml">${tr('ln_receivable')}</div><div class="mv pos">${fmt(recv)} PGK</div></div><div class="mc"><div class="ml">${tr('ln_payable')}</div><div class="mv neg">${fmt(pay)} PGK</div></div><div class="mc"><div class="ml">${tr('ln_net')}</div><div class="mv">${fmt(recv-pay)} PGK</div></div>`);
+  const list=document.getElementById('ln-list');if(!list)return;
+  if(!all.length){list.innerHTML=`<div class="empty">${tr('ln_none')}</div>`;return;}
+  list.innerHTML=all.map(l=>{
+    const os=loanOutstanding(l),settled=os<0.01,isLent=l.dir==='lent';
+    return `<div style="border:1px solid var(--bdr);border-radius:var(--r);padding:9px 11px;margin-bottom:8px;${settled?'opacity:.6':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+        <span style="font-size:13px;font-weight:700">${l.counterparty} <span class="tag ${isLent?'tag-in':'tag-out'}">${isLent?tr('ln_lent_tag'):tr('ln_borrowed_tag')}</span></span>
+        <span style="font-size:13px;font-weight:700;color:${isLent?'var(--gr)':'var(--rd)'}">${fmt(l.pgk)} PGK</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--txt2);gap:8px">
+        <span>${fD(l.date)} · ${l.platform||'-'} · ${settled?('✓ '+tr('ln_settled')):(tr('ln_outstanding_word')+': '+fmt(os))}${l.note?' · '+l.note:''}</span>
+        <span style="display:flex;gap:6px;flex-shrink:0" class="op-only">
+          ${settled?'':`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="repayLoanPrompt('${l.id}')">${tr('ln_repay')}</button>`}
+          <button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="deleteLoan('${l.id}')">🗑</button>
+        </span>
+      </div>
+      ${(l.repayments||[]).length?`<div style="font-size:10px;color:var(--txt2);margin-top:4px">↳ ${l.repayments.map(r=>`${fD(r.date)}: ${fmt(r.amt)}`).join(' · ')}</div>`:''}
+    </div>`;
+  }).join('');
+}
+function repayLoanPrompt(id){
+  const l=(S.pgkLoans||[]).find(x=>x.id===id);if(!l)return;
+  const os=loanOutstanding(l);
+  const amtStr=prompt(tr('ln_repay_amt')+' (max '+fmt(os)+')',fmt(os));
+  if(amtStr===null)return;
+  const amt=parseFloat(amtStr)||0;
+  if(amt<=0){showToast('Enter a valid amount',true);return;}
+  if(amt>os+0.01){showToast('More than outstanding',true);return;}
+  const dateStr=prompt(tr('ln_repay_date'),new Date().toISOString().slice(0,10));
+  if(dateStr===null)return;
+  if(lockBlocked(dateStr))return;
+  if(!l.repayments)l.repayments=[];
+  l.repayments.push({date:dateStr,amt});
+  persist();renderLoans();renderPGKRecon();showToast(tr('ln_repaid'));
+}
+function deleteLoan(id){
+  const l=(S.pgkLoans||[]).find(x=>x.id===id);if(!l)return;
+  if(lockBlocked(l.date))return;
+  if(!confirm(tr('ln_confirm_del')))return;
+  S.pgkLoans=(S.pgkLoans||[]).filter(x=>x.id!==id);
+  persist();renderLoans();renderPGKRecon();showToast(tr('toast_deleted'));
+}
+function pgkLoanNetFor(platformName,date){
+  let net=0;
+  (S.pgkLoans||[]).forEach(l=>{
+    if(l.platform!==platformName)return;
+    if(l.date===date)net+=(l.dir==='lent'?-(l.pgk||0):(l.pgk||0));
+    (l.repayments||[]).forEach(r=>{if(r.date===date)net+=(l.dir==='lent'?(r.amt||0):-(r.amt||0));});
+  });
+  return net;
+}
 function openExpEditModal(e){
   const isImg=e.attachment&&e.attachment.type&&e.attachment.type.startsWith('image/');
   const body=`
@@ -2851,8 +2989,9 @@ function buildPGKLedger(platformName,dayEntries){
       const exchOut=linked.filter(x=>x.dir==='out').reduce((s,x)=>s+(x.pgk||0),0);
       const exchIn=linked.filter(x=>x.dir==='in').reduce((s,x)=>s+(x.myr||0),0);
       const adjNet=(e.adjustments||[]).reduce((s,a)=>s+(a.dir==='in'?a.amt:-a.amt),0);
-      const computed=(e.pgkOpen||0)+(e.dep||0)-(e.with||0)-(e.bankCharges||0)-exchOut+exchIn+adjNet;
-      return{date:e.date,entry:e,linked,exchOut,exchIn,adjNet,computed,entered:e.pgkClose||0,diff:(e.pgkClose||0)-computed};
+      const loanNet=pgkLoanNetFor(platformName,e.date);
+      const computed=(e.pgkOpen||0)+(e.dep||0)-(e.with||0)-(e.bankCharges||0)-exchOut+exchIn+adjNet+loanNet;
+      return{date:e.date,entry:e,linked,exchOut,exchIn,adjNet,loanNet,computed,entered:e.pgkClose||0,diff:(e.pgkClose||0)-computed};
     });
 }
 // Reconciliation currency switch (left-side toggle): show MYR or PGK view
@@ -2899,6 +3038,7 @@ function renderPGKRecon(){
           ${r.exchOut?`<div class="recon-row"><span>− ${tr('rc_exch_out')} (${r.linked.filter(x=>x.dir==='out').length} ${tr('rc_txn')})</span><span class="neg">${fmt(r.exchOut)}</span></div>`:''}
           ${r.exchIn?`<div class="recon-row"><span>+ ${tr('rc_exch_in')} (${r.linked.filter(x=>x.dir==='in').length} ${tr('rc_txn')})</span><span class="pos">${fmt(r.exchIn)}</span></div>`:''}
           ${r.adjNet?`<div class="recon-row"><span>± ${tr('rc_adjustments')}</span><span>${fmt(r.adjNet)}</span></div>`:''}
+          ${r.loanNet?`<div class="recon-row"><span>± ${tr('rc_loans')}</span><span>${fmt(r.loanNet)}</span></div>`:''}
           <div class="recon-row subtot"><span>${tr('rc_computed')}</span><span>${fmt(r.computed)}</span></div>
           <div class="recon-row"><span>${tr('rc_entered')}</span><span style="font-weight:700">${fmt(r.entered)}</span></div>
           ${r.linked.length?`<div style="font-size:11px;color:var(--txt2);margin-top:7px">${tr('rc_linked_exch')}: ${r.linked.map(x=>`${x.dir==='out'?'−':'+'}${fmt(x.dir==='out'?x.pgk:x.myr)} (${x.exchanger||'?'})`).join(', ')}</div>`:''}
