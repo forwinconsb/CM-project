@@ -1818,12 +1818,12 @@ function renderExch2(){
       <div class="f"><label>${r.dir==='out'?tr('lbl_pkgsent'):'MYR sent'}</label><input type="number" value="${r.pgk||''}" placeholder="0.00" step="0.01" oninput="exchRows2[${i}].pgk=parseFloat(this.value)||0;aMYR2(${i})"></div></div>
     <div class="g4">
       <div class="f"><label>Rate</label><input type="number" value="${r.rate||''}" placeholder="0.885" step="0.001" oninput="exchRows2[${i}].rate=parseFloat(this.value)||0;aMYR2(${i})"></div>
-      <div class="f"><label>MYR equiv (auto)</label><input type="number" value="${r.myr||''}" readonly></div>
+      <div class="f"><label>MYR equiv (auto)</label><input type="number" id="exch2-myr-${i}" value="${r.myr||''}" readonly></div>
       <div class="f"><label>MYR actually ${r.dir==='out'?'received':'paid'}</label><input type="number" value="${r.paid||''}" placeholder="0.00" step="0.01" oninput="exchRows2[${i}].paid=parseFloat(this.value)||0"></div>
       <div class="f"><label>MYR bank</label><select onchange="exchRows2[${i}].myrBank=this.value">${S.myrBanks.map(b=>`<option ${b.name===r.myrBank?'selected':''}>${b.name}</option>`).join('')}</select></div>
     </div></div>`).join('');
 }
-function aMYR2(i){const r=exchRows2[i];if(r.pgk&&r.rate)r.myr=Math.round(r.pgk*r.rate*100)/100;renderExch2();}
+function aMYR2(i){const r=exchRows2[i];if(r.pgk&&r.rate)r.myr=Math.round(r.pgk*r.rate*100)/100;const me=document.getElementById('exch2-myr-'+i);if(me)me.value=r.myr||'';}
 function saveExchDay(){
   const date=document.getElementById('pgk-tab-date')?.value;if(!date){showToast('Select date first',true);return;}
   if(lockBlocked(date))return;
@@ -2636,13 +2636,14 @@ function renderExch(){
     <div class="g4" style="margin-bottom:8px">
       <div class="f"><label>Rate (PGK:MYR)</label><input type="number" value="${r.rate||''}" placeholder="0.885" step="0.001" oninput="exchRows[${i}].rate=parseFloat(this.value)||0;aMYR(${i})"></div></div>
     <div class="g4">
-      <div class="f"><label>MYR equiv (auto)</label><input type="number" value="${r.myr||''}" placeholder="0.00" readonly></div>
-      <div class="f"><label>MYR actually ${r.dir==='out'?'received':'paid'}</label><input type="number" value="${r.paid||''}" placeholder="0.00" step="0.01" oninput="exchRows[${i}].paid=parseFloat(this.value)||0;renderExch()"></div>
-      <div class="f"><label data-i18n="lbl_balance_owed">Balance Owed</label><input type="number" value="${fmt(Math.max(0,r.myr-r.paid))}" readonly style="${(r.myr-r.paid)>0.01?'color:#854F0B':''}"></div>
+      <div class="f"><label>MYR equiv (auto)</label><input type="number" id="exch-myr-${i}" value="${r.myr||''}" placeholder="0.00" readonly></div>
+      <div class="f"><label>MYR actually ${r.dir==='out'?'received':'paid'}</label><input type="number" value="${r.paid||''}" placeholder="0.00" step="0.01" oninput="exchRows[${i}].paid=parseFloat(this.value)||0;aOwed(${i})"></div>
+      <div class="f"><label data-i18n="lbl_balance_owed">Balance Owed</label><input type="number" id="exch-owed-${i}" value="${fmt(Math.max(0,r.myr-r.paid))}" readonly style="${(r.myr-r.paid)>0.01?'color:#854F0B':''}"></div>
       <div class="f"><label>MYR bank</label><select onchange="exchRows[${i}].myrBank=this.value">${S.myrBanks.map(b=>`<option ${b.name===r.myrBank?'selected':''}>${b.name}</option>`).join('')}</select></div>
     </div></div>`).join('');
 }
-function aMYR(i){const r=exchRows[i];if(r.pgk&&r.rate)r.myr=Math.round(r.pgk*r.rate*100)/100;renderExch();}
+function aMYR(i){const r=exchRows[i];if(r.pgk&&r.rate)r.myr=Math.round(r.pgk*r.rate*100)/100;const me=document.getElementById('exch-myr-'+i);if(me)me.value=r.myr||'';aOwed(i);}
+function aOwed(i){const r=exchRows[i];const oe=document.getElementById('exch-owed-'+i);if(oe){const owed=Math.max(0,(r.myr||0)-(r.paid||0));oe.value=fmt(owed);oe.style.color=owed>0.01?'#854F0B':'';}}
 
 // ── FUNDER ENTRY ──
 function addFunderRow(){funderRows.push({funder:S.funders[0]?.name||'',type:'injection',amount:0,bank:S.myrBanks[0]?.name||'',desc:''});renderFunders_entry();}
