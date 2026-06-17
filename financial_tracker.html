@@ -889,7 +889,7 @@ const LANG = {
     exp_add_line:'+ Add another line (same payment)', exp_lines_pending:'Lines in this payment', exp_lines_saved:'lines saved ✓',
     exp_add_more:'➕ Add another expense (same date & bank)', exp_add_line_hint:'Add the next line, then press Save expense.',
     exp_pay_by:'Payment by (bank)', exp_pay_by_fnd:'Payment by (funder)', exp_bank_bal_now:'Bank balance', exp_voucher_no:'Voucher no. (auto)',
-    exp_lines_word:'lines', exp_funder_note:'Funder pays the vendor directly — each line auto-creates a matching capital injection. No bank movement.',
+    exp_lines_word:'lines', exp_voucher:'Payment voucher', exp_funder_note:'Funder pays the vendor directly — each line auto-creates a matching capital injection. No bank movement.',
     exp_pay_to:'Payment to (payee)', exp_cheque:'Cheque / transfer no. (optional)',
     exp_bank_charge:'Bank charge (optional)', exp_bank_charge_cat:'Bank charge', exp_lines_label:'Lines — add one or more',
     cf_bank_bal:'🏦 Bank balances (computed)', cf_balance:'Balance',
@@ -1137,7 +1137,7 @@ const LANG = {
     exp_add_line:'+ 添加另一笔（同一付款）', exp_lines_pending:'本次付款的明细', exp_lines_saved:'笔已保存 ✓',
     exp_add_more:'➕ 添加另一笔费用（同日期和银行）', exp_add_line_hint:'填写下一笔，然后按“保存费用”。',
     exp_pay_by:'付款银行', exp_pay_by_fnd:'付款资金方', exp_bank_bal_now:'银行余额', exp_voucher_no:'凭证号（自动）',
-    exp_lines_word:'项', exp_funder_note:'资金方直接支付供应商 — 每一项自动生成对应的资本注入。不涉及银行流动。',
+    exp_lines_word:'项', exp_voucher:'付款凭证', exp_funder_note:'资金方直接支付供应商 — 每一项自动生成对应的资本注入。不涉及银行流动。',
     exp_pay_to:'收款方', exp_cheque:'支票/转账号（可选）',
     exp_bank_charge:'银行手续费（可选）', exp_bank_charge_cat:'银行手续费', exp_lines_label:'明细 — 添加一条或多条',
     cf_bank_bal:'🏦 银行余额（计算）', cf_balance:'余额',
@@ -2311,9 +2311,9 @@ function renderExpListing(){
   groups.forEach(g=>{
     if(g.lines.length===1){html+=expRowHtml(g.lines[0],false);return;}
     const tot=g.lines.reduce((s,e)=>s+e.amt,0),e0=g.lines[0];
-    const safe=(g.key||'').replace(/[^A-Za-z0-9_-]/g,'')||('g'+Math.random().toString(36).slice(2,7));
+    const rk=(e0.ref||'').replace(/'/g,"\\'");
     const cats=g.lines.map(l=>l.cat).filter(Boolean).slice(0,3).join(', ')+(g.lines.length>3?'…':'');
-    html+=`<tr class="row-tap" style="cursor:pointer;background:var(--bg3)" onclick="toggleExpGroup('${safe}')">
+    html+=`<tr class="row-tap" style="cursor:pointer;background:var(--bg3)" onclick="openExpGroupModal('${rk}')">
       <td class="hide-sm" style="font-family:monospace;font-size:11px;color:var(--bl);font-weight:600">${e0.ref||'—'}</td>
       <td>${fD(e0.date)}</td>
       <td><span class="pl-badge">🧾 ${g.lines.length} ${tr('exp_lines_word')}</span> <span style="color:var(--txt2);font-size:11px">${cats}</span>${e0.payee?` <span style="color:var(--txt2);font-size:11px">→ ${e0.payee}</span>`:''}</td>
@@ -2324,7 +2324,6 @@ function renderExpListing(){
       <td class="hide-sm"></td>
       <td class="hide-sm" style="text-align:right"><span class="pl-chev">›</span></td>
     </tr>`;
-    g.lines.forEach(l=>{html+=expRowHtml(l,true,safe);});
   });
   tbody.innerHTML=html;
 }
@@ -2346,7 +2345,35 @@ function expRowHtml(e,isDetail,grpKey){
     </td>
   </tr>`;
 }
-function toggleExpGroup(key){document.querySelectorAll('.grp-'+key).forEach(r=>{r.style.display=r.style.display==='none'?'':'none';});}
+function openExpGroupModal(ref){
+  const lines=S.dayEntries.flatMap((d,di)=>(d.expenses||[]).map((e,ei)=>({...e,date:d.date,_dayIdx:di,_expIdx:ei}))).filter(e=>(e.ref||'')===ref);
+  if(!lines.length)return;
+  const tot=lines.reduce((s,e)=>s+e.amt,0),e0=lines[0];
+  const payBy=e0.paySource==='funder'?('👤 '+(e0.funderName||'')):(bDot(e0.bank)+' '+(e0.bank||''));
+  let body=`<div class="modal-section">${tr('exp_voucher')} <span style="font-family:monospace;color:var(--bl)">${ref}</span> — ${fD(e0.date)}${e0.payee?' · '+e0.payee:''} · ${payBy}</div>`;
+  body+=`<div class="tw"><table><thead><tr><th>${tr('category')}</th><th style="text-align:right">${tr('amount')}</th><th>${tr('col_action')}</th></tr></thead><tbody>`;
+  lines.forEach(l=>{
+    const lj=JSON.stringify(l).replace(/"/g,'&quot;');
+    body+=`<tr>
+      <td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:${l.typeColor||'#888'};display:inline-block"></span>${l.cat}${l.platform?` <span class="pl-badge">🎮 ${l.platform}</span>`:''}${l.accrualMonth?` <span class="pl-badge">📅 ${ml(l.accrualMonth)}</span>`:''}</span>${l.note?`<div style="font-size:11px;color:var(--txt2)">${l.note}</div>`:''}</td>
+      <td style="text-align:right;font-weight:700;color:var(--rd)">-RM ${fmt(l.amt)}</td>
+      <td style="white-space:nowrap"><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="openExpEditModal(${lj})">✏️</button> <button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="delExpLineGroup(${l._dayIdx},${l._expIdx},'${ref.replace(/'/g,"\\'")}')">🗑</button></td>
+    </tr>`;
+  });
+  body+=`<tr style="font-weight:700;background:var(--bg3)"><td>${tr('lbl_total')}</td><td style="text-align:right;color:var(--rd)">-RM ${fmt(tot)}</td><td></td></tr>`;
+  body+=`</tbody></table></div>`;
+  openModal(tr('exp_voucher'),body);
+}
+function delExpLineGroup(dayIdx,expIdx,ref){
+  if(dayIdx<0||dayIdx>=S.dayEntries.length)return;
+  if(lockBlocked(S.dayEntries[dayIdx].date))return;
+  if(!confirm(tr('confirm_delete_exp')))return;
+  S.dayEntries[dayIdx].expenses.splice(expIdx,1);
+  S.dayEntries[dayIdx].totalExp=(S.dayEntries[dayIdx].expenses||[]).reduce((s,e)=>s+e.amt,0);
+  persist();renderExpListing();showToast(tr('toast_deleted'));
+  const remain=S.dayEntries.flatMap(d=>(d.expenses||[])).filter(e=>(e.ref||'')===ref).length;
+  if(remain>=2)openExpGroupModal(ref);else closeModal();
+}
 function openExpEditModal(e){
   const isImg=e.attachment&&e.attachment.type&&e.attachment.type.startsWith('image/');
   const body=`
