@@ -276,10 +276,9 @@ details.collapse-card[open]>summary:before{content:'▾'}
 
 <div class="nav">
   <button class="nb on" onclick="doNav('pgk-entry',this)" data-i18n="nav_pgk">🎮 PGK Platforms</button>
-  <button class="nb" onclick="doNav('exchange-tab',this)" data-i18n="nav_exchange">💱 Exchanges</button>
+  <button class="nb" onclick="doNav('exchange-tab',this)" data-i18n="nav_exchange">💱 Exchange & IOU</button>
   <button class="nb" onclick="doNav('fnd-tab',this)" data-i18n="nav_fnd">💰 Funder Movements</button>
   <button class="nb" onclick="doNav('exp-tab',this)" data-i18n="nav_exp">🧾 Expenses</button>
-  <button class="nb" onclick="doNav('loans',this)" data-i18n="nav_loans">🤝 Loans / IOU</button>
   <button class="nb" onclick="doNav('recon',this)" data-i18n="nav_recon">🏦 Reconciliation</button>
   <button class="nb" onclick="doNav('cashflow',this)" data-i18n="nav_cf">↔️ Cash Flow</button>
   <button class="nb" onclick="doNav('pl',this)" data-i18n="nav_pl">📊 P&L</button>
@@ -414,33 +413,6 @@ details.collapse-card[open]>summary:before{content:'▾'}
 </div>
 
 <!-- LOANS / IOU -->
-<div id="pg-loans" class="pg">
-  <div class="info-box" data-i18n="ln_info">🤝 <b>Loans / IOU (PGK)</b> — Record PGK lent to or borrowed from third parties. Each one stays outstanding until repaid. Movements feed the PGK platform reconciliation.</div>
-  <div id="ln-metrics" class="metrics" style="margin-bottom:12px"></div>
-  <!-- Entry form -->
-  <div class="card op-only">
-    <div class="step-lbl pu" data-i18n="ln_new">New loan / IOU</div>
-    <div style="display:flex;gap:6px;margin-bottom:9px">
-      <button id="ln-dir-lent" onclick="setLoanDir('lent')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid #0F6E56;background:#0F6E56;color:#fff;cursor:pointer" data-i18n="ln_lent">⬆ Lent out (they owe you)</button>
-      <button id="ln-dir-borrowed" onclick="setLoanDir('borrowed')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid var(--bdr2);background:none;color:var(--txt2);cursor:pointer" data-i18n="ln_borrowed">⬇ Borrowed in (you owe)</button>
-    </div>
-    <div class="g4" style="margin-bottom:9px">
-      <div class="f"><label data-i18n="date">Date</label><input type="date" id="ln-date"></div>
-      <div class="f"><label data-i18n="ln_party">Third party</label><input type="text" id="ln-party" placeholder="e.g. Ah Beng"></div>
-      <div class="f"><label data-i18n="ln_platform">PGK from platform</label><select id="ln-platform"></select></div>
-      <div class="f"><label data-i18n="ln_amount">Amount (PGK)</label><input type="number" id="ln-amt" placeholder="0.00" step="0.01"></div>
-    </div>
-    <div class="f" style="margin-bottom:9px;max-width:340px"><label data-i18n="note">Note (optional)</label><input type="text" id="ln-note" placeholder="optional"></div>
-    <div id="ln-effect-note" style="font-size:11px;color:var(--bl2);background:#E6F1FB;border:1px solid #B5D4F4;border-radius:var(--r);padding:6px 10px;margin-bottom:9px"></div>
-    <button class="btn-pri" style="max-width:200px" onclick="saveLoan()" data-i18n="ln_save">💾 Save loan</button>
-  </div>
-  <!-- Outstanding + history -->
-  <div class="card">
-    <div class="ct" data-i18n="ln_outstanding">Outstanding</div>
-    <div id="ln-list"><div class="empty" data-i18n="ln_none">No loans yet</div></div>
-  </div>
-</div>
-
 <!-- RECONCILIATION -->
 <div id="pg-recon" class="pg">
   <div class="filter-row" style="align-items:center">
@@ -682,7 +654,16 @@ details.collapse-card[open]>summary:before{content:'▾'}
 
 <!-- EXCHANGE TAB -->
 <div id="pg-exchange-tab" class="pg">
+ <div style="display:flex;gap:14px;align-items:flex-start" class="exch-split">
+  <div style="display:flex;flex-direction:column;gap:8px;min-width:96px;flex-shrink:0" class="exch-side-rail">
+    <span style="font-size:11px;color:var(--txt2);font-weight:500" data-i18n="ex_side_type">Type</span>
+    <button class="btn-sec on" id="ex-side-exch" onclick="setExchSide('exch')" style="justify-content:flex-start">💱 <span data-i18n="ex_side_exchange">Exchange</span></button>
+    <button class="btn-sec" id="ex-side-iou" onclick="setExchSide('iou')" style="justify-content:flex-start">🤝 <span data-i18n="ex_side_iou">IOU</span></button>
+  </div>
+  <div style="flex:1;min-width:0">
+  <div id="exch-side-exch">
   <div class="info-box">💱 <span data-i18n="ex_info">Exchange Transactions — record a transaction below; full listing further down. Tap a row to edit or delete.</span></div>
+  <div id="exch-metrics-bar" class="metrics" style="margin-bottom:12px"></div>
   <!-- Entry form -->
   <div class="card op-only">
     <div class="step-lbl pu" data-i18n="ex_new">New exchange transaction</div>
@@ -739,6 +720,58 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <tbody id="exch-tab-body"><tr><td colspan="11" class="empty">No entries yet</td></tr></tbody>
     </table></div>
   </div>
+  </div><!-- /exch-side-exch -->
+  <div id="exch-side-iou" style="display:none">
+    <div class="info-box">🤝 <span data-i18n="ln_info">Loans / IOU (PGK) — Record PGK lent to or borrowed from third parties. Each one stays outstanding until repaid. Movements feed the PGK platform reconciliation.</span></div>
+    <div id="ln-metrics" class="metrics" style="margin-bottom:12px"></div>
+    <div class="card op-only">
+      <div class="step-lbl pu" data-i18n="ln_new">New loan / IOU</div>
+      <div style="display:flex;gap:6px;margin-bottom:9px">
+        <button id="ln-dir-lent" onclick="setLoanDir('lent')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid #0F6E56;background:#0F6E56;color:#fff;cursor:pointer" data-i18n="ln_lent">⬆ Lent out (they owe you)</button>
+        <button id="ln-dir-borrowed" onclick="setLoanDir('borrowed')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid var(--bdr2);background:none;color:var(--txt2);cursor:pointer" data-i18n="ln_borrowed">⬇ Borrowed in (you owe)</button>
+      </div>
+      <div class="g4" style="margin-bottom:9px">
+        <div class="f"><label data-i18n="date">Date</label><input type="date" id="ln-date"></div>
+        <div class="f"><label data-i18n="ln_party">Third party</label><input type="text" id="ln-party" placeholder="e.g. Ah Beng"></div>
+        <div class="f"><label data-i18n="ln_platform">PGK from platform</label><select id="ln-platform"></select></div>
+        <div class="f"><label data-i18n="ln_amount">Amount (PGK)</label><input type="number" id="ln-amt" placeholder="0.00" step="0.01"></div>
+      </div>
+      <div class="f" style="margin-bottom:9px;max-width:340px"><label data-i18n="note">Note (optional)</label><input type="text" id="ln-note" placeholder="optional"></div>
+      <div id="ln-effect-note" style="font-size:11px;color:var(--bl2);background:#E6F1FB;border:1px solid #B5D4F4;border-radius:var(--r);padding:6px 10px;margin-bottom:9px"></div>
+      <button class="btn-pri" style="max-width:200px" onclick="saveLoan()" data-i18n="ln_save">💾 Save loan</button>
+    </div>
+    <div class="card">
+      <div class="ct">💰 <span data-i18n="ln_dues_title">Outstanding — third parties (PGK)</span></div>
+      <div id="ln-dues"><div class="empty" data-i18n="ln_no_outstanding">No outstanding loans</div></div>
+    </div>
+    <div class="card">
+      <div class="ct">📜 <span data-i18n="ln_stmt_title">Counterparty Statement — movement trace</span></div>
+      <div style="font-size:11px;color:var(--txt2);margin-bottom:8px" data-i18n="ln_stmt_desc">Every loan and repayment in date order with a running balance. Positive = they owe you · negative = you owe them.</div>
+      <div class="filter-row">
+        <select id="ln-stmt-party" onchange="renderLoanStatement()"></select>
+        <input type="date" id="ln-stmt-from" onchange="renderLoanStatement()" style="padding:6px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r)">
+        <span style="font-size:11px;color:var(--txt2)">to</span>
+        <input type="date" id="ln-stmt-to" onchange="renderLoanStatement()" style="padding:6px 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:var(--r)">
+        <button class="btn-add" onclick="document.getElementById('ln-stmt-from').value='';document.getElementById('ln-stmt-to').value='';renderLoanStatement()">✕ <span data-i18n="ex_clear_dates">Clear dates</span></button>
+      </div>
+      <div id="ln-stmt-content"><div class="empty" data-i18n="ln_select_party">Select a counterparty above</div></div>
+    </div>
+    <div class="card">
+      <div class="ct" data-i18n="ln_listing_title">Loan / IOU transactions — full listing</div>
+      <div class="filter-row">
+        <select id="ln-list-month" onchange="renderLoanListing()"></select>
+        <select id="ln-list-dir" onchange="renderLoanListing()"><option value="">All directions</option><option value="lent">Lent (they owe)</option><option value="borrowed">Borrowed (you owe)</option></select>
+        <select id="ln-list-party" onchange="renderLoanListing()"><option value="">All parties</option></select>
+        <button class="btn-sec" onclick="exportLoanCSV()">⬇ CSV</button>
+      </div>
+      <div class="tw"><table>
+        <thead><tr><th data-i18n="date">Date</th><th data-i18n="ln_party">Counterparty</th><th data-i18n="exch_dir">Direction</th><th data-i18n="pgk_platform">Platform</th><th>PGK</th><th data-i18n="ln_repaid">Repaid</th><th data-i18n="ln_outstanding">Outstanding</th><th data-i18n="col_action">Action</th></tr></thead>
+        <tbody id="ln-list-body"><tr><td colspan="8" class="empty" data-i18n="ln_none">No loans yet</td></tr></tbody>
+      </table></div>
+    </div>
+  </div><!-- /exch-side-iou -->
+  </div><!-- /flex content -->
+ </div><!-- /exch-split -->
 </div>
 
 <!-- SETTINGS -->
@@ -876,7 +909,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
 const LANG = {
   en: {
     // Nav
-    nav_entry:'✏️ Daily Entry', nav_pgk:'🎮 PGK Platforms', nav_exchange:'💱 Exchanges',
+    nav_entry:'✏️ Daily Entry', nav_pgk:'🎮 PGK Platforms', nav_exchange:'💱 Exchange & IOU',
     nav_fnd:'💰 Funder Movements', nav_exp:'🧾 Expenses', nav_loans:'🤝 Loans / IOU', nav_recon:'🏦 Reconciliation',
     ln_info:'🤝 <b>Loans / IOU (PGK)</b> — Record PGK lent to or borrowed from third parties. Each stays outstanding until repaid. Movements feed the PGK platform reconciliation.',
     ln_new:'New loan / IOU', ln_lent:'⬆ Lent out (they owe you)', ln_borrowed:'⬇ Borrowed in (you owe)',
@@ -884,6 +917,8 @@ const LANG = {
     ln_effect_lent:'Lending out reduces the platform’s PGK on this date in reconciliation; repayment adds it back.',
     ln_effect_borrowed:'Borrowing in raises the platform’s PGK on this date; repayment reduces it.',
     ln_outstanding:'Outstanding', ln_none:'No loans yet', ln_receivable:'Owed to you', ln_payable:'You owe', ln_net:'Net position',
+    ex_side_type:'Type', ex_side_exchange:'Exchange', ex_side_iou:'IOU', ex_pgk_pending:'PGK pending to receive',
+    ln_dues_title:'Outstanding — third parties (PGK)', ln_they_owe:'They owe you', ln_you_owe_sec:'You owe', ln_no_outstanding:'No outstanding loans', ln_stmt_title:'Counterparty Statement — movement trace', ln_stmt_desc:'Every loan and repayment in date order with a running balance. Positive = they owe you · negative = you owe them.', ln_select_party:'Select a counterparty above', ln_select_party_opt:'Select counterparty…', ln_all_parties:'All parties', ln_listing_title:'Loan / IOU transactions — full listing', ln_repaid:'Repaid', ln_lbl_owe:'owes you', ln_lbl_owed:'you owe',
     ln_lent_tag:'Lent out', ln_borrowed_tag:'Borrowed in', ln_settled:'Settled', ln_outstanding_word:'outstanding',
     ln_repay:'Repay', ln_saved:'Loan saved ✓', ln_repaid:'Repayment recorded ✓',
     ln_repay_amt:'Repayment amount (PGK)', ln_repay_date:'Repayment date (YYYY-MM-DD)', ln_confirm_del:'Delete this loan? This also removes its effect on reconciliation.',
@@ -1136,7 +1171,7 @@ const LANG = {
   },
   zh: {
     // Nav
-    nav_entry:'✏️ 每日录入', nav_pgk:'🎮 PGK平台', nav_exchange:'💱 兑换交易',
+    nav_entry:'✏️ 每日录入', nav_pgk:'🎮 PGK平台', nav_exchange:'💱 兑换 & 借贷',
     nav_fnd:'💰 资金方动账', nav_exp:'🧾 费用', nav_loans:'🤝 借贷 / 欠条', nav_recon:'🏦 对账',
     ln_info:'🤝 <b>借贷 / 欠条 (PGK)</b> — 记录借给第三方或向第三方借入的 PGK。每笔在还清前一直未结清。动账会计入 PGK 平台对账。',
     ln_new:'新增借贷 / 欠条', ln_lent:'⬆ 借出（对方欠你）', ln_borrowed:'⬇ 借入（你欠对方）',
@@ -1144,6 +1179,8 @@ const LANG = {
     ln_effect_lent:'借出会在当日减少该平台的 PGK（对账）；还款时加回。',
     ln_effect_borrowed:'借入会在当日增加该平台的 PGK；还款时减少。',
     ln_outstanding:'未结清', ln_none:'暂无借贷', ln_receivable:'应收（对方欠你）', ln_payable:'应付（你欠）', ln_net:'净额',
+    ex_side_type:'类型', ex_side_exchange:'兑换', ex_side_iou:'借贷', ex_pgk_pending:'待收 PGK',
+    ln_dues_title:'未结 — 第三方 (PGK)', ln_they_owe:'对方欠你', ln_you_owe_sec:'你欠对方', ln_no_outstanding:'暂无未结借贷', ln_stmt_title:'对方对账单 — 动账追踪', ln_stmt_desc:'按日期列出借贷与还款及累计余额。正数 = 对方欠你 · 负数 = 你欠对方。', ln_select_party:'请在上方选择对方', ln_select_party_opt:'选择对方…', ln_all_parties:'全部对方', ln_listing_title:'借贷 / 欠条 — 完整列表', ln_repaid:'已还', ln_lbl_owe:'欠你', ln_lbl_owed:'你欠',
     ln_lent_tag:'借出', ln_borrowed_tag:'借入', ln_settled:'已结清', ln_outstanding_word:'未结清',
     ln_repay:'还款', ln_saved:'借贷已保存 ✓', ln_repaid:'还款已记录 ✓',
     ln_repay_amt:'还款金额 (PGK)', ln_repay_date:'还款日期 (YYYY-MM-DD)', ln_confirm_del:'删除此借贷？同时会移除其对对账的影响。',
@@ -1658,10 +1695,9 @@ function viewDayDetail(date){
 // ── ACCOUNTS & ACCESS ──
 const ALL_TABS=[
   {id:'pgk-entry',label:'🎮 PGK Platforms'},
-  {id:'exchange-tab',label:'💱 Exchanges'},
+  {id:'exchange-tab',label:'💱 Exchange & IOU'},
   {id:'fnd-tab',label:'💰 Funder Movements'},
   {id:'exp-tab',label:'🧾 Expenses'},
-  {id:'loans',label:'🤝 Loans / IOU'},
   {id:'recon',label:'🏦 Reconciliation'},
   {id:'cashflow',label:'↔️ Cash Flow'},
   {id:'pl',label:'📊 P&L'},
@@ -1670,9 +1706,9 @@ const ALL_TABS=[
   {id:'settings',label:'⚙️ Setup'},
 ];
 const ROLE_PRESETS={
-  operator:['pgk-entry','exchange-tab','exp-tab','loans'],
-  manager:['pgk-entry','exchange-tab','fnd-tab','exp-tab','loans','recon','cashflow','pl','funders','funder-review'],
-  funder:['exchange-tab','fnd-tab','exp-tab','loans','recon','cashflow','pl','funders','funder-review'],
+  operator:['pgk-entry','exchange-tab','exp-tab'],
+  manager:['pgk-entry','exchange-tab','fnd-tab','exp-tab','recon','cashflow','pl','funders','funder-review'],
+  funder:['exchange-tab','fnd-tab','exp-tab','recon','cashflow','pl','funders','funder-review'],
   admin:ALL_TABS.map(t=>t.id)
 };
 let currentUser=null,loginSelId=null;
@@ -1849,11 +1885,14 @@ function renderPage(p){
     if(exSel){exSel.innerHTML='<option value="">All exchangers</option>'+S.exchangers.map(e=>`<option value="${e}">${e}</option>`).join('');}
     setSel('exch-tab-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);
     setSel('stmt-exchanger',[{v:'',l:'Select exchanger…'},...S.exchangers.map(e=>({v:e,l:e}))]);
-    initExchEntry();renderExchTab();return;
+    initExchEntry();renderExchTab();
+    setSel('ln-list-month',[{v:'',l:'All months'},...mopts()]);
+    initLoansTab();fillLoanSelects();renderIOU();
+    setExchSide(exchSide);
+    return;
   }
   if(p==='fnd-tab'){initFndTab();return;}
   if(p==='exp-tab'){initExpTab();return;}
-  if(p==='loans'){initLoansTab();renderLoans();return;}
   if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);setSel('rc-pgk-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);rcDetailOpen=false;renderRecon();renderPGKRecon();renderFrozen();setReconCur(rcCur);renderLockBtn();}
   if(p==='cashflow'){toggleCFCustom();setSel('cf-plat',[{v:'',l:'All platforms'},...S.platforms.map(q=>({v:q.name,l:q.name}))]);renderCF();}
   if(p==='pl'){setSel('pl-plat',[{v:'',l:tr('all_platforms')},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);togglePLCustom();renderPLActive();}
@@ -2469,7 +2508,7 @@ function saveLoan(){
   S.pgkLoans.push({id:genRef('LN'),date,counterparty:party,dir:loanDir,platform,pgk,note,repayments:[]});
   persist();
   ['ln-party','ln-amt','ln-note'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  renderLoans();renderPGKRecon();
+  fillLoanSelects();renderIOU();renderPGKRecon();
   showToast(tr('ln_saved'));
 }
 function renderLoans(){
@@ -2510,14 +2549,14 @@ function repayLoanPrompt(id){
   if(lockBlocked(dateStr))return;
   if(!l.repayments)l.repayments=[];
   l.repayments.push({date:dateStr,amt});
-  persist();renderLoans();renderPGKRecon();showToast(tr('ln_repaid'));
+  persist();renderIOU();renderPGKRecon();showToast(tr('ln_repaid'));
 }
 function deleteLoan(id){
   const l=(S.pgkLoans||[]).find(x=>x.id===id);if(!l)return;
   if(lockBlocked(l.date))return;
   if(!confirm(tr('ln_confirm_del')))return;
   S.pgkLoans=(S.pgkLoans||[]).filter(x=>x.id!==id);
-  persist();renderLoans();renderPGKRecon();showToast(tr('toast_deleted'));
+  persist();fillLoanSelects();renderIOU();renderPGKRecon();showToast(tr('toast_deleted'));
 }
 // MYR→PGK incoming PGK received on a given date (new deferred-receipt model only).
 // Mirrors pgkLoanNetFor: credits each receipt on the day it actually arrived.
@@ -2539,6 +2578,119 @@ function pgkLoanNetFor(platformName,date){
   return net;
 }
 
+// ══ COMBINED TAB: Exchange / IOU side toggle ══
+let exchSide='exch';
+function setExchSide(s){
+  exchSide=s;
+  const ev=document.getElementById('exch-side-exch'),iv=document.getElementById('exch-side-iou');
+  if(ev)ev.style.display=s==='exch'?'block':'none';
+  if(iv)iv.style.display=s==='iou'?'block':'none';
+  const be=document.getElementById('ex-side-exch'),bi=document.getElementById('ex-side-iou');
+  if(be)be.classList.toggle('on',s==='exch');
+  if(bi)bi.classList.toggle('on',s==='iou');
+  if(s==='exch')renderExchTab();
+  else{initLoansTab();renderIOU();}
+}
+// Exchange summary bar — MYR row (dues) + a PGK-pending card (kept separate, never mixed)
+function renderExchMetrics(){
+  const el=document.getElementById('exch-metrics-bar');if(!el)return;
+  const acc={};
+  S.dayEntries.forEach(d=>(d.exchanges||[]).forEach(x=>{
+    if(x.dir==='out'){acc[x.exchanger]=acc[x.exchanger]||{out:0,set:0};acc[x.exchanger].out+=Math.max(0,(x.myr||0)-(x.paid||0));}
+  }));
+  (S.exchSettlements||[]).forEach(s=>{acc[s.exchanger]=acc[s.exchanger]||{out:0,set:0};acc[s.exchanger].set+=(s.amount||0);});
+  let owed=0,owe=0;
+  Object.values(acc).forEach(v=>{const net=v.out-v.set;if(net>0.009)owed+=net;else if(net<-0.009)owe+=-net;});
+  let pgkPending=0;
+  S.dayEntries.forEach(d=>(d.exchanges||[]).forEach(x=>{
+    if(x.dir==='in'&&x.receipts){const r=x.receipts.reduce((a,b)=>a+(b.amt||0),0);pgkPending+=Math.max(0,(x.myr||0)-r);}
+  }));
+  el.innerHTML=
+    `<div class="mc"><div class="ml">${tr('ln_receivable')} (MYR)</div><div class="mv pos">RM ${fmt(owed)}</div></div>`+
+    `<div class="mc"><div class="ml">${tr('ln_payable')} (MYR)</div><div class="mv neg">RM ${fmt(owe)}</div></div>`+
+    `<div class="mc"><div class="ml">${tr('ln_net')} (MYR)</div><div class="mv">RM ${fmt(owed-owe)}</div></div>`+
+    `<div class="mc"><div class="ml">${tr('ex_pgk_pending')}</div><div class="mv pos">${fmt(pgkPending)} PGK</div></div>`;
+}
+// ── IOU render bundle ──
+function renderIOU(){renderLoans();renderLoanDues();renderLoanStatement();renderLoanListing();}
+function fillLoanSelects(){
+  const parties=[...new Set((S.pgkLoans||[]).map(l=>l.counterparty).filter(Boolean))].sort();
+  const sp=document.getElementById('ln-stmt-party');
+  if(sp){const cur=sp.value;sp.innerHTML='<option value="">'+tr('ln_select_party_opt')+'</option>'+parties.map(p=>`<option value="${p}">${p}</option>`).join('');sp.value=cur;}
+  const lp=document.getElementById('ln-list-party');
+  if(lp){const cur=lp.value;lp.innerHTML='<option value="">'+tr('ln_all_parties')+'</option>'+parties.map(p=>`<option value="${p}">${p}</option>`).join('');lp.value=cur;}
+}
+function renderLoanDues(){
+  const el=document.getElementById('ln-dues');if(!el)return;
+  const recv={},pay={};
+  (S.pgkLoans||[]).forEach(l=>{const os=loanOutstanding(l);if(os<=0.009)return;
+    const t=l.dir==='lent'?recv:pay;
+    t[l.counterparty]=t[l.counterparty]||{amt:0,n:0,oldest:l.date};
+    t[l.counterparty].amt+=os;t[l.counterparty].n++;if(l.date<t[l.counterparty].oldest)t[l.counterparty].oldest=l.date;
+  });
+  const sec=(obj,cls,owe)=>Object.entries(obj).sort((a,b)=>b[1].amt-a[1].amt).map(([p,v])=>
+    `<div class="plat-row"><span style="display:flex;align-items:center;gap:9px"><b>${p}</b><span style="color:var(--${cls});font-weight:700">${owe?tr('ln_lbl_owed'):tr('ln_lbl_owe')} ${fmt(v.amt)} PGK</span><span style="font-size:11px;color:var(--txt2)">(${v.n} ${tr('rc_txn')}, ${tr('ex_oldest')} ${fD(v.oldest)})</span></span></div>`).join('');
+  const r=sec(recv,'am',false),p=sec(pay,'pu',true);
+  let html='';
+  if(r)html+=`<div style="font-size:11px;font-weight:700;color:var(--txt2);margin:2px 0 5px">${tr('ln_they_owe')}</div>${r}`;
+  if(p)html+=`<div style="font-size:11px;font-weight:700;color:var(--txt2);margin:10px 0 5px">${tr('ln_you_owe_sec')}</div>${p}`;
+  el.innerHTML=html||`<div class="recon-ok">✓ ${tr('ln_no_outstanding')}</div>`;
+}
+function loanStatementEvents(party){
+  const ev=[];
+  (S.pgkLoans||[]).filter(l=>l.counterparty===party).forEach(l=>{
+    const isLent=l.dir==='lent';
+    ev.push({date:l.date,type:isLent?'lent':'borrowed',detail:`${isLent?tr('ln_lent_tag'):tr('ln_borrowed_tag')} ${fmt(l.pgk)} PGK${l.platform?' · '+l.platform:''}${l.note?' · '+l.note:''}`,delta:isLent?(l.pgk||0):-(l.pgk||0)});
+    (l.repayments||[]).forEach(r=>ev.push({date:r.date,type:'repay',detail:tr('ln_repay'),delta:isLent?-(r.amt||0):(r.amt||0)}));
+  });
+  return ev.sort((a,b)=>a.date.localeCompare(b.date));
+}
+function renderLoanStatement(){
+  const el=document.getElementById('ln-stmt-content');if(!el)return;
+  const party=document.getElementById('ln-stmt-party')?.value||'';
+  const from=document.getElementById('ln-stmt-from')?.value||'';
+  const to=document.getElementById('ln-stmt-to')?.value||'';
+  if(!party){el.innerHTML=`<div class="empty">${tr('ln_select_party')}</div>`;return;}
+  const all=loanStatementEvents(party);let bf=0;const rows=[];
+  all.forEach(e=>{if(from&&e.date<from){bf+=e.delta;return;}if(to&&e.date>to)return;rows.push(e);});
+  const lbl=v=>v>0.009?`<span style="color:var(--am);font-weight:700">${tr('ln_lbl_owe')} ${fmt(v)} PGK</span>`:v<-0.009?`<span style="color:var(--pu);font-weight:700">${tr('ln_lbl_owed')} ${fmt(-v)} PGK</span>`:`<span style="color:var(--gr);font-weight:700">✓ ${tr('ex_settled')}</span>`;
+  let bal=bf;
+  let html=`<div class="pr"><span style="color:var(--txt2)">${tr('ex_bf')}${from?' '+tr('ex_before')+' '+fD(from):''}</span><span>${lbl(bf)}</span></div>`;
+  if(!rows.length){html+=`<div class="empty">${tr('ex_no_movements')}</div>`;}
+  else{
+    html+=`<div class="tw"><table><thead><tr><th>${tr('date')}</th><th>${tr('type')}</th><th>${tr('ex_detail')}</th><th>${tr('ex_owes_more')}</th><th>${tr('ex_reduces')}</th><th>${tr('ex_running_bal')}</th></tr></thead><tbody>`;
+    rows.forEach(e=>{bal+=e.delta;html+=`<tr><td>${fD(e.date)}</td><td><span class="tag ${e.type==='repay'?'tag-in':e.delta>0?'tag-out':'tag-exch'}">${e.type==='lent'?tr('ln_lent_tag'):e.type==='borrowed'?tr('ln_borrowed_tag'):tr('ln_repay')}</span></td><td style="color:var(--txt2);font-size:11px">${e.detail}</td><td style="color:var(--am);font-weight:600">${e.delta>0.009?'PGK '+fmt(e.delta):''}</td><td style="color:var(--gr);font-weight:600">${e.delta<-0.009?'PGK '+fmt(-e.delta):''}</td><td>${lbl(bal)}</td></tr>`;});
+    html+=`</tbody></table></div>`;
+  }
+  html+=`<div class="pr ptot"><span>${tr('ex_closing_bal')}${to?' '+tr('ex_at')+' '+fD(to):''}</span><span>${lbl(bal)}</span></div>`;
+  el.innerHTML=html;
+}
+function renderLoanListing(){
+  const tbody=document.getElementById('ln-list-body');if(!tbody)return;
+  const month=document.getElementById('ln-list-month')?.value||'';
+  const dir=document.getElementById('ln-list-dir')?.value||'';
+  const party=document.getElementById('ln-list-party')?.value||'';
+  const all=(S.pgkLoans||[]).filter(l=>(!month||mk(l.date)===month)&&(!dir||l.dir===dir)&&(!party||l.counterparty===party)).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!all.length){tbody.innerHTML=`<tr><td colspan="8" class="empty">${tr('ln_none')}</td></tr>`;return;}
+  tbody.innerHTML=all.map(l=>{
+    const repaid=(l.repayments||[]).reduce((s,r)=>s+(r.amt||0),0),os=loanOutstanding(l),settled=os<0.01,isLent=l.dir==='lent';
+    return`<tr>
+      <td>${fD(l.date)}</td><td>${l.counterparty||'-'}</td>
+      <td><span class="tag ${isLent?'tag-in':'tag-out'}">${isLent?tr('ln_lent_tag'):tr('ln_borrowed_tag')}</span></td>
+      <td class="hide-sm">${l.platform||'-'}</td>
+      <td>${fmt(l.pgk)}</td><td class="hide-sm">${fmt(repaid)}</td>
+      <td style="color:${settled?'var(--gr)':'var(--am)'};font-weight:700">${settled?'✓':fmt(os)}</td>
+      <td style="white-space:nowrap" class="op-only">${settled?'':`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="repayLoanPrompt('${l.id}')">${tr('ln_repay')}</button> `}<button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="deleteLoan('${l.id}')">🗑</button></td>
+    </tr>`;
+  }).join('');
+}
+function exportLoanCSV(){
+  const all=(S.pgkLoans||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
+  if(!all.length){showToast('No data',true);return;}
+  let csv='Date,Counterparty,Direction,Platform,Amount PGK,Repaid,Outstanding,Note\n';
+  all.forEach(l=>{const repaid=(l.repayments||[]).reduce((s,r)=>s+(r.amt||0),0);csv+=`${l.date},${(l.counterparty||'').replace(/,/g,' ')},${l.dir},${(l.platform||'').replace(/,/g,' ')},${l.pgk},${repaid},${loanOutstanding(l)},${(l.note||'').replace(/,/g,' ')}\n`;});
+  dlFile(csv,'text/csv','loans_all.csv');showToast('CSV exported ✓');
+}
 // ══ EXCHANGE ENTRY (Exchanges tab — single transaction) ══
 let exchEntryDir='out';
 function setExchEntryDir(d){
@@ -4948,7 +5100,7 @@ function renderExchTab(){
   const platF=document.getElementById('exch-tab-platform')?.value||'';
   const allExch=S.dayEntries.filter(e=>!month||mk(e.date)===month).flatMap(d=>(d.exchanges||[]).map(x=>({...x,date:d.date})));
   const filtered=allExch.filter(x=>(!dir||x.dir===dir)&&(!exName||x.exchanger===exName)&&(!platF||x.platform===platF));
-  renderExchDues();renderExchStatement();
+  renderExchDues();renderExchStatement();if(typeof renderExchMetrics==='function')renderExchMetrics();
   const tbody=document.getElementById('exch-tab-body');if(!tbody)return;
   if(!filtered.length){tbody.innerHTML=`<tr><td colspan="11" class="empty">No exchange transactions${month?' for '+ml(month):''}</td></tr>`;setHTML('exch-tab-metrics','');return;}
   const{owedByKey}=exchDuesData();
