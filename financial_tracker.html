@@ -1002,6 +1002,7 @@ const LANG = {
     ex_owes:'owes RM', ex_oldest:'oldest', ex_receive_payment:'Receive payment',
     ex_date_received:'Date received', ex_amount_rm:'Amount (RM)', ex_into_bank:'Into MYR bank', ex_no_payments:'No payments received yet',
     ex_receive_from:'Receive payment from', ex_currently_owes:'currently owes', ex_amount_received:'Amount received (RM)', ex_note_optional:'Note (optional)', ex_save_payment:'Save payment received', ex_modal_title:'Receive Due Payment',
+    ex_receive_btn:'Receive', ex_received_full:'Received', ex_recv_pgk_title:'Receive PGK', ex_recv_pgk_from:'Receive PGK from', ex_pgk_outstanding:'PGK still to receive:', ex_pgk_received:'PGK received', ex_save_receipt:'Save receipt', ex_pgk_received_toast:'PGK received:', ex_receipts:'Receipts', ex_no_receipts:'No receipts yet — still pending', ex_del_receipt_confirm:'Delete this PGK receipt? The PGK will be pending again.', ex_this_txn_owes:'this transaction — owes',
     ex_owes_us:'owes us RM', ex_we_owe:'we owe RM', ex_settled:'settled', ex_bf:'B/F balance', ex_before:'before',
     ex_no_movements:'No movements', ex_in_range:'in this date range', ex_detail:'Detail', ex_owes_more:'+ Owes more', ex_reduces:'− Reduces', ex_running_bal:'Running balance', ex_closing_bal:'Closing balance', ex_at:'at',
     ex_pgk_myr:'Exchange PGK→MYR', ex_myr_pgk:'Exchange MYR→PGK', ex_pay_received:'Payment received',
@@ -1261,6 +1262,7 @@ const LANG = {
     ex_owes:'欠 RM', ex_oldest:'最早', ex_receive_payment:'登记收款',
     ex_date_received:'收款日期', ex_amount_rm:'金额 (RM)', ex_into_bank:'存入MYR银行', ex_no_payments:'暂无收款记录',
     ex_receive_from:'登记收款 — 来自', ex_currently_owes:'当前欠款', ex_amount_received:'收到金额 (RM)', ex_note_optional:'备注（可选）', ex_save_payment:'保存收款', ex_modal_title:'登记欠款收款',
+    ex_receive_btn:'收款', ex_received_full:'已收', ex_recv_pgk_title:'登记收到 PGK', ex_recv_pgk_from:'收到 PGK — 来自', ex_pgk_outstanding:'待收 PGK：', ex_pgk_received:'收到的 PGK', ex_save_receipt:'保存收款', ex_pgk_received_toast:'已收 PGK：', ex_receipts:'收款记录', ex_no_receipts:'暂无收款 — 待收', ex_del_receipt_confirm:'删除此 PGK 收款？该笔 PGK 将重新变为待收。', ex_this_txn_owes:'本笔交易 — 欠',
     ex_owes_us:'欠我们 RM', ex_we_owe:'我们欠 RM', ex_settled:'已结清', ex_bf:'承前余额', ex_before:'截至',
     ex_no_movements:'无流水', ex_in_range:'在此日期范围内', ex_detail:'明细', ex_owes_more:'+ 增加欠款', ex_reduces:'− 减少', ex_running_bal:'滚动余额', ex_closing_bal:'期末余额', ex_at:'截至',
     ex_pgk_myr:'兑换 PGK→MYR', ex_myr_pgk:'兑换 MYR→PGK', ex_pay_received:'已收款',
@@ -2517,6 +2519,16 @@ function deleteLoan(id){
   S.pgkLoans=(S.pgkLoans||[]).filter(x=>x.id!==id);
   persist();renderLoans();renderPGKRecon();showToast(tr('toast_deleted'));
 }
+// MYR→PGK incoming PGK received on a given date (new deferred-receipt model only).
+// Mirrors pgkLoanNetFor: credits each receipt on the day it actually arrived.
+function exchReceiptNetFor(platformName,date,dayEntries){
+  const days=dayEntries||S.dayEntries;let net=0;
+  days.forEach(d=>(d.exchanges||[]).forEach(x=>{
+    if(x.dir!=='in'||x.platform!==platformName||!x.receipts)return;
+    (x.receipts||[]).forEach(r=>{if(r.date===date)net+=(r.amt||0);});
+  }));
+  return net;
+}
 function pgkLoanNetFor(platformName,date){
   let net=0;
   (S.pgkLoans||[]).forEach(l=>{
@@ -2562,7 +2574,7 @@ function saveExchangeOne(){
   const myrBank=document.getElementById('exch-ent-bank')?.value||'';
   if(!pgk){showToast('Enter the amount',true);return;}
   const myr=Math.round(pgk*rate*100)/100;
-  const ex={dir:exchEntryDir,platform,exchanger,pgk,rate,myr,paid,myrBank,ref:genRef('EXC')};
+  const ex={dir:exchEntryDir,platform,exchanger,pgk,rate,myr,paid,myrBank,ref:genRef('EXC'),receipts:[]};
   let day=S.dayEntries.find(e=>e.date===date);
   if(!day){day={date,exchanges:[],myrBanks:[],funderTxns:[],expenses:[],totalExp:0};S.dayEntries.push(day);S.dayEntries.sort((a,b)=>a.date.localeCompare(b.date));}
   if(!day.exchanges)day.exchanges=[];
@@ -3048,7 +3060,10 @@ function buildPGKLedger(platformName,dayEntries){
       const day=days.find(d=>d.date===e.date);
       const linked=(day?.exchanges||[]).filter(x=>x.platform===platformName);
       const exchOut=linked.filter(x=>x.dir==='out').reduce((s,x)=>s+(x.pgk||0),0);
-      const exchIn=linked.filter(x=>x.dir==='in').reduce((s,x)=>s+(x.myr||0),0);
+      // MYR→PGK incoming PGK: legacy entries (no receipts[]) credit in full on the exchange
+      // date (unchanged); new entries credit only the receipts dated on this day.
+      const exchIn=linked.filter(x=>x.dir==='in'&&!x.receipts).reduce((s,x)=>s+(x.myr||0),0)
+        +exchReceiptNetFor(platformName,e.date,days);
       const adjNet=(e.adjustments||[]).reduce((s,a)=>s+(a.dir==='in'?a.amt:-a.amt),0);
       const loanNet=pgkLoanNetFor(platformName,e.date);
       const computed=(e.pgkOpen||0)+(e.dep||0)-(e.with||0)-(e.bankCharges||0)-exchOut+exchIn+adjNet+loanNet;
@@ -4744,6 +4759,72 @@ function deleteSettlement(id){
   S.exchSettlements=S.exchSettlements.filter(x=>x.id!==id);
   persist();renderExchTab();renderRecon();showToast('Payment record deleted ✓');
 }
+// ── PER-ROW RECEIVE (actual amount + date the money arrived) ──
+// PGK→MYR: route to the existing exchanger due/settlement system, pre-filled with this row's outstanding.
+function openReceiveExch(x){
+  const{owedByKey}=exchDuesData();
+  const k=`${x.date}|${x.exchanger}|${x.pgk}|${x.myr}|${x.paid}`;
+  const owed=owedByKey[k]!==undefined?owedByKey[k]:Math.max(0,(x.myr||0)-(x.paid||0));
+  const bankOpts=S.myrBanks.map(b=>`<option value="${b.name}" ${b.name===x.myrBank?'selected':''}>${b.name}</option>`).join('');
+  const body=`
+    <div class="modal-section">${tr('ex_receive_from')} ${x.exchanger} — ${tr('ex_this_txn_owes')} RM ${fmt(owed)}<br>
+      <span style="font-size:11px;color:var(--txt2)">${fD(x.date)} · ${fmt(x.pgk)} PGK${x.platform?' · '+x.platform:''}</span></div>
+    <div class="g2" style="gap:8px;margin-bottom:10px">
+      <div class="f"><label>${tr('ex_date_received')}</label><input type="date" id="due-date" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="f"><label>${tr('ex_amount_received')}</label><input type="number" id="due-amt" value="${owed.toFixed(2)}" step="0.01"></div>
+      <div class="f"><label>${tr('ex_into_bank')}</label><select id="due-bank">${bankOpts}</select></div>
+      <div class="f"><label>${tr('ex_note_optional')}</label><input type="text" id="due-note" placeholder=""></div>
+    </div>
+    <button class="btn-pri" onclick="saveDueReceipt('${(x.exchanger||'').replace(/'/g,"\\'")}')">💾 ${tr('ex_save_payment')}</button>`;
+  openModal(tr('ex_modal_title'),body);
+}
+// MYR→PGK: record PGK actually received on a date; credited to the platform on that date.
+function findInExch(orig){
+  const dIdx=S.dayEntries.findIndex(e=>e.date===orig.date);if(dIdx<0)return null;
+  const xIdx=S.dayEntries[dIdx].exchanges.findIndex(x=>x.dir==='in'&&(orig.ref&&x.ref?x.ref===orig.ref:
+    (x.exchanger===orig.exchanger&&Math.abs((x.pgk||0)-(orig.pgk||0))<0.001&&Math.abs((x.paid||0)-(orig.paid||0))<0.001)));
+  if(xIdx<0)return null;
+  return{dIdx,xIdx,x:S.dayEntries[dIdx].exchanges[xIdx]};
+}
+function openReceivePGK(x){
+  const recd=(x.receipts||[]).reduce((s,r)=>s+(r.amt||0),0);
+  const owed=Math.max(0,(x.myr||0)-recd);
+  const xJson=JSON.stringify(x).replace(/"/g,'&quot;');
+  const body=`
+    <div class="modal-section">${tr('ex_recv_pgk_from')} ${x.exchanger||'-'} — ${tr('ex_pgk_outstanding')} ${fmt(owed)} PGK<br>
+      <span style="font-size:11px;color:var(--txt2)">${fD(x.date)}${x.platform?' · '+x.platform:''}</span></div>
+    <div class="g2" style="gap:8px;margin-bottom:10px">
+      <div class="f"><label>${tr('ex_date_received')}</label><input type="date" id="rpgk-date" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="f"><label>${tr('ex_pgk_received')}</label><input type="number" id="rpgk-amt" value="${owed.toFixed(2)}" step="0.01"></div>
+      <div class="f" style="grid-column:1/-1"><label>${tr('ex_note_optional')}</label><input type="text" id="rpgk-note" placeholder=""></div>
+    </div>
+    <button class="btn-pri" onclick="saveReceivePGK(${xJson})">💾 ${tr('ex_save_receipt')}</button>`;
+  openModal(tr('ex_recv_pgk_title'),body);
+}
+function saveReceivePGK(orig){
+  const date=document.getElementById('rpgk-date')?.value;
+  const amt=parseFloat(document.getElementById('rpgk-amt')?.value)||0;
+  const note=document.getElementById('rpgk-note')?.value||'';
+  if(!date){showToast('Select date',true);return;}
+  if(lockBlocked(date))return;
+  if(amt<=0){showToast('Enter amount',true);return;}
+  const hit=findInExch(orig);if(!hit){showToast('Exchange not found',true);return;}
+  const x=hit.x;if(!x.receipts)x.receipts=[];
+  const recd=x.receipts.reduce((s,r)=>s+(r.amt||0),0);
+  const owed=Math.max(0,(x.myr||0)-recd);
+  if(amt>owed+0.009&&!confirm(`${fmt(amt)} PGK > outstanding ${fmt(owed)} PGK. Save anyway?`))return;
+  x.receipts.push({id:'RCV-'+Date.now().toString(36)+Math.floor(Math.random()*1000),date,amt,note});
+  persist();closeModal();renderExchTab();if(typeof renderPGKRecon==='function')renderPGKRecon();
+  showToast(tr('ex_pgk_received_toast')+' '+fmt(amt)+' PGK ✓');
+}
+function deleteReceiptPGK(orig,rid){
+  const hit=findInExch(orig);if(!hit||!hit.x.receipts)return;
+  const r=hit.x.receipts.find(r=>r.id===rid);if(!r)return;
+  if(lockBlocked(r.date))return;
+  if(!confirm(tr('ex_del_receipt_confirm')))return;
+  hit.x.receipts=hit.x.receipts.filter(r=>r.id!==rid);
+  persist();closeModal();renderExchTab();if(typeof renderPGKRecon==='function')renderPGKRecon();showToast(tr('toast_deleted'));
+}
 // ── EXCHANGER STATEMENT (movement trace) ──
 function exchStatementEvents(exchanger){
   const ev=[];
@@ -4819,19 +4900,31 @@ function renderExchTab(){
   if(!filtered.length){tbody.innerHTML=`<tr><td colspan="11" class="empty">No exchange transactions${month?' for '+ml(month):''}</td></tr>`;setHTML('exch-tab-metrics','');return;}
   const{owedByKey}=exchDuesData();
   tbody.innerHTML=filtered.map((x,xi)=>{
-    const rawOwed=Math.max(0,(x.myr||0)-(x.paid||0));
     const k=`${x.date}|${x.exchanger}|${x.pgk}|${x.myr}|${x.paid}`;
-    const owed=x.dir==='out'&&owedByKey[k]!==undefined?owedByKey[k]:rawOwed;
-    return`<tr class="row-tap" style="cursor:pointer" onclick="viewEditExch(${JSON.stringify(x).replace(/"/g,'&quot;')})">
+    let owed,recvFn;
+    if(x.dir==='out'){
+      const rawOwed=Math.max(0,(x.myr||0)-(x.paid||0));
+      owed=owedByKey[k]!==undefined?owedByKey[k]:rawOwed; // MYR still to receive
+      recvFn='openReceiveExch';
+    }else{
+      const recd=(x.receipts||[]).reduce((s,r)=>s+(r.amt||0),0);
+      owed=x.receipts?Math.max(0,(x.myr||0)-recd):0; // legacy 'in' = already received; PGK still to receive
+      recvFn='openReceivePGK';
+    }
+    const xJson=JSON.stringify(x).replace(/"/g,'&quot;');
+    const owedCell=owed>0.01
+      ? `${fmt(owed)}<div style="margin-top:3px"><button class="btn-plat" style="font-size:9px;padding:2px 7px" onclick="event.stopPropagation();${recvFn}(${xJson})">💵 ${tr('ex_receive_btn')}</button></div>`
+      : `${fmt(owed)}<div style="font-size:9px;color:var(--gr);font-weight:400">✓ ${tr('ex_received_full')}</div>`;
+    return`<tr class="row-tap" style="cursor:pointer" onclick="viewEditExch(${xJson})">
       <td>${fD(x.date)}</td>
       <td><span class="tag ${x.dir==='out'?'tag-out':'tag-in'}">${x.dir==='out'?'PGK→MYR':'MYR→PGK'}</span></td>
       <td class="hide-sm">${x.platform?`<span style="background:#E6F1FB;color:#0C447C;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700">${x.platform}</span>`:'-'}</td>
       <td>${x.exchanger||'-'}</td><td>${fmt(x.pgk)}</td><td class="hide-sm">${x.rate}</td>
       <td class="hide-sm">${fmt(x.myr||0)}</td>
       <td style="color:${x.dir==='out'?'var(--gr)':'var(--rd)'}">${fmt(x.paid||0)}</td>
-      <td style="color:${owed>0.01?'var(--am)':'var(--gr)'};font-weight:700">${fmt(owed)}</td>
+      <td style="color:${owed>0.01?'var(--am)':'var(--gr)'};font-weight:700">${owedCell}</td>
       <td class="hide-sm">${bDot(x.myrBank||'')} ${x.myrBank||'-'}</td>
-      <td class="hide-sm"><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();viewEditExch(${JSON.stringify(x).replace(/"/g,'&quot;')})">✏️ Edit/View</button></td>
+      <td class="hide-sm"><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();viewEditExch(${xJson})">✏️ Edit/View</button></td>
     </tr>`;
   }).join('');
   const myrIn=filtered.filter(x=>x.dir==='out').reduce((s,x)=>s+(x.paid||0),0);
@@ -4860,6 +4953,16 @@ function viewEditExch(x){
       <div class="f"><label>MYR actually paid/received</label><input type="number" id="exch-edit-paid" value="${x.paid||0}" step="0.01"></div>
       <div class="f"><label>MYR bank</label><select id="exch-edit-bank">${bankOpts}</select></div>
     </div>
+    ${x.dir==='in'?`
+      <div class="modal-section">${tr('ex_receipts')} (PGK)</div>
+      ${(x.receipts&&x.receipts.length)?`<div class="tw"><table>
+        <thead><tr><th>${tr('ex_date_received')}</th><th>PGK</th><th>${tr('note')}</th><th></th></tr></thead>
+        <tbody>${x.receipts.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>`<tr><td>${fD(r.date)}</td><td style="font-weight:700;color:var(--gr)">${fmt(r.amt)}</td><td style="color:var(--txt2)">${r.note||'-'}</td><td><button class="del" onclick="deleteReceiptPGK(${xJson},'${r.id}')">🗑</button></td></tr>`).join('')}</tbody>
+      </table></div>`:`<div class="empty">${tr('ex_no_receipts')}</div>`}
+      <button class="btn-sec" style="width:100%;margin-top:8px;margin-bottom:4px" onclick="openReceivePGK(${xJson})">💵 ${tr('ex_recv_pgk_title')}</button>
+    `:`
+      <button class="btn-sec" style="width:100%;margin-top:4px;margin-bottom:4px" onclick="openReceiveExch(${xJson})">💵 ${tr('ex_receive_payment')}</button>
+    `}
     <div style="display:flex;gap:8px;margin-top:4px">
       <button class="btn-pri" style="flex:1" onclick="saveExchEdit(${xJson})">💾 Save changes</button>
       <button class="btn-danger" onclick="deleteExchEntry(${xJson})">🗑 Delete</button>
