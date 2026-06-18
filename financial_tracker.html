@@ -1022,7 +1022,7 @@ const LANG = {
     rc_pgk_title:'PGK Platform Reconciliation', rc_pgk_desc:'Computed book closing vs entered closing per platform. Exchanges auto-linked by platform + date.',
     rc_frozen_title:'Frozen Funds — PGK stuck in frozen banks', rc_frozen_desc:'Created when a bank with balance is deactivated. Write off = loss in P&L. Recovery (full or partial) credits back. Written-off funds can still be marked recovered later.',
     rc_all_reconciled:'All reconciled', rc_out_by:'Out by', rc_total_suffix:'total', rc_reconciled:'Reconciled', rc_oob:'Out of balance',
-    rc_opening:'Opening', rc_deposit:'Deposit', rc_withdraw:'Withdraw', rc_bank_charges:'Bank charges', rc_exch_out:'Exchange out', rc_exch_in:'Exchange in', rc_txn:'txn', rc_adjustments:'Adjustments', rc_loans:'Loans / IOU',
+    rc_opening:'Opening', rc_deposit:'Deposit', rc_withdraw:'Withdraw', rc_bank_charges:'Bank charges', rc_exch_out:'Exchange out', rc_exch_in:'Exchange in', rc_txn:'txn', rc_adjustments:'Adjustments', rc_loans:'Loans / IOU', rc_linked_loans:'Linked loans / IOU',
     rc_computed:'Computed book closing', rc_entered:'Entered closing (actual)', rc_linked_exch:'Linked exchanges', rc_no_pgk:'No PGK platform entries',
     rc_col_month:'Statement month', rc_col_book:'Book closing', rc_col_stmt:'Statement closing', rc_col_status:'Status', rc_not_entered:'statement not entered', rc_open_btn:'Open', rc_no_daily:'No daily entries yet — reconciliation rows appear once MYR bank data is entered',
     rc_click_row:'Click a row in the summary above to open the fill-in reconciliation detail',
@@ -1285,7 +1285,7 @@ const LANG = {
     rc_pgk_title:'PGK平台对账', rc_pgk_desc:'各平台账面计算余额 vs 录入余额。兑换按平台+日期自动关联。',
     rc_frozen_title:'冻结资金 — 卡在冻结银行的PGK', rc_frozen_desc:'当有余额的银行被停用时生成。核销=计入损益表的亏损。收回（全部或部分）可冲回。已核销资金日后仍可标记为已收回。',
     rc_all_reconciled:'全部已对账', rc_out_by:'差额', rc_total_suffix:'（合计）', rc_reconciled:'已对账', rc_oob:'不平衡',
-    rc_opening:'期初', rc_deposit:'存款', rc_withdraw:'取款', rc_bank_charges:'银行手续费', rc_exch_out:'兑出', rc_exch_in:'兑入', rc_txn:'笔', rc_adjustments:'调整', rc_loans:'借贷 / 欠条',
+    rc_opening:'期初', rc_deposit:'存款', rc_withdraw:'取款', rc_bank_charges:'银行手续费', rc_exch_out:'兑出', rc_exch_in:'兑入', rc_txn:'笔', rc_adjustments:'调整', rc_loans:'借贷 / 欠条', rc_linked_loans:'关联借贷 / 欠条',
     rc_computed:'账面计算余额', rc_entered:'录入余额（实际）', rc_linked_exch:'关联兑换', rc_no_pgk:'无PGK平台记录',
     rc_col_month:'对账月份', rc_col_book:'账面余额', rc_col_stmt:'对账单余额', rc_col_status:'状态', rc_not_entered:'未录入对账单', rc_open_btn:'展开', rc_no_daily:'暂无每日记录 — 录入MYR银行数据后会出现对账行',
     rc_click_row:'点击上方汇总中的行以展开填写对账明细',
@@ -3285,8 +3285,14 @@ function buildPGKLedger(platformName,dayEntries){
         +exchReceiptNetFor(platformName,e.date,days);
       const adjNet=(e.adjustments||[]).reduce((s,a)=>s+(a.dir==='in'?a.amt:-a.amt),0);
       const loanNet=pgkLoanNetFor(platformName,e.date);
+      const linkedLoans=[];
+      (S.pgkLoans||[]).forEach(l=>{
+        if(l.platform!==platformName)return;
+        if(l.date===e.date)linkedLoans.push({party:l.counterparty,amt:l.dir==='lent'?-(l.pgk||0):(l.pgk||0)});
+        (l.repayments||[]).forEach(rp=>{if(rp.date===e.date)linkedLoans.push({party:l.counterparty,repay:true,amt:l.dir==='lent'?(rp.amt||0):-(rp.amt||0)});});
+      });
       const computed=(e.pgkOpen||0)+(e.dep||0)-(e.with||0)-(e.bankCharges||0)-exchOut+exchIn+adjNet+loanNet;
-      return{date:e.date,entry:e,linked,exchOut,exchIn,adjNet,loanNet,computed,entered:e.pgkClose||0,diff:(e.pgkClose||0)-computed};
+      return{date:e.date,entry:e,linked,linkedLoans,exchOut,exchIn,adjNet,loanNet,computed,entered:e.pgkClose||0,diff:(e.pgkClose||0)-computed};
     });
 }
 // Reconciliation currency switch (left-side toggle): show MYR or PGK view
@@ -3337,6 +3343,7 @@ function renderPGKRecon(){
           <div class="recon-row subtot"><span>${tr('rc_computed')}</span><span>${fmt(r.computed)}</span></div>
           <div class="recon-row"><span>${tr('rc_entered')}</span><span style="font-weight:700">${fmt(r.entered)}</span></div>
           ${r.linked.length?`<div style="font-size:11px;color:var(--txt2);margin-top:7px">${tr('rc_linked_exch')}: ${r.linked.map(x=>`${x.dir==='out'?'−':'+'}${fmt(x.dir==='out'?x.pgk:x.myr)} (${x.exchanger||'?'})`).join(', ')}</div>`:''}
+          ${r.linkedLoans&&r.linkedLoans.length?`<div style="font-size:11px;color:var(--txt2);margin-top:4px">${tr('rc_linked_loans')}: ${r.linkedLoans.map(l=>`${l.amt<0?'−':'+'}${fmt(Math.abs(l.amt))} (${l.party||'?'}${l.repay?' '+tr('ln_repay'):''})`).join(', ')}</div>`:''}
         </div>
       </div>`;
     });
