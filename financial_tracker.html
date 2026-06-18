@@ -3762,9 +3762,17 @@ function renderPL(){
   const pf=document.getElementById('pl-plat')?.value||'';
   const platRows=S.platEntries.filter(e=>e.date>=from&&e.date<=to&&(!pf||e.platform===pf)),dayRows=S.dayEntries.filter(e=>e.date>=from&&e.date<=to);
   const rangeLabel=from===to?fD(from):`${fD(from)} – ${fD(to)}`;
-  // Expenses are recognised by their accrual month (belongs-to), not the payment date.
+  // Expense recognition: month/year ranges use the accrual month (belongs-to), so an expense
+  // paid late still lands in its month. Day-level ranges (Today / Custom) use the actual expense
+  // date, so a single day shows only that day's expenses — not the whole month.
+  const plRange=document.getElementById('pl-range')?.value||'month';
+  const dayLevel=(plRange==='today'||plRange==='custom');
   const mFrom=mk(from),mTo=mk(to);
-  const accrualExps=S.dayEntries.flatMap(d=>(d.expenses||[]).map(x=>({...x,date:d.date}))).filter(x=>{const am=x.accrualMonth||mk(x.date);return am>=mFrom&&am<=mTo&&(!pf||x.platform===pf);});
+  const accrualExps=S.dayEntries.flatMap(d=>(d.expenses||[]).map(x=>({...x,date:d.date}))).filter(x=>{
+    if(pf&&x.platform!==pf)return false;
+    if(dayLevel)return x.date>=from&&x.date<=to;
+    const am=x.accrualMonth||mk(x.date);return am>=mFrom&&am<=mTo;
+  });
   if(!platRows.length&&!dayRows.length&&!accrualExps.length){setHTML('pl-content',`<div class="empty">No entries for ${rangeLabel}.</div>`);setHTML('pl-metrics','');setHTML('pl-exch','<div class="empty">No data</div>');setHTML('pl-funder-summary','<div class="empty">No data</div>');return;}
   const allExch=dayRows.flatMap(d=>(d.exchanges||[]).filter(x=>!pf||x.platform===pf).map(x=>({...x,date:d.date})));
   const myrIn=allExch.filter(x=>x.dir==='out').reduce((s,x)=>s+(x.paid||0),0),myrOut=allExch.filter(x=>x.dir==='in').reduce((s,x)=>s+(x.paid||0),0);
