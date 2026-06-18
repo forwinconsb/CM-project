@@ -475,18 +475,25 @@ details.collapse-card[open]>summary:before{content:'▾'}
   </div>
   <div id="cf-metrics" class="metrics"></div>
   <div class="card"><div class="ct" data-i18n="cf_chart_title">Daily trend - deposit (bars) &amp; win/lose (line)</div><div id="cf-chart"></div></div>
-  <div class="card"><div class="ct" data-i18n="cf_bank_bal">🏦 Bank balances (computed)</div>
+  <div class="card"><div class="ct" data-i18n="cf_myr_bank_bal">🏦 MYR Bank balances (computed)</div>
     <div class="tw"><table><thead><tr><th data-i18n="bank">Bank</th><th style="text-align:right" data-i18n="bank_open">Opening</th><th style="text-align:right" data-i18n="cf_in">In</th><th style="text-align:right" data-i18n="cf_out">Out</th><th style="text-align:right" data-i18n="cf_balance">Balance</th><th style="text-align:right" data-i18n="rc_col_stmt">Statement</th></tr></thead><tbody id="cf-bankbal-body"><tr><td colspan="6" class="empty">No data yet</td></tr></tbody></table></div>
-    <div style="font-size:10px;color:var(--txt2);margin-top:6px" data-i18n="cf_bank_bal_note">Balance = opening (last month's statement) + in − out for this period. Book figure — confirm against the bank statement in the Reconciliation tab.</div>
+    <div style="font-size:10px;color:var(--txt2);margin-top:6px" data-i18n="cf_bank_bal_note">Balance = opening (prior closing) + in − out for this period. Book figure — confirm against the bank statement in the Reconciliation tab.</div>
+  </div>
+  <div class="card"><div class="ct" data-i18n="cf_pgk_bank_bal">🎰 PGK Bank balances (entered actuals)</div>
+    <div class="tw"><table><thead><tr><th data-i18n="bank">Bank</th><th style="text-align:right" data-i18n="bank_open">Opening</th><th style="text-align:right" data-i18n="cf_movement">Movement</th><th style="text-align:right" data-i18n="col_close">Closing</th><th style="text-align:right" data-i18n="cf_frozen_col">Frozen</th></tr></thead><tbody id="cf-pgkbal-body"><tr><td colspan="5" class="empty">No data yet</td></tr></tbody></table></div>
+    <div style="font-size:10px;color:var(--txt2);margin-top:6px" data-i18n="cf_pgk_bal_note">Each PGK bank's last entered actual closing in the period (opening = last closing before it). Frozen = PGK still stuck in that bank.</div>
   </div>
   <div class="card"><div class="ct" data-i18n="lbl_plat_perf">Platform performance (PGK)</div>
     <div class="tw"><table><thead><tr><th data-i18n="pgk_platform">Platform</th><th data-i18n="col_deposit">Deposit</th><th data-i18n="col_withdraw">Withdraw</th><th data-i18n="win_lose">Win / Lose</th><th data-i18n="cf_count">Count</th><th></th></tr></thead><tbody id="cf-plat-body"><tr><td colspan="6" class="empty">No data yet</td></tr></tbody></table></div>
   </div>
-  <div class="card"><div class="ct" data-i18n="lbl_exch_txns">Exchange transactions</div>
-    <div class="tw"><table><thead><tr><th data-i18n="exch_exchanger">Exchanger</th><th>PGK</th><th>MYR</th><th data-i18n="cf_paid_rcvd">Paid/Rcvd</th><th data-i18n="cf_due">Due</th><th data-i18n="cf_count">Count</th><th></th></tr></thead><tbody id="cf-exch-body"><tr><td colspan="7" class="empty">No data yet</td></tr></tbody></table></div>
+  <div class="card"><div class="ct" data-i18n="cf_exch_summary">💱 Exchange transaction summary</div>
+    <div id="cf-exsum"><div class="empty">No data yet</div></div>
   </div>
-  <div class="card"><div class="ct" data-i18n="cf_myr_ledger">MYR bank ledger (running balance)</div>
-    <div class="tw"><table><thead><tr><th data-i18n="type">Type</th><th data-i18n="cf_in">In (MYR)</th><th data-i18n="cf_out">Out (MYR)</th><th data-i18n="cf_net">Net</th><th data-i18n="cf_count">Count</th><th></th></tr></thead><tbody id="cf-myr-body"><tr><td colspan="6" class="empty">No data yet</td></tr></tbody></table></div>
+  <div class="card"><div class="ct" data-i18n="cf_iou_summary">🤝 IOU transaction summary</div>
+    <div id="cf-iousum"><div class="empty">No data yet</div></div>
+  </div>
+  <div class="card"><div class="ct" data-i18n="cf_frozen_title">🧊 Frozen Funds — PGK stuck in frozen banks</div>
+    <div id="cf-frozen"><div class="empty">No data yet</div></div>
   </div>
 </div>
 
@@ -977,6 +984,7 @@ const LANG = {
     exp_bank_charge:'Bank charge (optional)', exp_bank_charge_cat:'Bank charge', exp_lines_label:'Lines — add one or more',
     cf_bank_bal:'🏦 Bank balances (computed)', cf_balance:'Balance',
     cf_bank_bal_note:'Balance = opening (last month’s statement) + in − out for this period. Book figure — confirm against the bank statement in the Reconciliation tab.',
+    cf_myr_bank_bal:'🏦 MYR Bank balances (computed)', cf_pgk_bank_bal:'🎰 PGK Bank balances (entered actuals)', cf_pgk_bal_note:'Each PGK bank’s last entered actual closing in the period (opening = last closing before it). Frozen = PGK still stuck in that bank.', cf_movement:'Movement', cf_frozen_col:'Frozen', cf_exch_summary:'💱 Exchange transaction summary', cf_iou_summary:'🤝 IOU transaction summary', cf_frozen_title:'🧊 Frozen Funds — PGK stuck in frozen banks', cf_sent:'Sent', cf_received:'Received', cf_outstanding:'Outstanding', cf_amount:'Amount', cf_repaid_period:'Repaid in period', cf_pgk_balance:'PGK BALANCE', cf_exch_due:'EXCHANGE DUE (MYR)', cf_iou_net:'IOU NET (PGK)', cf_frozen_metric:'FROZEN (PGK)',
     exp_search_ph:'🔍 Search ref, category, note...',
     exp_funder_note:'Funder pays vendor directly — auto-creates a matching capital injection. No bank movement.',
     paid_from:'Bank Paid', paid_by_funder:'Paid by funder',
@@ -1239,6 +1247,7 @@ const LANG = {
     exp_bank_charge:'银行手续费（可选）', exp_bank_charge_cat:'银行手续费', exp_lines_label:'明细 — 添加一条或多条',
     cf_bank_bal:'🏦 银行余额（计算）', cf_balance:'余额',
     cf_bank_bal_note:'余额 = 期初（上月对账单）+ 本期收入 − 支出。账面数字 — 请在对账标签页与银行对账单核对。',
+    cf_myr_bank_bal:'🏦 MYR 银行余额（计算）', cf_pgk_bank_bal:'🎰 PGK 银行余额（实际录入）', cf_pgk_bal_note:'各 PGK 银行在本期最后录入的实际期末余额（期初 = 之前最后一次期末）。冻结 = 仍卡在该银行的 PGK。', cf_movement:'变动', cf_frozen_col:'冻结', cf_exch_summary:'💱 兑换交易汇总', cf_iou_summary:'🤝 借贷交易汇总', cf_frozen_title:'🧊 冻结资金 — 卡在冻结银行的 PGK', cf_sent:'转出', cf_received:'收到', cf_outstanding:'未结', cf_amount:'金额', cf_repaid_period:'本期已还', cf_pgk_balance:'PGK 余额', cf_exch_due:'兑换应收 (MYR)', cf_iou_net:'借贷净额 (PGK)', cf_frozen_metric:'冻结 (PGK)',
     exp_search_ph:'🔍 搜索参考号、类别、备注...',
     exp_funder_note:'资金方直接向供应商付款 — 自动创建对应的资本注入记录。无银行转账。',
     paid_from:'从银行支付', paid_by_funder:'资金方支付',
@@ -3498,22 +3507,11 @@ function renderCF(){
   setHTML('cf-plat-body',!platKeys.length?`<tr><td colspan="6" class="empty">${tr('no_entries')} — ${rangeLabel}</td></tr>`:
     platKeys.map(k=>{const g=platG[k];const kk=k.replace(/\\/g,'\\\\').replace(/'/g,"\\'");return`<tr style="cursor:pointer" onclick="cfPlatDetail('${kk}')"><td><b>${k}</b></td><td>${fmt(g.dep)}</td><td>${fmt(g.wd)}</td><td style="color:${g.wl>=0?'var(--gr)':'var(--rd)'}">${fmt(g.wl)}</td><td><span class="pl-badge">${g.n}</span></td><td style="text-align:right"><span class="pl-chev">›</span></td></tr>`;}).join(''));
   const allExch=dayRows.flatMap(d=>(d.exchanges||[]).map(x=>({...x,date:d.date})));
-  const exchG={};
-  allExch.forEach(x=>{const k=x.exchanger||'-';if(!exchG[k])exchG[k]={pgk:0,myr:0,paid:0,due:0,n:0};const g=exchG[k];g.pgk+=x.pgk||0;g.myr+=x.myr||0;g.paid+=x.paid||0;g.due+=Math.max(0,(x.myr||0)-(x.paid||0));g.n++;});
-  const exchKeys=Object.keys(exchG).sort();
-  setHTML('cf-exch-body',!exchKeys.length?`<tr><td colspan="7" class="empty">${tr('no_entries')} — ${rangeLabel}</td></tr>`:
-    exchKeys.map(k=>{const g=exchG[k];const kk=k.replace(/\\/g,'\\\\').replace(/'/g,"\\'");return`<tr style="cursor:pointer" onclick="cfExchDetail('${kk}')"><td><b>${k}</b></td><td>${fmt(g.pgk)}</td><td>${fmt(g.myr)}</td><td>${fmt(g.paid)}</td><td style="color:${g.due>0.01?'var(--am)':'var(--gr)'}">${fmt(g.due)}</td><td><span class="pl-badge">${g.n}</span></td><td style="text-align:right"><span class="pl-chev">›</span></td></tr>`;}).join(''));
-  const allTxns=dayRows.flatMap(d=>buildLedger(d.date,d).map(t=>({...t,date:d.date}))).sort((a,b)=>a.date.localeCompare(b.date));
-  const runBal={};S.myrBanks.forEach(b=>{runBal[b.name]=0;});dayRows.forEach(d=>(d.myrBanks||[]).forEach(b=>{if(b.open&&!runBal[b.name])runBal[b.name]=b.open;}));
-  const typeG={};
-  allTxns.forEach(t=>{const k=t.type;if(!typeG[k])typeG[k]={in:0,out:0,n:0};typeG[k].in+=t.in;typeG[k].out+=t.out;typeG[k].n++;});
-  const typeKeys=Object.keys(typeG);
-  setHTML('cf-myr-body',!typeKeys.length?`<tr><td colspan="6" class="empty">${tr('no_entries')} — ${rangeLabel}</td></tr>`:
-    typeKeys.map(k=>{const g=typeG[k];const net=g.in-g.out;return`<tr style="cursor:pointer" onclick="cfMyrDetail('${k}')"><td><span class="tag ${k==='exchange'?'tag-exch':k==='funder'?'tag-fund':'tag-exp'}">${tr('cf_type_'+k)||k}</span></td><td style="color:var(--gr)">RM ${fmt(g.in)}</td><td style="color:var(--rd)">RM ${fmt(g.out)}</td><td style="font-weight:700;color:${net>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(net)}</td><td><span class="pl-badge">${g.n}</span></td><td style="text-align:right"><span class="pl-chev">›</span></td></tr>`;}).join(''));
-  // Per-bank balances: opening (prev-month statement) + in − out within range
-  const cfFromM=mk(from),cfToM=mk(to);
+  // Per-bank balances: opening = prev-month statement + net movements before `from` (this month)
+  const cfFromM=mk(from),cfToM=mk(to),monthStart=cfFromM+'-01';
   const balRows=S.myrBanks.map(b=>{
-    const open=getStmtBalance(b.name,prevMonth(cfFromM))||0;
+    let pre=0;S.dayEntries.forEach(d=>{if(d.date>=monthStart&&d.date<from)buildLedger(d.date,d).forEach(t=>{if(t.bank===b.name)pre+=t.in-t.out;});});
+    const open=(getStmtBalance(b.name,prevMonth(cfFromM))||0)+pre;
     let bi=0,bo=0;dayRows.forEach(d=>buildLedger(d.date,d).forEach(t=>{if(t.bank===b.name){bi+=t.in;bo+=t.out;}}));
     return{b,open,bi,bo,bal:open+bi-bo,stmt:getStmtBalance(b.name,cfToM)};
   }).filter(r=>r.open||r.bi||r.bo||r.stmt!=null);
@@ -3522,12 +3520,92 @@ function renderCF(){
     const tO=balRows.reduce((s,r)=>s+r.open,0),tI=balRows.reduce((s,r)=>s+r.bi,0),tOut=balRows.reduce((s,r)=>s+r.bo,0),tBal=balRows.reduce((s,r)=>s+r.bal,0);
     setHTML('cf-bankbal-body',balRows.map(r=>`<tr><td><span class="bdot" style="background:${r.b.color}"></span> ${r.b.name}</td><td style="text-align:right">RM ${fmt(r.open)}</td><td style="text-align:right;color:var(--gr)">${r.bi?'RM '+fmt(r.bi):'-'}</td><td style="text-align:right;color:var(--rd)">${r.bo?'RM '+fmt(r.bo):'-'}</td><td style="text-align:right;font-weight:700">RM ${fmt(r.bal)}</td><td style="text-align:right;color:var(--txt2)">${r.stmt!=null?'RM '+fmt(r.stmt):'—'}</td></tr>`).join('')+`<tr style="font-weight:700;background:var(--bg3)"><td>${tr('lbl_total')}</td><td style="text-align:right">RM ${fmt(tO)}</td><td style="text-align:right;color:var(--gr)">RM ${fmt(tI)}</td><td style="text-align:right;color:var(--rd)">RM ${fmt(tOut)}</td><td style="text-align:right">RM ${fmt(tBal)}</td><td></td></tr>`);
   }
+  renderCFPgkBal(from,to);
+  renderCFExchSummary(dayRows,rangeLabel);
+  renderCFIouSummary(from,to,rangeLabel);
+  renderCFFrozen(from,to,rangeLabel);
   const totDep=platRows.reduce((s,e)=>s+e.dep,0),totWL=platRows.reduce((s,e)=>s+e.winLose,0);
-  const myrIn=allExch.filter(x=>x.dir==='out').reduce((s,x)=>s+x.myr,0),myrOut=allExch.filter(x=>x.dir==='in').reduce((s,x)=>s+(x.paid||0),0);
-  const lastDay=dayRows[dayRows.length-1];const myrBal=lastDay?.myrBanks?lastDay.myrBanks.reduce((s,b)=>s+(b.close||0),0):0;
-  setHTML('cf-metrics',`<div class="mc"><div class="ml" >${tr('lbl_total_dep')}</div><div class="mv">${fmt(totDep)}</div></div><div class="mc"><div class="ml" >${tr('lbl_net_wl')}</div><div class="mv ${totWL>=0?'pos':'neg'}">${fmt(totWL)}</div></div><div class="mc"><div class="ml">${tr('lbl_myr_rcvd')}</div><div class="mv pos">${fmt(myrIn)}</div></div><div class="mc"><div class="ml" >${tr('lbl_myr_out')}</div><div class="mv neg">${myrOut?'-'+fmt(myrOut):'-'}</div></div><div class="mc"><div class="ml" >${tr('lbl_total_exp')}</div><div class="mv neg">-${fmt(dayRows.reduce((s,d)=>s+d.totalExp,0))}</div></div><div class="mc"><div class="ml" >${tr('lbl_myr_bal')}</div><div class="mv">${fmt(myrBal)}</div></div>`);
+  const totExp=dayRows.reduce((s,d)=>s+(d.totalExp||0),0);
+  // MYR balance = computed total across banks (statement-anchored); PGK balance = entered closings as of `to`
+  const myrBalTotal=balRows.reduce((s,r)=>s+r.bal,0);
+  const pgkBalTotal=(S.pgkBanks||[]).filter(b=>!b.inactive).reduce((s,b)=>s+pgkBankBalAsOf(b.name,to,false),0);
+  const exDue=(function(){const{byEx}=exchDuesData();return Object.values(byEx).reduce((s,v)=>s+Math.max(0,v.owed),0);})();
+  let iouR=0,iouP=0;(S.pgkLoans||[]).forEach(l=>{const os=loanOutstanding(l);if(os<=0.009)return;if(l.dir==='lent')iouR+=os;else iouP+=os;});
+  const iouNet=iouR-iouP;
+  const frozenStill=(S.pgkFrozen||[]).filter(f=>f.status==='frozen').reduce((s,f)=>s+f.amount,0);
+  setHTML('cf-metrics',
+    `<div class="mc"><div class="ml">${tr('lbl_total_dep')}</div><div class="mv">${fmt(totDep)}</div></div>`+
+    `<div class="mc"><div class="ml">${tr('lbl_net_wl')}</div><div class="mv ${totWL>=0?'pos':'neg'}">${fmt(totWL)}</div></div>`+
+    `<div class="mc"><div class="ml">${tr('lbl_total_exp')}</div><div class="mv neg">${totExp?'-'+fmt(totExp):'0.00'}</div></div>`+
+    `<div class="mc"><div class="ml">${tr('cf_pgk_balance')}</div><div class="mv">${fmt(pgkBalTotal)} PGK</div></div>`+
+    `<div class="mc"><div class="ml">${tr('lbl_myr_bal')}</div><div class="mv">RM ${fmt(myrBalTotal)}</div></div>`+
+    `<div class="mc"><div class="ml">${tr('cf_exch_due')}</div><div class="mv ${exDue>0.01?'neg':''}">RM ${fmt(exDue)}</div></div>`+
+    `<div class="mc"><div class="ml">${tr('cf_iou_net')}</div><div class="mv ${iouNet>=0?'pos':'neg'}">${fmt(iouNet)} PGK</div></div>`+
+    `<div class="mc"><div class="ml">${tr('cf_frozen_metric')}</div><div class="mv ${frozenStill>0?'neg':''}">${fmt(frozenStill)} PGK</div></div>`);
 }
 
+// PGK bank balance = sum (per platform) of the latest entered per-bank closing on/before a date
+function pgkBankBalAsOf(bankName,asOf,excl){
+  const byPlat={};
+  S.platEntries.forEach(e=>{
+    if(excl?e.date>=asOf:e.date>asOf)return;
+    (e.perBank||[]).forEach(pb=>{if(pb.bank!==bankName)return;
+      if(!byPlat[e.platform]||e.date>byPlat[e.platform].date)byPlat[e.platform]={date:e.date,close:pb.close||0};});
+  });
+  return Object.values(byPlat).reduce((s,v)=>s+v.close,0);
+}
+function renderCFPgkBal(from,to){
+  const body=document.getElementById('cf-pgkbal-body');if(!body)return;
+  const rows=(S.pgkBanks||[]).filter(b=>!b.inactive).map(b=>{
+    const open=pgkBankBalAsOf(b.name,from,true),close=pgkBankBalAsOf(b.name,to,false);
+    const frozen=(S.pgkFrozen||[]).filter(f=>f.bank===b.name&&f.status==='frozen').reduce((s,f)=>s+f.amount,0);
+    return{name:b.name,open,close,mv:close-open,frozen};
+  }).filter(r=>r.open||r.close||r.frozen);
+  if(!rows.length){body.innerHTML=`<tr><td colspan="5" class="empty">${tr('no_entries')}</td></tr>`;return;}
+  const tO=rows.reduce((s,r)=>s+r.open,0),tC=rows.reduce((s,r)=>s+r.close,0),tM=rows.reduce((s,r)=>s+r.mv,0),tF=rows.reduce((s,r)=>s+r.frozen,0);
+  body.innerHTML=rows.map(r=>`<tr><td>🎰 ${r.name}</td><td style="text-align:right">${fmt(r.open)}</td><td style="text-align:right;color:${r.mv>=0?'var(--gr)':'var(--rd)'}">${fmt(r.mv)}</td><td style="text-align:right;font-weight:700">${fmt(r.close)}</td><td style="text-align:right;color:${r.frozen?'var(--am)':'var(--txt2)'}">${r.frozen?fmt(r.frozen):'-'}</td></tr>`).join('')+
+    `<tr style="font-weight:700;background:var(--bg3)"><td>${tr('lbl_total')}</td><td style="text-align:right">${fmt(tO)}</td><td style="text-align:right">${fmt(tM)}</td><td style="text-align:right">${fmt(tC)}</td><td style="text-align:right;color:${tF?'var(--am)':'inherit'}">${tF?fmt(tF):'-'}</td></tr>`;
+}
+function renderCFExchSummary(dayRows,rangeLabel){
+  const el=document.getElementById('cf-exsum');if(!el)return;
+  const ex=dayRows.flatMap(d=>(d.exchanges||[]));
+  if(!ex.length){el.innerHTML=`<div class="empty">${tr('no_entries')} — ${rangeLabel}</div>`;return;}
+  const out=ex.filter(x=>x.dir==='out'),inn=ex.filter(x=>x.dir==='in');
+  const oP=out.reduce((s,x)=>s+(x.pgk||0),0),oMyr=out.reduce((s,x)=>s+(x.myr||0),0),oPaid=out.reduce((s,x)=>s+(x.paid||0),0),oDue=out.reduce((s,x)=>s+Math.max(0,(x.myr||0)-(x.paid||0)),0);
+  const iMyr=inn.reduce((s,x)=>s+(x.paid||0),0),iPgk=inn.reduce((s,x)=>s+(x.myr||0),0);
+  const iRec=inn.reduce((s,x)=>s+((x.receipts||[]).reduce((a,r)=>a+(r.amt||0),0)),0);
+  const iPend=inn.reduce((s,x)=>s+(x.receipts?Math.max(0,(x.myr||0)-(x.receipts||[]).reduce((a,r)=>a+(r.amt||0),0)):0),0);
+  el.innerHTML=`<div class="tw"><table>
+    <thead><tr><th>${tr('exch_dir')}</th><th>${tr('cf_count')}</th><th>${tr('cf_sent')}</th><th>${tr('cf_received')}</th><th>${tr('cf_outstanding')}</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag tag-out">PGK→MYR</span></td><td><span class="pl-badge">${out.length}</span></td><td>${fmt(oP)} PGK</td><td style="color:var(--gr)">RM ${fmt(oPaid)} <span style="color:var(--txt2);font-size:10px">/ ${fmt(oMyr)}</span></td><td style="color:${oDue>0.01?'var(--am)':'var(--gr)'}">RM ${fmt(oDue)}</td></tr>
+      <tr><td><span class="tag tag-in">MYR→PGK</span></td><td><span class="pl-badge">${inn.length}</span></td><td>RM ${fmt(iMyr)}</td><td style="color:var(--gr)">${fmt(iRec)} PGK <span style="color:var(--txt2);font-size:10px">/ ${fmt(iPgk)}</span></td><td style="color:${iPend>0.01?'var(--am)':'var(--gr)'}">${fmt(iPend)} PGK</td></tr>
+    </tbody></table></div>`;
+}
+function renderCFIouSummary(from,to,rangeLabel){
+  const el=document.getElementById('cf-iousum');if(!el)return;
+  const loans=(S.pgkLoans||[]).filter(l=>l.date>=from&&l.date<=to);
+  const lent=loans.filter(l=>l.dir==='lent'),bor=loans.filter(l=>l.dir==='borrowed');
+  const repayIn=dir=>{let s=0;(S.pgkLoans||[]).filter(l=>l.dir===dir).forEach(l=>(l.repayments||[]).forEach(r=>{if(r.date>=from&&r.date<=to)s+=(r.amt||0);}));return s;};
+  const lentRep=repayIn('lent'),borRep=repayIn('borrowed');
+  if(!loans.length&&!lentRep&&!borRep){el.innerHTML=`<div class="empty">${tr('no_entries')} — ${rangeLabel}</div>`;return;}
+  el.innerHTML=`<div class="tw"><table>
+    <thead><tr><th>${tr('type')}</th><th>${tr('cf_count')}</th><th>${tr('cf_amount')}</th><th>${tr('cf_repaid_period')}</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag tag-in">${tr('ln_lent_tag')}</span></td><td><span class="pl-badge">${lent.length}</span></td><td>${fmt(lent.reduce((s,l)=>s+(l.pgk||0),0))} PGK</td><td style="color:var(--gr)">${fmt(lentRep)} PGK</td></tr>
+      <tr><td><span class="tag tag-out">${tr('ln_borrowed_tag')}</span></td><td><span class="pl-badge">${bor.length}</span></td><td>${fmt(bor.reduce((s,l)=>s+(l.pgk||0),0))} PGK</td><td style="color:var(--gr)">${fmt(borRep)} PGK</td></tr>
+    </tbody></table></div>`;
+}
+function renderCFFrozen(from,to,rangeLabel){
+  const el=document.getElementById('cf-frozen');if(!el)return;
+  const rows=(S.pgkFrozen||[]).filter(f=>f.status==='frozen'||(f.dateFrozen>=from&&f.dateFrozen<=to)||(f.dateResolved&&f.dateResolved>=from&&f.dateResolved<=to)||(f.dateRecovered&&f.dateRecovered>=from&&f.dateRecovered<=to))
+    .sort((a,b)=>b.dateFrozen.localeCompare(a.dateFrozen));
+  if(!rows.length){el.innerHTML=`<div class="empty">${tr('rc_no_frozen')}</div>`;return;}
+  const stillFrozen=rows.filter(f=>f.status==='frozen').reduce((s,f)=>s+f.amount,0);
+  el.innerHTML=`<div style="font-size:11px;color:var(--txt2);margin-bottom:7px">${tr('rc_still_frozen')}: <b style="color:var(--am)">${fmt(stillFrozen)} PGK</b></div>
+  <div class="tw"><table><thead><tr><th>${tr('rc_date_frozen')}</th><th>${tr('bank')}</th><th>${tr('rc_amount_pgk')}</th><th>${tr('rc_col_status')}</th><th>${tr('rc_recovered')}</th></tr></thead><tbody>`+
+  rows.map(f=>{const rec=f.recoveredAmount||0;const st=f.status==='frozen'?`<span class="tag tag-exch">🧊 ${tr('rc_frozen_tag')}</span>`:f.status==='recovered'?`<span class="tag tag-in">💰 ${tr('rc_recovered_tag')}</span>`:`<span class="tag tag-out">💸 ${tr('rc_writtenoff_tag')}</span>`;return`<tr><td>${fD(f.dateFrozen)}</td><td>${f.bank}</td><td style="font-weight:700">${fmt(f.amount)}</td><td>${st}</td><td style="color:var(--gr)">${rec?fmt(rec):'-'}</td></tr>`;}).join('')+`</tbody></table></div>`;
+}
 // ── CASH FLOW DRILL-DOWN (click a summary row to see its detail) ──
 function cfPlatDetail(platform){
   const{from,to}=getCFDates();
