@@ -1002,7 +1002,7 @@ const LANG = {
     ex_owes:'owes RM', ex_oldest:'oldest', ex_receive_payment:'Receive payment',
     ex_date_received:'Date received', ex_amount_rm:'Amount (RM)', ex_into_bank:'Into MYR bank', ex_no_payments:'No payments received yet',
     ex_receive_from:'Receive payment from', ex_currently_owes:'currently owes', ex_amount_received:'Amount received (RM)', ex_note_optional:'Note (optional)', ex_save_payment:'Save payment received', ex_modal_title:'Receive Due Payment',
-    ex_receive_btn:'Receive', ex_received_full:'Received', ex_recv_pgk_title:'Receive PGK', ex_recv_pgk_from:'Receive PGK from', ex_pgk_outstanding:'PGK still to receive:', ex_pgk_received:'PGK received', ex_save_receipt:'Save receipt', ex_pgk_received_toast:'PGK received:', ex_receipts:'Receipts', ex_no_receipts:'No receipts yet — still pending', ex_del_receipt_confirm:'Delete this PGK receipt? The PGK will be pending again.', ex_this_txn_owes:'this transaction — owes',
+    ex_receive_btn:'Receive', ex_received_full:'Received', ex_recv_pgk_title:'Receive PGK', ex_recv_pgk_from:'Receive PGK from', ex_pgk_outstanding:'PGK still to receive:', ex_pgk_received:'PGK received', ex_save_receipt:'Save receipt', ex_pgk_received_toast:'PGK received:', ex_receipts:'Receipts', ex_no_receipts:'No receipts yet — still pending', ex_del_receipt_confirm:'Delete this PGK receipt? The PGK will be pending again.', ex_this_txn_owes:'this transaction — owes', ex_edit_receipt:'Edit received payment', ex_receipt_updated:'Receipt updated',
     ex_owes_us:'owes us RM', ex_we_owe:'we owe RM', ex_settled:'settled', ex_bf:'B/F balance', ex_before:'before',
     ex_no_movements:'No movements', ex_in_range:'in this date range', ex_detail:'Detail', ex_owes_more:'+ Owes more', ex_reduces:'− Reduces', ex_running_bal:'Running balance', ex_closing_bal:'Closing balance', ex_at:'at',
     ex_pgk_myr:'Exchange PGK→MYR', ex_myr_pgk:'Exchange MYR→PGK', ex_pay_received:'Payment received',
@@ -1262,7 +1262,7 @@ const LANG = {
     ex_owes:'欠 RM', ex_oldest:'最早', ex_receive_payment:'登记收款',
     ex_date_received:'收款日期', ex_amount_rm:'金额 (RM)', ex_into_bank:'存入MYR银行', ex_no_payments:'暂无收款记录',
     ex_receive_from:'登记收款 — 来自', ex_currently_owes:'当前欠款', ex_amount_received:'收到金额 (RM)', ex_note_optional:'备注（可选）', ex_save_payment:'保存收款', ex_modal_title:'登记欠款收款',
-    ex_receive_btn:'收款', ex_received_full:'已收', ex_recv_pgk_title:'登记收到 PGK', ex_recv_pgk_from:'收到 PGK — 来自', ex_pgk_outstanding:'待收 PGK：', ex_pgk_received:'收到的 PGK', ex_save_receipt:'保存收款', ex_pgk_received_toast:'已收 PGK：', ex_receipts:'收款记录', ex_no_receipts:'暂无收款 — 待收', ex_del_receipt_confirm:'删除此 PGK 收款？该笔 PGK 将重新变为待收。', ex_this_txn_owes:'本笔交易 — 欠',
+    ex_receive_btn:'收款', ex_received_full:'已收', ex_recv_pgk_title:'登记收到 PGK', ex_recv_pgk_from:'收到 PGK — 来自', ex_pgk_outstanding:'待收 PGK：', ex_pgk_received:'收到的 PGK', ex_save_receipt:'保存收款', ex_pgk_received_toast:'已收 PGK：', ex_receipts:'收款记录', ex_no_receipts:'暂无收款 — 待收', ex_del_receipt_confirm:'删除此 PGK 收款？该笔 PGK 将重新变为待收。', ex_this_txn_owes:'本笔交易 — 欠', ex_edit_receipt:'编辑收款', ex_receipt_updated:'收款已更新',
     ex_owes_us:'欠我们 RM', ex_we_owe:'我们欠 RM', ex_settled:'已结清', ex_bf:'承前余额', ex_before:'截至',
     ex_no_movements:'无流水', ex_in_range:'在此日期范围内', ex_detail:'明细', ex_owes_more:'+ 增加欠款', ex_reduces:'− 减少', ex_running_bal:'滚动余额', ex_closing_bal:'期末余额', ex_at:'截至',
     ex_pgk_myr:'兑换 PGK→MYR', ex_myr_pgk:'兑换 MYR→PGK', ex_pay_received:'已收款',
@@ -4718,7 +4718,7 @@ function renderExchDues(){
     const setts=[...(S.exchSettlements||[])].sort((a,b)=>b.date.localeCompare(a.date));
     sEl.innerHTML=setts.length?`<div class="tw"><table>
       <thead><tr><th>${tr('ex_date_received')}</th><th>${tr('exch_exchanger')}</th><th>${tr('ex_amount_rm')}</th><th>${tr('ex_into_bank')}</th><th>${tr('note')}</th><th></th></tr></thead>
-      <tbody>${setts.map(s=>`<tr><td>${fD(s.date)}</td><td>${s.exchanger}</td><td style="font-weight:700;color:var(--gr)">${fmt(s.amount)}</td><td>${s.myrBank||'-'}</td><td style="color:var(--txt2)">${s.note||'-'}</td><td><button class="del" onclick="deleteSettlement('${s.id}')">🗑</button></td></tr>`).join('')}</tbody>
+      <tbody>${setts.map(s=>`<tr><td>${fD(s.date)}</td><td>${s.exchanger}</td><td style="font-weight:700;color:var(--gr)">${fmt(s.amount)}</td><td>${s.myrBank||'-'}</td><td style="color:var(--txt2)">${s.note||'-'}</td><td style="white-space:nowrap"><button class="del" title="${tr('ex_edit_receipt')}" onclick="editSettlement('${s.id}')">✏️</button> <button class="del" onclick="deleteSettlement('${s.id}')">🗑</button></td></tr>`).join('')}</tbody>
     </table></div>`:`<div class="empty">${tr('ex_no_payments')}</div>`;
   }
 }
@@ -4748,7 +4748,8 @@ function saveDueReceipt(exchanger){
   const owed=byEx[exchanger]?.owed||0;
   if(amt>owed+0.009&&!confirm(`Amount RM ${fmt(amt)} is MORE than owed RM ${fmt(owed)}. Save anyway?`))return;
   if(!S.exchSettlements)S.exchSettlements=[];
-  S.exchSettlements.push({id:genRef('SET'),date,exchanger,amount:amt,myrBank:bank,note:document.getElementById('due-note')?.value||''});
+  const exchRef=document.getElementById('due-exchref')?.value||'';
+  S.exchSettlements.push({id:genRef('SET'),date,exchanger,amount:amt,myrBank:bank,note:document.getElementById('due-note')?.value||'',...(exchRef?{exchRef}:{})});
   persist();closeModal();renderExchTab();renderRecon();
   showToast('Payment received: RM '+fmt(amt)+' from '+exchanger+' ✓');
 }
@@ -4758,6 +4759,31 @@ function deleteSettlement(id){
   if(!confirm(`Delete received payment of RM ${fmt(s.amount)} from ${s.exchanger} on ${fD(s.date)}?\nThe due will become outstanding again.`))return;
   S.exchSettlements=S.exchSettlements.filter(x=>x.id!==id);
   persist();renderExchTab();renderRecon();showToast('Payment record deleted ✓');
+}
+function editSettlement(id){
+  const s=(S.exchSettlements||[]).find(x=>x.id===id);if(!s)return;
+  const bankOpts=S.myrBanks.map(b=>`<option value="${b.name}" ${b.name===s.myrBank?'selected':''}>${b.name}</option>`).join('');
+  const body=`
+    <div class="modal-section">${tr('ex_edit_receipt')} — ${s.exchanger}</div>
+    <div class="g2" style="gap:8px;margin-bottom:10px">
+      <div class="f"><label>${tr('ex_date_received')}</label><input type="date" id="set-edit-date" value="${s.date}"></div>
+      <div class="f"><label>${tr('ex_amount_received')}</label><input type="number" id="set-edit-amt" value="${s.amount}" step="0.01"></div>
+      <div class="f"><label>${tr('ex_into_bank')}</label><select id="set-edit-bank">${bankOpts}</select></div>
+      <div class="f"><label>${tr('ex_note_optional')}</label><input type="text" id="set-edit-note" value="${(s.note||'').replace(/"/g,'&quot;')}"></div>
+    </div>
+    <button class="btn-pri" style="width:100%" onclick="saveSettlementEdit('${id}')">💾 ${tr('ex_save_payment')}</button>`;
+  openModal(tr('ex_edit_receipt'),body);
+}
+function saveSettlementEdit(id){
+  const s=(S.exchSettlements||[]).find(x=>x.id===id);if(!s)return;
+  const date=document.getElementById('set-edit-date')?.value;
+  const amt=parseFloat(document.getElementById('set-edit-amt')?.value)||0;
+  if(!date){showToast('Select date',true);return;}
+  if(lockBlocked(s.date))return;                  // original month locked?
+  if(date!==s.date&&lockBlocked(date))return;     // moving into a locked month?
+  if(amt<=0){showToast('Enter amount',true);return;}
+  s.date=date;s.amount=amt;s.myrBank=document.getElementById('set-edit-bank')?.value||s.myrBank;s.note=document.getElementById('set-edit-note')?.value||'';
+  persist();closeModal();renderExchTab();renderRecon&&renderRecon();showToast(tr('ex_receipt_updated')+' ✓');
 }
 // ── PER-ROW RECEIVE (actual amount + date the money arrived) ──
 // PGK→MYR: route to the existing exchanger due/settlement system, pre-filled with this row's outstanding.
@@ -4775,6 +4801,7 @@ function openReceiveExch(x){
       <div class="f"><label>${tr('ex_into_bank')}</label><select id="due-bank">${bankOpts}</select></div>
       <div class="f"><label>${tr('ex_note_optional')}</label><input type="text" id="due-note" placeholder=""></div>
     </div>
+    <input type="hidden" id="due-exchref" value="${x.ref||''}">
     <button class="btn-pri" onclick="saveDueReceipt('${(x.exchanger||'').replace(/'/g,"\\'")}')">💾 ${tr('ex_save_payment')}</button>`;
   openModal(tr('ex_modal_title'),body);
 }
@@ -4824,6 +4851,32 @@ function deleteReceiptPGK(orig,rid){
   if(!confirm(tr('ex_del_receipt_confirm')))return;
   hit.x.receipts=hit.x.receipts.filter(r=>r.id!==rid);
   persist();closeModal();renderExchTab();if(typeof renderPGKRecon==='function')renderPGKRecon();showToast(tr('toast_deleted'));
+}
+function editReceiptPGK(orig,rid){
+  const hit=findInExch(orig);if(!hit||!hit.x.receipts)return;
+  const r=hit.x.receipts.find(r=>r.id===rid);if(!r)return;
+  const xJson=JSON.stringify(orig).replace(/"/g,'&quot;');
+  const body=`
+    <div class="modal-section">${tr('ex_edit_receipt')} (PGK) — ${orig.exchanger||'-'}</div>
+    <div class="g2" style="gap:8px;margin-bottom:10px">
+      <div class="f"><label>${tr('ex_date_received')}</label><input type="date" id="rpgk-edit-date" value="${r.date}"></div>
+      <div class="f"><label>${tr('ex_pgk_received')}</label><input type="number" id="rpgk-edit-amt" value="${r.amt}" step="0.01"></div>
+      <div class="f" style="grid-column:1/-1"><label>${tr('ex_note_optional')}</label><input type="text" id="rpgk-edit-note" value="${(r.note||'').replace(/"/g,'&quot;')}"></div>
+    </div>
+    <button class="btn-pri" style="width:100%" onclick="saveReceiptPGKEdit(${xJson},'${rid}')">💾 ${tr('ex_save_receipt')}</button>`;
+  openModal(tr('ex_edit_receipt'),body);
+}
+function saveReceiptPGKEdit(orig,rid){
+  const hit=findInExch(orig);if(!hit||!hit.x.receipts)return;
+  const r=hit.x.receipts.find(r=>r.id===rid);if(!r)return;
+  const date=document.getElementById('rpgk-edit-date')?.value;
+  const amt=parseFloat(document.getElementById('rpgk-edit-amt')?.value)||0;
+  if(!date){showToast('Select date',true);return;}
+  if(lockBlocked(r.date))return;
+  if(date!==r.date&&lockBlocked(date))return;
+  if(amt<=0){showToast('Enter amount',true);return;}
+  r.date=date;r.amt=amt;r.note=document.getElementById('rpgk-edit-note')?.value||'';
+  persist();closeModal();renderExchTab();if(typeof renderPGKRecon==='function')renderPGKRecon();showToast(tr('ex_receipt_updated')+' ✓');
 }
 // ── EXCHANGER STATEMENT (movement trace) ──
 function exchStatementEvents(exchanger){
@@ -4957,7 +5010,7 @@ function viewEditExch(x){
       <div class="modal-section">${tr('ex_receipts')} (PGK)</div>
       ${(x.receipts&&x.receipts.length)?`<div class="tw"><table>
         <thead><tr><th>${tr('ex_date_received')}</th><th>PGK</th><th>${tr('note')}</th><th></th></tr></thead>
-        <tbody>${x.receipts.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>`<tr><td>${fD(r.date)}</td><td style="font-weight:700;color:var(--gr)">${fmt(r.amt)}</td><td style="color:var(--txt2)">${r.note||'-'}</td><td><button class="del" onclick="deleteReceiptPGK(${xJson},'${r.id}')">🗑</button></td></tr>`).join('')}</tbody>
+        <tbody>${x.receipts.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>`<tr><td>${fD(r.date)}</td><td style="font-weight:700;color:var(--gr)">${fmt(r.amt)}</td><td style="color:var(--txt2)">${r.note||'-'}</td><td style="white-space:nowrap"><button class="del" title="${tr('ex_edit_receipt')}" onclick="editReceiptPGK(${xJson},'${r.id}')">✏️</button> <button class="del" onclick="deleteReceiptPGK(${xJson},'${r.id}')">🗑</button></td></tr>`).join('')}</tbody>
       </table></div>`:`<div class="empty">${tr('ex_no_receipts')}</div>`}
       <button class="btn-sec" style="width:100%;margin-top:8px;margin-bottom:4px" onclick="openReceivePGK(${xJson})">💵 ${tr('ex_recv_pgk_title')}</button>
     `:`
@@ -5009,7 +5062,16 @@ function deleteExchEntry(orig){
       Math.abs(x.pgk-orig.pgk)<0.001&&Math.abs((x.paid||0)-(orig.paid||0))<0.001)
   );
   if(S.dayEntries[dIdx].exchanges.length===before){showToast('Entry not found',true);closeModal();return;}
-  persist();closeModal();renderExchTab();renderPGKRecon();showToast('Exchange deleted ✓');
+  // Row-originated MYR receipts are linked to this exchange via exchRef — offer to remove them
+  // too, so deleting an exchange doesn't leave an orphaned "we owe" balance.
+  const linked=(S.exchSettlements||[]).filter(s=>orig.ref&&s.exchRef===orig.ref);
+  if(linked.length){
+    const free=linked.filter(s=>!isLocked(s.date)),tot=free.reduce((a,s)=>a+(s.amount||0),0);
+    if(free.length&&confirm(`This exchange has ${free.length} linked received payment(s) totalling RM ${fmt(tot)}.\nDelete them too?\n\nOK = remove (it was part of this exchange).\nCancel = keep (the money belongs to a different exchange).`)){
+      S.exchSettlements=S.exchSettlements.filter(s=>!(orig.ref&&s.exchRef===orig.ref&&!isLocked(s.date)));
+    }
+  }
+  persist();closeModal();renderExchTab();renderPGKRecon();renderRecon&&renderRecon();showToast('Exchange deleted ✓');
 }
 function exportExchCSV(){
   const month=document.getElementById('exch-tab-month')?.value||'';
