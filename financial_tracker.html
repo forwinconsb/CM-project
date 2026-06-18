@@ -751,6 +751,10 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <div class="ct">💰 <span data-i18n="ln_dues_title">Outstanding — third parties (PGK)</span></div>
       <div id="ln-dues"><div class="empty" data-i18n="ln_no_outstanding">No outstanding loans</div></div>
       <details class="collapse-card" style="margin-top:12px">
+        <summary style="font-size:11px;font-weight:600;color:var(--txt2)" data-i18n="ln_loan_history">Borrow / lend history</summary>
+        <div id="ln-loan-history" style="margin-top:8px"></div>
+      </details>
+      <details class="collapse-card" style="margin-top:8px">
         <summary style="font-size:11px;font-weight:600;color:var(--txt2)" data-i18n="ln_repay_history">Repayments history</summary>
         <div id="ln-repay-history" style="margin-top:8px"></div>
       </details>
@@ -929,7 +933,7 @@ const LANG = {
     ln_effect_borrowed:'Borrowing in raises the platform’s PGK on this date; repayment reduces it.',
     ln_outstanding:'Outstanding', ln_none:'No loans yet', ln_receivable:'Owed to you', ln_payable:'You owe', ln_net:'Net position',
     ex_side_type:'Type', ex_side_exchange:'Exchange', ex_side_iou:'IOU', ex_pgk_pending:'PGK pending to receive',
-    ln_dues_title:'Outstanding — third parties (PGK)', ln_they_owe:'They owe you', ln_you_owe_sec:'You owe', ln_no_outstanding:'No outstanding loans', ln_stmt_title:'Counterparty Statement — movement trace', ln_stmt_desc:'Every loan and repayment in date order with a running balance. Positive = they owe you · negative = you owe them.', ln_select_party:'Select a counterparty above', ln_select_party_opt:'Select counterparty…', ln_all_parties:'All parties', ln_listing_title:'Loan / IOU transactions — full listing', ln_repaid:'Repaid', ln_lbl_owe:'owes you', ln_lbl_owed:'you owe', ln_edit_title:'Edit loan / IOU', ln_repayments:'Repayments', ln_no_repay:'No repayments yet', ln_updated:'Loan updated ✓', ln_del_repay_confirm:'Delete this repayment? The outstanding will increase again.', ln_save_changes:'Save changes', ln_delete:'Delete', ln_repay_history:'Repayments history',
+    ln_dues_title:'Outstanding — third parties (PGK)', ln_they_owe:'They owe you', ln_you_owe_sec:'You owe', ln_no_outstanding:'No outstanding loans', ln_stmt_title:'Counterparty Statement — movement trace', ln_stmt_desc:'Every loan and repayment in date order with a running balance. Positive = they owe you · negative = you owe them.', ln_select_party:'Select a counterparty above', ln_select_party_opt:'Select counterparty…', ln_all_parties:'All parties', ln_listing_title:'Loan / IOU transactions — full listing', ln_repaid:'Repaid', ln_lbl_owe:'owes you', ln_lbl_owed:'you owe', ln_edit_title:'Edit loan / IOU', ln_repayments:'Repayments', ln_no_repay:'No repayments yet', ln_updated:'Loan updated ✓', ln_del_repay_confirm:'Delete this repayment? The outstanding will increase again.', ln_save_changes:'Save changes', ln_delete:'Delete', ln_repay_history:'Repayments history', ln_loan_history:'Borrow / lend history',
     ln_lent_tag:'Lent out', ln_borrowed_tag:'Borrowed in', ln_settled:'Settled', ln_outstanding_word:'outstanding',
     ln_repay:'Repay', ln_saved:'Loan saved ✓', ln_repaid:'Repayment recorded ✓',
     ln_repay_amt:'Repayment amount (PGK)', ln_repay_date:'Repayment date (YYYY-MM-DD)', ln_confirm_del:'Delete this loan? This also removes its effect on reconciliation.',
@@ -1192,7 +1196,7 @@ const LANG = {
     ln_effect_borrowed:'借入会在当日增加该平台的 PGK；还款时减少。',
     ln_outstanding:'未结清', ln_none:'暂无借贷', ln_receivable:'应收（对方欠你）', ln_payable:'应付（你欠）', ln_net:'净额',
     ex_side_type:'类型', ex_side_exchange:'兑换', ex_side_iou:'借贷', ex_pgk_pending:'待收 PGK',
-    ln_dues_title:'未结 — 第三方 (PGK)', ln_they_owe:'对方欠你', ln_you_owe_sec:'你欠对方', ln_no_outstanding:'暂无未结借贷', ln_stmt_title:'对方对账单 — 动账追踪', ln_stmt_desc:'按日期列出借贷与还款及累计余额。正数 = 对方欠你 · 负数 = 你欠对方。', ln_select_party:'请在上方选择对方', ln_select_party_opt:'选择对方…', ln_all_parties:'全部对方', ln_listing_title:'借贷 / 欠条 — 完整列表', ln_repaid:'已还', ln_lbl_owe:'欠你', ln_lbl_owed:'你欠', ln_edit_title:'编辑借贷 / 欠条', ln_repayments:'还款记录', ln_no_repay:'暂无还款', ln_updated:'借贷已更新 ✓', ln_del_repay_confirm:'删除此还款？未结金额将再次增加。', ln_save_changes:'保存修改', ln_delete:'删除', ln_repay_history:'还款记录',
+    ln_dues_title:'未结 — 第三方 (PGK)', ln_they_owe:'对方欠你', ln_you_owe_sec:'你欠对方', ln_no_outstanding:'暂无未结借贷', ln_stmt_title:'对方对账单 — 动账追踪', ln_stmt_desc:'按日期列出借贷与还款及累计余额。正数 = 对方欠你 · 负数 = 你欠对方。', ln_select_party:'请在上方选择对方', ln_select_party_opt:'选择对方…', ln_all_parties:'全部对方', ln_listing_title:'借贷 / 欠条 — 完整列表', ln_repaid:'已还', ln_lbl_owe:'欠你', ln_lbl_owed:'你欠', ln_edit_title:'编辑借贷 / 欠条', ln_repayments:'还款记录', ln_no_repay:'暂无还款', ln_updated:'借贷已更新 ✓', ln_del_repay_confirm:'删除此还款？未结金额将再次增加。', ln_save_changes:'保存修改', ln_delete:'删除', ln_repay_history:'还款记录', ln_loan_history:'借贷记录',
     ln_lent_tag:'借出', ln_borrowed_tag:'借入', ln_settled:'已结清', ln_outstanding_word:'未结清',
     ln_repay:'还款', ln_saved:'借贷已保存 ✓', ln_repaid:'还款已记录 ✓',
     ln_repay_amt:'还款金额 (PGK)', ln_repay_date:'还款日期 (YYYY-MM-DD)', ln_confirm_del:'删除此借贷？同时会移除其对对账的影响。',
@@ -1490,7 +1494,7 @@ let S={
 // existing field (adding brand-new fields needs NO migration — defaults merge in safely).
 // To add one: increase SCHEMA_VERSION, then add an `if(v<N){ ...transform p...; v=N; }`
 // block below in order. Old saved data upgrades itself automatically on load.
-const SCHEMA_VERSION=2;
+const SCHEMA_VERSION=3;
 function migrateData(p){
   let v=p.schemaVersion||0;
   // v2: genRef previously did not scan pgkFrozen / exchSettlements, so historical FRZ and SET
@@ -1501,6 +1505,13 @@ function migrateData(p){
     (p.exchSettlements||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''))
       .forEach((s,i)=>{s.id='SET-'+(i+1).toString().padStart(4,'0');});
     v=2;
+  }
+  // v3: genRef also did not scan pgkLoans, so every loan got id LN-0001 — deleting/editing one
+  // hit them all. Renumber loan ids uniquely, in date order.
+  if(v<3){
+    (p.pgkLoans||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''))
+      .forEach((l,i)=>{l.id='LN-'+(i+1).toString().padStart(4,'0');});
+    v=3;
   }
   p.schemaVersion=SCHEMA_VERSION;
   return p;
@@ -2006,6 +2017,7 @@ function genRef(prefix){
   });
   (S.pgkFrozen||[]).forEach(f=>check(f.id));        // FRZ ids live here, not in dayEntries
   (S.exchSettlements||[]).forEach(s=>check(s.id));  // SET ids live here, not in dayEntries
+  (S.pgkLoans||[]).forEach(l=>check(l.id));         // LN ids live here, not in dayEntries
   return prefix+'-'+(max+1).toString().padStart(4,'0');
 }
 
@@ -2683,7 +2695,15 @@ function renderExchMetrics(){
     `<div class="mc"><div class="ml">${tr('ex_pgk_pending')}</div><div class="mv pos">${fmt(pgkPending)} PGK</div></div>`;
 }
 // ── IOU render bundle ──
-function renderIOU(){renderLoans();renderLoanDues();renderLoanStatement();renderLoanListing();renderLoanRepayHistory();}
+function renderIOU(){renderLoans();renderLoanDues();renderLoanStatement();renderLoanListing();renderLoanLoanHistory();renderLoanRepayHistory();}
+function renderLoanLoanHistory(){
+  const el=document.getElementById('ln-loan-history');if(!el)return;
+  const all=(S.pgkLoans||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  el.innerHTML=all.length?`<div class="tw"><table>
+    <thead><tr><th>${tr('date')}</th><th>${tr('ln_party')}</th><th>PGK</th><th>${tr('type')}</th><th>${tr('ln_outstanding')}</th><th></th></tr></thead>
+    <tbody>${all.map(l=>{const os=loanOutstanding(l),isLent=l.dir==='lent';return`<tr><td>${fD(l.date)}</td><td>${l.counterparty||'-'}</td><td style="font-weight:700">${fmt(l.pgk)}</td><td><span class="tag ${isLent?'tag-in':'tag-out'}">${isLent?tr('ln_lent_tag'):tr('ln_borrowed_tag')}</span></td><td style="color:${os<0.01?'var(--gr)':'var(--am)'};font-weight:600">${os<0.01?'✓':fmt(os)}</td><td style="white-space:nowrap"><button class="del" title="${tr('ex_edit_receipt')}" onclick="viewEditLoan('${l.id}')">✏️</button> <button class="del" onclick="deleteLoan('${l.id}')">🗑</button></td></tr>`;}).join('')}</tbody>
+  </table></div>`:`<div class="empty">${tr('ln_none')}</div>`;
+}
 function renderLoanRepayHistory(){
   const el=document.getElementById('ln-repay-history');if(!el)return;
   const rows=[];
