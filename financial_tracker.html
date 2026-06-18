@@ -2788,13 +2788,16 @@ function renderLoanListing(){
   if(!all.length){tbody.innerHTML=`<tr><td colspan="8" class="empty">${tr('ln_none')}</td></tr>`;return;}
   tbody.innerHTML=all.map(l=>{
     const repaid=(l.repayments||[]).reduce((s,r)=>s+(r.amt||0),0),os=loanOutstanding(l),settled=os<0.01,isLent=l.dir==='lent';
+    const outCell=settled
+      ? `${fmt(os)}<div style="font-size:9px;color:var(--gr);font-weight:400">✓ ${tr('ln_settled')}</div>`
+      : `${fmt(os)}<div style="margin-top:3px" class="op-only"><button class="btn-plat" style="font-size:9px;padding:2px 7px" onclick="event.stopPropagation();repayLoanPrompt('${l.id}')">💵 ${tr('ln_repay')}</button></div>`;
     return`<tr class="row-tap" style="cursor:pointer" onclick="viewEditLoan('${l.id}')">
       <td>${fD(l.date)}</td><td>${l.counterparty||'-'}</td>
       <td><span class="tag ${isLent?'tag-in':'tag-out'}">${isLent?tr('ln_lent_tag'):tr('ln_borrowed_tag')}</span></td>
       <td class="hide-sm">${l.platform||'-'}</td>
       <td>${fmt(l.pgk)}</td><td class="hide-sm">${fmt(repaid)}</td>
-      <td style="color:${settled?'var(--gr)':'var(--am)'};font-weight:700">${settled?'✓':fmt(os)}</td>
-      <td style="white-space:nowrap" class="op-only"><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();viewEditLoan('${l.id}')">✏️</button> ${settled?'':`<button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();repayLoanPrompt('${l.id}')">${tr('ln_repay')}</button> `}<button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteLoan('${l.id}')">🗑</button></td>
+      <td style="color:${settled?'var(--gr)':'var(--am)'};font-weight:700">${outCell}</td>
+      <td class="hide-sm"><button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();viewEditLoan('${l.id}')">✏️ Edit/View</button></td>
     </tr>`;
   }).join('');
 }
