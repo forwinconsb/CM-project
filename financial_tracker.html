@@ -2695,7 +2695,20 @@ function renderExchMetrics(){
     `<div class="mc"><div class="ml">${tr('ex_pgk_pending')}</div><div class="mv pos">${fmt(pgkPending)} PGK</div></div>`;
 }
 // ── IOU render bundle ──
-function renderIOU(){renderLoans();renderLoanDues();renderLoanStatement();renderLoanListing();renderLoanLoanHistory();renderLoanRepayHistory();}
+// Safety net: guarantee every loan has a unique id before they are rendered/acted on, so a
+// delete/edit can never hit more than one. Catches old data with colliding LN-0001 ids
+// regardless of migration timing or how the data arrived (localStorage / cloud).
+function ensureUniqueLoanIds(){
+  const loans=S.pgkLoans||[];const seen=new Set();let changed=false;
+  loans.forEach(l=>{
+    if(l.id&&!seen.has(l.id)){seen.add(l.id);return;}
+    let i=loans.length,nid;
+    do{i++;nid='LN-'+i.toString().padStart(4,'0');}while(seen.has(nid)||loans.some(o=>o.id===nid));
+    l.id=nid;seen.add(nid);changed=true;
+  });
+  return changed;
+}
+function renderIOU(){if(ensureUniqueLoanIds())persist();renderLoans();renderLoanDues();renderLoanStatement();renderLoanListing();renderLoanLoanHistory();renderLoanRepayHistory();}
 function renderLoanLoanHistory(){
   const el=document.getElementById('ln-loan-history');if(!el)return;
   const all=(S.pgkLoans||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
