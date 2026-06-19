@@ -21,6 +21,13 @@ h1{font-size:18px;font-weight:600;margin-bottom:.75rem}
 .navmenu .nb{text-align:left;border-bottom:none;border-radius:6px;margin:0;width:100%;white-space:nowrap}
 .navmenu .nb:hover{background:var(--bg3)}
 .navmenu .nb.on{background:var(--bg3);color:var(--txt)}
+.tabstrip{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 .85rem}
+.tabstrip:empty{display:none}
+.wtab{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;font-size:11px;font-weight:500;color:var(--txt2);background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);cursor:pointer;white-space:nowrap}
+.wtab:hover{color:var(--txt)}
+.wtab.actv{background:var(--bl);color:#fff;border-color:var(--bl)}
+.wtab-x{font-size:14px;line-height:1;opacity:.6;padding:0 2px;border-radius:3px}
+.wtab-x:hover{opacity:1}
 .pg{display:none}.pg.on{display:block}
 .card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--rlg);padding:.875rem 1rem;margin-bottom:.75rem}
 .ct{font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
@@ -287,8 +294,8 @@ details.collapse-card[open]>summary:before{content:'▾'}
     <button class="nb navtrig" onclick="toggleNavGroup(this,event)" data-i18n="nav_grp_txn">Transaction</button>
     <div class="navmenu">
       <button class="nb on" onclick="doNav('pgk-entry',this)" data-i18n="nav_pgk">🎮 PGK Platforms</button>
-      <button class="nb" onclick="doNav('exchange-tab',this);setExchSide('exch')" data-i18n="nav_exchange">💱 Exchange</button>
-      <button class="nb" onclick="doNav('exchange-tab',this);setExchSide('iou')" data-i18n="nav_iou">🤝 IOU</button>
+      <button class="nb" onclick="setExchSide('exch');doNav('exchange-tab',this)" data-i18n="nav_exchange">💱 Exchange</button>
+      <button class="nb" onclick="setExchSide('iou');doNav('exchange-tab',this)" data-i18n="nav_iou">🤝 IOU</button>
       <button class="nb" onclick="doNav('fnd-tab',this)" data-i18n="nav_fnd">💰 Funder Transaction</button>
       <button class="nb" onclick="doNav('exp-tab',this)" data-i18n="nav_exp">🧾 Expenses</button>
     </div>
@@ -310,6 +317,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
       style="padding:4px 10px;border-radius:var(--r);border:1.5px solid var(--bdr2);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">中文</button>
   </div>
 </div>
+<div id="tabstrip" class="tabstrip"></div>
 
 <!-- FUNDER MOVEMENTS TAB -->
 <div id="pg-fnd-tab" class="pg">
@@ -942,7 +950,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
 const LANG = {
   en: {
     // Nav
-    nav_entry:'✏️ Daily Entry', nav_pgk:'🎮 PGK Platforms', nav_exchange:'💱 Exchange', nav_iou:'🤝 IOU', nav_grp_txn:'Transaction', nav_grp_report:'Report',
+    nav_entry:'✏️ Daily Entry', nav_pgk:'🎮 PGK Platforms', nav_exchange:'💱 Exchange', nav_iou:'🤝 IOU', nav_grp_txn:'Transaction', nav_grp_report:'Report', wtab_close:'Close tab',
     nav_fnd:'💰 Funder Transaction', nav_exp:'🧾 Expenses', nav_loans:'🤝 Loans / IOU', nav_recon:'🏦 Reconciliation',
     ln_info:'🤝 <b>Loans / IOU (PGK)</b> — Record PGK lent to or borrowed from third parties. Each stays outstanding until repaid. Movements feed the PGK platform reconciliation.',
     ln_new:'New loan / IOU', ln_lent:'⬆ Lent out (they owe you)', ln_borrowed:'⬇ Borrowed in (you owe)',
@@ -1205,7 +1213,7 @@ const LANG = {
   },
   zh: {
     // Nav
-    nav_entry:'✏️ 每日录入', nav_pgk:'🎮 PGK平台', nav_exchange:'💱 兑换', nav_iou:'🤝 借贷', nav_grp_txn:'交易', nav_grp_report:'报表',
+    nav_entry:'✏️ 每日录入', nav_pgk:'🎮 PGK平台', nav_exchange:'💱 兑换', nav_iou:'🤝 借贷', nav_grp_txn:'交易', nav_grp_report:'报表', wtab_close:'关闭',
     nav_fnd:'💰 资金方交易', nav_exp:'🧾 费用', nav_loans:'🤝 借贷 / 欠条', nav_recon:'🏦 对账',
     ln_info:'🤝 <b>借贷 / 欠条 (PGK)</b> — 记录借给第三方或向第三方借入的 PGK。每笔在还清前一直未结清。动账会计入 PGK 平台对账。',
     ln_new:'新增借贷 / 欠条', ln_lent:'⬆ 借出（对方欠你）', ln_borrowed:'⬇ 借入（你欠对方）',
@@ -1769,11 +1777,16 @@ function applyAccess(){
   document.querySelectorAll('.navgroup').forEach(g=>{const any=[...g.querySelectorAll('.navmenu .nb')].some(b=>navTabOf(b)&&b.style.display!=='none');g.style.display=any?'':'none';});
   const badge=document.getElementById('user-badge');
   if(badge)badge.innerHTML=currentUser?`👤 <b>${currentUser.name}</b> <span style="opacity:.6">(${currentUser.role})</span> <button class="btn-sec" style="font-size:10px;padding:2px 8px" onclick="lockApp()">🔒 Lock</button>`:'';
+  // Restore persisted workspace tabs once per page-load; if that shows a page, we're done.
+  if(!workRestored){workRestored=true;if(restoreWorkTabs()){return;}}
+  // Drop any open tabs the (possibly switched) user can no longer access.
+  const before=workTabs.length;workTabs=workTabs.filter(t=>allow.includes(t.page));
+  if(workTabs.length!==before){renderTabStrip();saveWorkTabs();}
   const cur=document.querySelector('.nb.on');const curTab=cur?navTabOf(cur):null;
   if(!curTab||!allow.includes(curTab)){
     const first=allow[0];
     if(first){const b=[...document.querySelectorAll('.nav .nb')].find(x=>navTabOf(x)===first);if(b)doNav(first,b);}
-  }
+  }else{registerWorkTab(curTab);}
   markActiveGroup();
 }
 function showLogin(){
@@ -1909,8 +1922,51 @@ function doNav(p,btn){
   document.querySelectorAll('.nb').forEach(e=>e.classList.remove('on'));
   const pg=document.getElementById('pg-'+p);if(pg)pg.classList.add('on');
   btn.classList.add('on');
-  closeNavMenus();markActiveGroup();
+  closeNavMenus();markActiveGroup();registerWorkTab(p);
   setTimeout(()=>{try{renderPage(p);}catch(e){console.error('render error',p,e);}},0);
+}
+// ── WORKSPACE TABS (open multiple views, switch & close like browser tabs) ──
+let workTabs=[],activeWorkKey=null,workReady=false,workRestored=false;
+const WORK_KEY='ftrk_worktabs';  // per-browser UI state — NOT in S, never synced to cloud/others
+function saveWorkTabs(){if(!workReady)return;try{localStorage.setItem(WORK_KEY,JSON.stringify({tabs:workTabs,active:activeWorkKey}));}catch(e){}}
+function restoreWorkTabs(){
+  // Called once after access is known; rebuild the strip from saved per-browser state.
+  let saved;try{saved=JSON.parse(localStorage.getItem(WORK_KEY)||'null');}catch(e){saved=null;}
+  workReady=true;
+  if(!saved||!Array.isArray(saved.tabs)||!saved.tabs.length)return false;
+  const allow=allowedTabs();
+  const tabs=saved.tabs.filter(t=>t&&t.page&&allow.includes(t.page)).map(t=>({key:t.key,page:t.page,side:t.side||null,label:tabLabelFor(t.page,t.side)}));
+  if(!tabs.length)return false;
+  workTabs=tabs;
+  const act=tabs.some(t=>t.key===saved.active)?saved.active:tabs[tabs.length-1].key;
+  activateWorkTab(act);
+  return true;
+}
+const TAB_LABELS={'entry':'✏️ Daily Entry','pgk-entry':'🎮 PGK Platforms','exchange-tab':'💱 Exchange','fnd-tab':'💰 Funder Transaction','exp-tab':'🧾 Expenses','cashflow':'↔️ Cash Flow','pl':'📊 P&L','funders':'👥 Funders','recon':'🏦 Reconciliation','settings':'⚙️ Setup'};
+function tabLabelFor(page,side){return page==='exchange-tab'?(side==='iou'?'🤝 IOU':'💱 Exchange'):(TAB_LABELS[page]||page);}
+function registerWorkTab(page){
+  const side=page==='exchange-tab'?(typeof exchSide!=='undefined'?exchSide:'exch')||'exch':null;
+  const key=side?page+'|'+side:page;
+  if(!workTabs.some(t=>t.key===key))workTabs.push({key,page,side,label:tabLabelFor(page,side)});
+  activeWorkKey=key;renderTabStrip();saveWorkTabs();
+}
+function renderTabStrip(){
+  const el=document.getElementById('tabstrip');if(!el)return;
+  el.innerHTML=workTabs.map(t=>`<div class="wtab${t.key===activeWorkKey?' actv':''}" onclick="activateWorkTab('${t.key}')"><span>${t.label}</span><span class="wtab-x" title="${tr('wtab_close')}" onclick="event.stopPropagation();closeWorkTab('${t.key}')">×</span></div>`).join('');
+}
+function activateWorkTab(key){
+  const t=workTabs.find(x=>x.key===key);if(!t)return;
+  if(t.side)setExchSide(t.side);
+  const btn=[...document.querySelectorAll('.nav .nb')].find(b=>navTabOf(b)===t.page);
+  if(btn)doNav(t.page,btn);
+}
+function closeWorkTab(key){
+  const idx=workTabs.findIndex(t=>t.key===key);if(idx<0)return;
+  const wasActive=(key===activeWorkKey);
+  workTabs.splice(idx,1);
+  if(!workTabs.length){renderTabStrip();saveWorkTabs();const allow=allowedTabs();const first=allow[0];if(first){const b=[...document.querySelectorAll('.nav .nb')].find(x=>navTabOf(x)===first);if(b)doNav(first,b);}return;}
+  if(wasActive)activateWorkTab(workTabs[Math.max(0,idx-1)].key);
+  else{renderTabStrip();saveWorkTabs();}
 }
 // ── NAV DROPDOWN GROUPS (Transaction / Report) ──
 function closeNavMenus(){document.querySelectorAll('.navmenu.open').forEach(m=>m.classList.remove('open'));}
