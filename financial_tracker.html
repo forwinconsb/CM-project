@@ -13,6 +13,14 @@ h1{font-size:18px;font-weight:600;margin-bottom:.75rem}
 .nav{display:flex;gap:2px;margin-bottom:1rem;border-bottom:1px solid var(--bdr);flex-wrap:wrap}
 .nb{background:none;border:none;padding:8px 12px;font-size:12px;font-weight:500;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
 .nb:hover{color:var(--txt);background:var(--bg3)}.nb.on{color:var(--txt);border-bottom-color:var(--bl)}
+.navgroup{position:relative}
+.navtrig::after{content:" \25BE";font-size:9px;opacity:.65}
+.navtrig.actv{color:var(--txt);border-bottom-color:var(--bl)}
+.navmenu{display:none;position:fixed;background:#fff;border:1px solid var(--bdr);border-radius:var(--r);box-shadow:0 6px 18px rgba(0,0,0,.14);z-index:200;min-width:185px;padding:5px;flex-direction:column;gap:2px}
+.navmenu.open{display:flex}
+.navmenu .nb{text-align:left;border-bottom:none;border-radius:6px;margin:0;width:100%;white-space:nowrap}
+.navmenu .nb:hover{background:var(--bg3)}
+.navmenu .nb.on{background:var(--bg3);color:var(--txt)}
 .pg{display:none}.pg.on{display:block}
 .card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--rlg);padding:.875rem 1rem;margin-bottom:.75rem}
 .ct{font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
@@ -275,15 +283,25 @@ details.collapse-card[open]>summary:before{content:'▾'}
 </div>
 
 <div class="nav">
-  <button class="nb on" onclick="doNav('pgk-entry',this)" data-i18n="nav_pgk">🎮 PGK Platforms</button>
-  <button class="nb" onclick="doNav('exchange-tab',this)" data-i18n="nav_exchange">💱 Exchange & IOU</button>
-  <button class="nb" onclick="doNav('fnd-tab',this)" data-i18n="nav_fnd">💰 Funder Movements</button>
-  <button class="nb" onclick="doNav('exp-tab',this)" data-i18n="nav_exp">🧾 Expenses</button>
+  <div class="navgroup">
+    <button class="nb navtrig" onclick="toggleNavGroup(this,event)" data-i18n="nav_grp_txn">Transaction</button>
+    <div class="navmenu">
+      <button class="nb on" onclick="doNav('pgk-entry',this)" data-i18n="nav_pgk">🎮 PGK Platforms</button>
+      <button class="nb" onclick="doNav('exchange-tab',this);setExchSide('exch')" data-i18n="nav_exchange">💱 Exchange</button>
+      <button class="nb" onclick="doNav('exchange-tab',this);setExchSide('iou')" data-i18n="nav_iou">🤝 IOU</button>
+      <button class="nb" onclick="doNav('fnd-tab',this)" data-i18n="nav_fnd">💰 Funder Transaction</button>
+      <button class="nb" onclick="doNav('exp-tab',this)" data-i18n="nav_exp">🧾 Expenses</button>
+    </div>
+  </div>
+  <div class="navgroup">
+    <button class="nb navtrig" onclick="toggleNavGroup(this,event)" data-i18n="nav_grp_report">Report</button>
+    <div class="navmenu">
+      <button class="nb" onclick="doNav('cashflow',this)" data-i18n="nav_cf">↔️ Cash Flow</button>
+      <button class="nb" onclick="doNav('pl',this)" data-i18n="nav_pl">📊 P&L</button>
+      <button class="nb" onclick="doNav('funders',this)" data-i18n="nav_funders">👥 Funders</button>
+    </div>
+  </div>
   <button class="nb" onclick="doNav('recon',this)" data-i18n="nav_recon">🏦 Reconciliation</button>
-  <button class="nb" onclick="doNav('cashflow',this)" data-i18n="nav_cf">↔️ Cash Flow</button>
-  <button class="nb" onclick="doNav('pl',this)" data-i18n="nav_pl">📊 P&L</button>
-  <button class="nb" onclick="doNav('funders',this)" data-i18n="nav_funders">👥 Funders</button>
-  <button class="nb" onclick="doNav('funder-review',this)" data-i18n="nav_fv">📊 Funder View</button>
   <button class="nb" onclick="doNav('settings',this)" data-i18n="nav_settings">⚙️ Setup</button>
   <div style="display:flex;gap:4px;align-items:center;margin-left:auto;padding:0 8px">
     <button class="lang-btn" data-lang="en" onclick="setLang('en')"
@@ -924,8 +942,8 @@ details.collapse-card[open]>summary:before{content:'▾'}
 const LANG = {
   en: {
     // Nav
-    nav_entry:'✏️ Daily Entry', nav_pgk:'🎮 PGK Platforms', nav_exchange:'💱 Exchange & IOU',
-    nav_fnd:'💰 Funder Movements', nav_exp:'🧾 Expenses', nav_loans:'🤝 Loans / IOU', nav_recon:'🏦 Reconciliation',
+    nav_entry:'✏️ Daily Entry', nav_pgk:'🎮 PGK Platforms', nav_exchange:'💱 Exchange', nav_iou:'🤝 IOU', nav_grp_txn:'Transaction', nav_grp_report:'Report',
+    nav_fnd:'💰 Funder Transaction', nav_exp:'🧾 Expenses', nav_loans:'🤝 Loans / IOU', nav_recon:'🏦 Reconciliation',
     ln_info:'🤝 <b>Loans / IOU (PGK)</b> — Record PGK lent to or borrowed from third parties. Each stays outstanding until repaid. Movements feed the PGK platform reconciliation.',
     ln_new:'New loan / IOU', ln_lent:'⬆ Lent out (they owe you)', ln_borrowed:'⬇ Borrowed in (you owe)',
     ln_party:'Third party', ln_platform:'PGK from platform', ln_amount:'Amount (PGK)', ln_save:'💾 Save loan',
@@ -1187,8 +1205,8 @@ const LANG = {
   },
   zh: {
     // Nav
-    nav_entry:'✏️ 每日录入', nav_pgk:'🎮 PGK平台', nav_exchange:'💱 兑换 & 借贷',
-    nav_fnd:'💰 资金方动账', nav_exp:'🧾 费用', nav_loans:'🤝 借贷 / 欠条', nav_recon:'🏦 对账',
+    nav_entry:'✏️ 每日录入', nav_pgk:'🎮 PGK平台', nav_exchange:'💱 兑换', nav_iou:'🤝 借贷', nav_grp_txn:'交易', nav_grp_report:'报表',
+    nav_fnd:'💰 资金方交易', nav_exp:'🧾 费用', nav_loans:'🤝 借贷 / 欠条', nav_recon:'🏦 对账',
     ln_info:'🤝 <b>借贷 / 欠条 (PGK)</b> — 记录借给第三方或向第三方借入的 PGK。每笔在还清前一直未结清。动账会计入 PGK 平台对账。',
     ln_new:'新增借贷 / 欠条', ln_lent:'⬆ 借出（对方欠你）', ln_borrowed:'⬇ 借入（你欠对方）',
     ln_party:'第三方', ln_platform:'PGK 来自平台', ln_amount:'金额 (PGK)', ln_save:'💾 保存借贷',
@@ -1726,13 +1744,12 @@ const ALL_TABS=[
   {id:'cashflow',label:'↔️ Cash Flow'},
   {id:'pl',label:'📊 P&L'},
   {id:'funders',label:'👥 Funders'},
-  {id:'funder-review',label:'📊 Funder View'},
   {id:'settings',label:'⚙️ Setup'},
 ];
 const ROLE_PRESETS={
   operator:['pgk-entry','exchange-tab','exp-tab'],
-  manager:['pgk-entry','exchange-tab','fnd-tab','exp-tab','recon','cashflow','pl','funders','funder-review'],
-  funder:['exchange-tab','fnd-tab','exp-tab','recon','cashflow','pl','funders','funder-review'],
+  manager:['pgk-entry','exchange-tab','fnd-tab','exp-tab','recon','cashflow','pl','funders'],
+  funder:['exchange-tab','fnd-tab','exp-tab','recon','cashflow','pl','funders'],
   admin:ALL_TABS.map(t=>t.id)
 };
 let currentUser=null,loginSelId=null;
@@ -1748,6 +1765,8 @@ function applyAccess(){
   // View-only (e.g. funder) accounts: hide all add/edit/delete actions via body class (see CSS)
   document.body.classList.toggle('readonly',!!(currentUser&&currentUser.viewOnly));
   document.querySelectorAll('.nav .nb').forEach(btn=>{const t=navTabOf(btn);if(t)btn.style.display=allow.includes(t)?'':'none';});
+  // Hide a dropdown group if none of its items are visible
+  document.querySelectorAll('.navgroup').forEach(g=>{const any=[...g.querySelectorAll('.navmenu .nb')].some(b=>navTabOf(b)&&b.style.display!=='none');g.style.display=any?'':'none';});
   const badge=document.getElementById('user-badge');
   if(badge)badge.innerHTML=currentUser?`👤 <b>${currentUser.name}</b> <span style="opacity:.6">(${currentUser.role})</span> <button class="btn-sec" style="font-size:10px;padding:2px 8px" onclick="lockApp()">🔒 Lock</button>`:'';
   const cur=document.querySelector('.nb.on');const curTab=cur?navTabOf(cur):null;
@@ -1755,6 +1774,7 @@ function applyAccess(){
     const first=allow[0];
     if(first){const b=[...document.querySelectorAll('.nav .nb')].find(x=>navTabOf(x)===first);if(b)doNav(first,b);}
   }
+  markActiveGroup();
 }
 function showLogin(){
   const ov=document.getElementById('login-overlay');if(!ov)return;
@@ -1889,8 +1909,29 @@ function doNav(p,btn){
   document.querySelectorAll('.nb').forEach(e=>e.classList.remove('on'));
   const pg=document.getElementById('pg-'+p);if(pg)pg.classList.add('on');
   btn.classList.add('on');
+  closeNavMenus();markActiveGroup();
   setTimeout(()=>{try{renderPage(p);}catch(e){console.error('render error',p,e);}},0);
 }
+// ── NAV DROPDOWN GROUPS (Transaction / Report) ──
+function closeNavMenus(){document.querySelectorAll('.navmenu.open').forEach(m=>m.classList.remove('open'));}
+function toggleNavGroup(trig,e){
+  if(e)e.stopPropagation();
+  const menu=trig.nextElementSibling;if(!menu)return;
+  const wasOpen=menu.classList.contains('open');
+  closeNavMenus();
+  if(wasOpen)return;
+  const r=trig.getBoundingClientRect();
+  menu.style.left=r.left+'px';menu.style.top=(r.bottom+2)+'px';
+  menu.classList.add('open');
+  requestAnimationFrame(()=>{const mr=menu.getBoundingClientRect();if(mr.right>window.innerWidth-6)menu.style.left=Math.max(6,window.innerWidth-6-mr.width)+'px';});
+}
+function markActiveGroup(){
+  document.querySelectorAll('.navtrig').forEach(t=>t.classList.remove('actv'));
+  const on=document.querySelector('.navmenu .nb.on');
+  if(on){const g=on.closest('.navgroup');const t=g&&g.querySelector('.navtrig');if(t)t.classList.add('actv');}
+}
+document.addEventListener('click',closeNavMenus);
+window.addEventListener('scroll',closeNavMenus,true);
 function renderPage(p){
   if(p==='entry'){renderDayStatus();return;}
   if(p==='pgk-entry'){
