@@ -7,26 +7,26 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bl:#378ADD;--bl2:#185FA5;--gr:#0F6E56;--rd:#A32D2D;--am:#854F0B;--pu:#534AB7;--bg:#f8f8f7;--bg2:#fff;--bg3:#f0efed;--txt:#111;--txt2:#666;--bdr:#ddd;--bdr2:#ccc;--r:8px;--rlg:12px}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:var(--txt);background:var(--bg);min-height:100vh}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--txt);background:var(--bg);min-height:100vh}
 .app{max-width:1600px;margin:0 auto;padding:1rem 1.5rem}
 h1{font-size:18px;font-weight:600;margin-bottom:.75rem}
 .nav{display:flex;gap:2px;margin-bottom:1rem;border-bottom:1px solid var(--bdr);flex-wrap:wrap}
-.nb{background:none;border:none;padding:8px 12px;font-size:12px;font-weight:500;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.nb{background:none;border:none;padding:8px 12px;font-size:14px;font-weight:500;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
 .nb:hover{color:var(--txt);background:var(--bg3)}.nb.on{color:var(--txt);border-bottom-color:var(--bl)}
 .navgroup{position:relative}
-.navtrig::after{content:" \25BE";font-size:9px;opacity:.65}
+.navtrig::after{content:" \25BE";font-size:12px;opacity:.7}
 .navtrig.actv{color:var(--txt);border-bottom-color:var(--bl)}
 .navmenu{display:none;position:fixed;background:#fff;border:1px solid var(--bdr);border-radius:var(--r);box-shadow:0 6px 18px rgba(0,0,0,.14);z-index:200;min-width:185px;padding:5px;flex-direction:column;gap:2px}
 .navmenu.open{display:flex}
-.navmenu .nb{text-align:left;border-bottom:none;border-radius:6px;margin:0;width:100%;white-space:nowrap}
+.navmenu .nb{text-align:left;border-bottom:none;border-radius:6px;margin:0;width:100%;white-space:nowrap;font-size:14.5px;padding:9px 12px}
 .navmenu .nb:hover{background:var(--bg3)}
 .navmenu .nb.on{background:var(--bg3);color:var(--txt)}
 .tabstrip{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 .85rem}
 .tabstrip:empty{display:none}
-.wtab{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;font-size:11px;font-weight:500;color:var(--txt2);background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);cursor:pointer;white-space:nowrap}
+.wtab{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;font-size:13px;font-weight:500;color:var(--txt2);background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);cursor:pointer;white-space:nowrap}
 .wtab:hover{color:var(--txt)}
 .wtab.actv{background:var(--bl);color:#fff;border-color:var(--bl)}
-.wtab-x{font-size:14px;line-height:1;opacity:.6;padding:0 2px;border-radius:3px}
+.wtab-x{font-size:16px;line-height:1;opacity:.6;padding:0 2px;border-radius:3px}
 .wtab-x:hover{opacity:1}
 .pg{display:none}.pg.on{display:block}
 .card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--rlg);padding:.875rem 1rem;margin-bottom:.75rem}
@@ -48,7 +48,7 @@ body.readonly .btn-pri,body.readonly .btn-plat,body.readonly .btn-add,body.reado
 body.readonly table .btn-sec{display:none!important}
 .pl-drill{transition:background .15s}
 .pl-drill:hover{background:var(--bg3)}
-.pl-badge{font-size:9px;color:var(--bl2);background:#E6F1FB;border:1px solid #B5D4F4;border-radius:10px;padding:1px 7px;font-weight:600;white-space:nowrap;margin-left:4px}
+.pl-badge{font-size:11px;color:var(--bl2);background:#E6F1FB;border:1px solid #B5D4F4;border-radius:10px;padding:1px 8px;font-weight:600;white-space:nowrap;margin-left:4px}
 .pl-chev{color:var(--bl);font-weight:700;font-size:13px}
 .btn-plat{padding:9px 18px;font-size:12px;font-weight:700;background:var(--bl);color:#fff;border:none;border-radius:var(--r);cursor:pointer}
 .btn-plat:hover{background:var(--bl2)}
@@ -122,7 +122,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
   h1{font-size:16px}
   .nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .nav::-webkit-scrollbar{display:none}
-  .nb{padding:8px 10px;font-size:11px;flex-shrink:0}
+  .nb{padding:8px 10px;font-size:12.5px;flex-shrink:0}
   .card{padding:.7rem .75rem}
   .g3,.g4{grid-template-columns:1fr 1fr}
   .recon-3col{grid-template-columns:1fr}
@@ -2886,8 +2886,8 @@ function renderLoanListing(){
   tbody.innerHTML=all.map(l=>{
     const repaid=(l.repayments||[]).reduce((s,r)=>s+(r.amt||0),0),os=loanOutstanding(l),settled=os<0.01,isLent=l.dir==='lent';
     const outCell=settled
-      ? `${fmt(os)}<div style="font-size:9px;color:var(--gr);font-weight:400">✓ ${tr('ln_settled')}</div>`
-      : `${fmt(os)}<div style="margin-top:3px" class="op-only"><button class="btn-plat" style="font-size:9px;padding:2px 7px" onclick="event.stopPropagation();repayLoanPrompt('${l.id}')">💵 ${tr('ln_repay')}</button></div>`;
+      ? `${fmt(os)}<div style="font-size:11px;color:var(--gr);font-weight:400">✓ ${tr('ln_settled')}</div>`
+      : `${fmt(os)}<div style="margin-top:3px" class="op-only"><button class="btn-plat" style="font-size:11px;padding:3px 8px" onclick="event.stopPropagation();repayLoanPrompt('${l.id}')">💵 ${tr('ln_repay')}</button></div>`;
     return`<tr class="row-tap" style="cursor:pointer" onclick="viewEditLoan('${l.id}')">
       <td>${fD(l.date)}</td><td>${l.counterparty||'-'}</td>
       <td><span class="tag ${isLent?'tag-in':'tag-out'}">${isLent?tr('ln_lent_tag'):tr('ln_borrowed_tag')}</span></td>
@@ -5416,8 +5416,8 @@ function renderExchTab(){
     }
     const xJson=JSON.stringify(x).replace(/"/g,'&quot;');
     const owedCell=owed>0.01
-      ? `${fmt(owed)}<div style="margin-top:3px"><button class="btn-plat" style="font-size:9px;padding:2px 7px" onclick="event.stopPropagation();${recvFn}(${xJson})">💵 ${tr('ex_receive_btn')}</button></div>`
-      : `${fmt(owed)}<div style="font-size:9px;color:var(--gr);font-weight:400">✓ ${tr('ex_received_full')}</div>`;
+      ? `${fmt(owed)}<div style="margin-top:3px"><button class="btn-plat" style="font-size:11px;padding:3px 8px" onclick="event.stopPropagation();${recvFn}(${xJson})">💵 ${tr('ex_receive_btn')}</button></div>`
+      : `${fmt(owed)}<div style="font-size:11px;color:var(--gr);font-weight:400">✓ ${tr('ex_received_full')}</div>`;
     return`<tr class="row-tap" style="cursor:pointer" onclick="viewEditExch(${xJson})">
       <td>${fD(x.date)}</td>
       <td><span class="tag ${x.dir==='out'?'tag-out':'tag-in'}">${x.dir==='out'?'PGK→MYR':'MYR→PGK'}</span></td>
