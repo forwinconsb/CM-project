@@ -1073,7 +1073,7 @@ const LANG = {
     ex_info:'Exchange Transactions — record a transaction below; full listing further down. Tap a row to edit or delete.',
     ex_new:'New exchange transaction', ex_save:'💾 Save exchange', ex_dir_out:'⬆ PGK → MYR (receive RM)', ex_dir_in:'⬇ MYR → PGK (top up)',
     ex_myr_sent:'MYR sent', ex_myr_recv:'MYR actually received', ex_myr_paid:'MYR actually paid', ex_saved:'Exchange saved ✓',
-    ex_dues_title:'Outstanding — exchangers (MYR & PGK)', ex_no_dues:'No outstanding dues — all exchangers settled', ex_owed_myr:'Owed to us (MYR)', ex_they_owe_pgk:'They owe us (PGK)', ex_we_owe_myr:'We owe (MYR)', ex_owes_plain:'owes',
+    ex_dues_title:'Outstanding — exchangers (MYR & PGK)', ex_no_dues:'No outstanding dues — all exchangers settled', ex_owed_myr:'Owed to us (MYR)', ex_they_owe_pgk:'They owe us (PGK)', ex_we_owe_myr:'We owe (MYR)', ex_owes_plain:'owes', ex_to_send_pgk:'We still to send (PGK)', ex_to_send:'to send', ex_send_pgk_title:'Send PGK', ex_send_pgk_from:'Send PGK from', ex_pgk_to_send:'PGK to send:', ex_date_sent:'Date sent', ex_pgk_sent:'PGK sent', ex_save_send:'Save send', ex_pgk_sent_toast:'PGK sent:', ex_no_sends:'Not sent yet — pending', ex_pgk_send_section:'PGK sent', ex_pay_myr_title:'Pay MYR', ex_pay_myr_to:'Pay MYR to', ex_myr_to_pay:'MYR to pay:', ex_date_paid:'Date paid', ex_myr_paid_amt:'MYR paid', ex_from_bank:'From MYR bank', ex_save_pay:'Save payment', ex_myr_paid_toast:'MYR paid:', ex_myr_pay_section:'MYR paid', ex_no_pays:'Not paid yet — pending', ex_del_movement_confirm:'Delete this movement? It becomes pending again.',
     ex_pay_history:'Received payments history', ex_stmt_title:'Exchanger Statement — movement trace',
     ex_stmt_desc:'Every exchange and payment in date order with a running balance. Positive = exchanger owes us; negative = we owe the exchanger.',
     ex_clear_dates:'Clear dates', ex_select_exchanger:'Select an exchanger above', ex_listing_title:'Exchange transactions — full listing',
@@ -1336,7 +1336,7 @@ const LANG = {
     ex_info:'兑换交易 — 在下方记录交易；完整列表在下方。点击行可编辑或删除。',
     ex_new:'新增兑换交易', ex_save:'💾 保存兑换', ex_dir_out:'⬆ PGK → MYR（收 RM）', ex_dir_in:'⬇ MYR → PGK（充值）',
     ex_myr_sent:'MYR 转出', ex_myr_recv:'实际收到 MYR', ex_myr_paid:'实际支付 MYR', ex_saved:'兑换已保存 ✓',
-    ex_dues_title:'未结 — 兑换商（MYR 和 PGK）', ex_no_dues:'无未收欠款 — 所有兑换商已结清', ex_owed_myr:'应收我们（MYR）', ex_they_owe_pgk:'对方欠我们（PGK）', ex_we_owe_myr:'我们应付（MYR）', ex_owes_plain:'欠',
+    ex_dues_title:'未结 — 兑换商（MYR 和 PGK）', ex_no_dues:'无未收欠款 — 所有兑换商已结清', ex_owed_myr:'应收我们（MYR）', ex_they_owe_pgk:'对方欠我们（PGK）', ex_we_owe_myr:'我们应付（MYR）', ex_owes_plain:'欠', ex_to_send_pgk:'待发送（PGK）', ex_to_send:'待发', ex_send_pgk_title:'发送 PGK', ex_send_pgk_from:'从平台发送 PGK —', ex_pgk_to_send:'待发 PGK：', ex_date_sent:'发送日期', ex_pgk_sent:'已发送 PGK', ex_save_send:'保存发送', ex_pgk_sent_toast:'已发送 PGK：', ex_no_sends:'尚未发送 — 待发', ex_pgk_send_section:'PGK 发送', ex_pay_myr_title:'支付 MYR', ex_pay_myr_to:'支付 MYR —', ex_myr_to_pay:'待付 MYR：', ex_date_paid:'支付日期', ex_myr_paid_amt:'已付 MYR', ex_from_bank:'从 MYR 银行', ex_save_pay:'保存支付', ex_myr_paid_toast:'已付 MYR：', ex_myr_pay_section:'MYR 支付', ex_no_pays:'尚未支付 — 待付', ex_del_movement_confirm:'删除此记录？将重新变为待处理。',
     ex_pay_history:'收款历史', ex_stmt_title:'兑换商对账单 — 流水追踪',
     ex_stmt_desc:'按日期排列的所有兑换与收款及滚动余额。正数=兑换商欠我们；负数=我们欠兑换商。',
     ex_clear_dates:'清除日期', ex_select_exchanger:'请在上方选择兑换商', ex_listing_title:'兑换交易 — 完整列表',
@@ -2701,7 +2701,7 @@ function viewEditLoan(id){
     reps.map((r,i)=>`<tr><td>${fD(r.date)}</td><td style="font-weight:700;color:var(--gr)">${fmt(r.amt)}</td><td style="white-space:nowrap"><button class="del" title="${tr('ex_edit_receipt')}" onclick="editLoanRepay('${id}',${i})">✏️</button> <button class="del" onclick="deleteLoanRepay('${id}',${i})">🗑</button></td></tr>`).join('')+`</tbody></table></div>`:`<div class="empty">${tr('ln_no_repay')}</div>`;
   const os=loanOutstanding(l);
   const body=`
-    <div class="modal-section">${tr('ln_edit_title')} — ${fD(l.date)}</div>
+    <div class="modal-section">${tr('ln_edit_title')} — ${fD(l.date)}${l.id?' · <span style="font-family:monospace;color:var(--bl)">'+l.id+'</span>':''}</div>
     <div class="g2" style="gap:8px;margin-bottom:10px">
       <div class="f"><label>${tr('exch_dir')}</label><select id="ln-edit-dir"><option value="lent" ${l.dir==='lent'?'selected':''}>${tr('ln_lent_tag')}</option><option value="borrowed" ${l.dir==='borrowed'?'selected':''}>${tr('ln_borrowed_tag')}</option></select></div>
       <div class="f"><label>${tr('date')}</label><input type="date" id="ln-edit-date" value="${l.date}"></div>
@@ -2758,6 +2758,15 @@ function exchReceiptNetFor(platformName,date,dayEntries){
   days.forEach(d=>(d.exchanges||[]).forEach(x=>{
     if(x.dir!=='in'||x.platform!==platformName||!x.receipts)return;
     (x.receipts||[]).forEach(r=>{if(r.date===date)net+=(r.amt||0);});
+  }));
+  return net;
+}
+// PGK→MYR PGK actually sent out on a given date (new dated-leg model only).
+function exchPgkOutNetFor(platformName,date,dayEntries){
+  const days=dayEntries||S.dayEntries;let net=0;
+  days.forEach(d=>(d.exchanges||[]).forEach(x=>{
+    if(x.dir!=='out'||x.platform!==platformName||!x.pgkOut)return;
+    (x.pgkOut||[]).forEach(m=>{if(m.date===date)net+=(m.amt||0);});
   }));
   return net;
 }
@@ -2902,7 +2911,7 @@ function renderLoanListing(){
       ? `${fmt(os)}<div style="font-size:11px;color:var(--gr);font-weight:400">✓ ${tr('ln_settled')}</div>`
       : `${fmt(os)}<div style="margin-top:3px" class="op-only"><button class="btn-plat" style="font-size:11px;padding:3px 8px" onclick="event.stopPropagation();repayLoanPrompt('${l.id}')">💵 ${tr('ln_repay')}</button></div>`;
     return`<tr class="row-tap" style="cursor:pointer" onclick="viewEditLoan('${l.id}')">
-      <td>${fD(l.date)}</td><td>${l.counterparty||'-'}</td>
+      <td>${fD(l.date)}</td><td>${l.counterparty||'-'}<div style="font-size:10px;font-family:monospace;color:var(--txt2)">${l.id||''}</div></td>
       <td><span class="tag ${isLent?'tag-in':'tag-out'}">${isLent?tr('ln_lent_tag'):tr('ln_borrowed_tag')}</span></td>
       <td class="hide-sm">${l.platform||'-'}</td>
       <td>${fmt(l.pgk)}</td><td class="hide-sm">${fmt(repaid)}</td>
@@ -2957,7 +2966,7 @@ function saveExchangeOne(){
   const myrBank=document.getElementById('exch-ent-bank')?.value||'';
   if(!pgk){showToast('Enter the amount',true);return;}
   const myr=exchMyrEquiv(exchEntryDir,pgk,rate);
-  const ex={dir:exchEntryDir,platform,exchanger,pgk,rate,myr,paid,myrBank,ref:genRef('EXC'),receipts:[]};
+  const ex={dir:exchEntryDir,platform,exchanger,pgk,rate,myr,paid,myrBank,ref:genRef('EXC'),receipts:[],pgkOut:[],myrPaid:[]};
   let day=S.dayEntries.find(e=>e.date===date);
   if(!day){day={date,exchanges:[],myrBanks:[],funderTxns:[],expenses:[],totalExp:0};S.dayEntries.push(day);S.dayEntries.sort((a,b)=>a.date.localeCompare(b.date));}
   if(!day.exchanges)day.exchanges=[];
@@ -3423,6 +3432,11 @@ function buildLedger(date,d){
   (S.exchSettlements||[]).filter(s=>s.date===date).forEach(s=>{
     txns.push({bank:s.myrBank||'',type:'exchange',desc:'Due received — '+(s.exchanger||'')+(s.note?' ('+s.note+')':''),in:s.amount||0,out:0,attachment:null});
   });
+  // MYR→PGK MYR paid out later — counted on the actual payment date, from the bank used
+  S.dayEntries.forEach(dd=>(dd.exchanges||[]).forEach(x=>{
+    if(x.dir!=='in'||!x.myrPaid)return;
+    (x.myrPaid||[]).forEach(m=>{if(m.date===date)txns.push({bank:m.bank||x.myrBank||'',type:'exchange',desc:'MYR paid — '+(x.exchanger||'')+' (MYR→PGK)'+(m.note?' ('+m.note+')':''),in:0,out:m.amt||0,attachment:null});});
+  }));
   (d.funderTxns||[]).forEach(t=>{
     if(t.isAutoFromExpense)return;
     if(t.type==='injection')txns.push({bank:t.bank||'',type:'funder',desc:'Capital injection — '+(t.funder||''),in:t.amount||0,out:0,attachment:null});
@@ -3442,7 +3456,10 @@ function buildPGKLedger(platformName,dayEntries){
     .map(e=>{
       const day=days.find(d=>d.date===e.date);
       const linked=(day?.exchanges||[]).filter(x=>x.platform===platformName);
-      const exchOut=linked.filter(x=>x.dir==='out').reduce((s,x)=>s+(x.pgk||0),0);
+      // PGK→MYR outgoing PGK: legacy entries (no pgkOut[]) subtract in full on the record date;
+      // new entries subtract only the PGK actually sent on this day (pgkOut movements).
+      const exchOut=linked.filter(x=>x.dir==='out'&&!x.pgkOut).reduce((s,x)=>s+(x.pgk||0),0)
+        +exchPgkOutNetFor(platformName,e.date,days);
       // MYR→PGK incoming PGK = the PGK amount received (x.pgk). Legacy entries (no receipts[])
       // credit in full on the exchange date; new entries credit only the receipts dated this day.
       const exchIn=linked.filter(x=>x.dir==='in'&&!x.receipts).reduce((s,x)=>s+(x.pgk||0),0)
@@ -5189,17 +5206,22 @@ function renderExchDues(){
   const el=document.getElementById('exch-dues');if(!el)return;
   const{byEx}=exchDuesData();
   const rows=Object.entries(byEx).filter(([,v])=>v.owed>0.009).sort((a,b)=>b[1].owed-a[1].owed);
-  // MYR->PGK legs: exchanger still owes us PGK (not yet delivered) and/or we still owe them MYR (not yet paid)
-  const inRecv={},inPay={};
+  // Per-transaction legs that are still pending: PGK they owe us, MYR we owe, PGK we still to send
+  const recvTx=[],payTx=[],sendTx=[];
   S.dayEntries.forEach(d=>(d.exchanges||[]).forEach(x=>{
-    if(x.dir!=='in')return;
-    const recd=(x.receipts||[]).reduce((s,r)=>s+(r.amt||0),0);
-    const pgkPend=x.receipts?Math.max(0,(x.pgk||0)-recd):0;
-    const myrUnpaid=Math.max(0,(x.myr||0)-(x.paid||0));
-    if(pgkPend>0.009){const t=inRecv[x.exchanger]=inRecv[x.exchanger]||{amt:0,n:0,oldest:d.date};t.amt+=pgkPend;t.n++;if(d.date<t.oldest)t.oldest=d.date;}
-    if(myrUnpaid>0.009){const t=inPay[x.exchanger]=inPay[x.exchanger]||{amt:0,n:0,oldest:d.date};t.amt+=myrUnpaid;t.n++;if(d.date<t.oldest)t.oldest=d.date;}
+    const xx={...x,date:d.date};
+    if(x.dir==='in'){
+      const recd=(x.receipts||[]).reduce((s,r)=>s+(r.amt||0),0);
+      if(x.receipts&&(x.pgk||0)-recd>0.009)recvTx.push({x:xx,amt:(x.pgk||0)-recd});
+      const myrUnpaid=(x.myr||0)-(x.paid||0)-(x.myrPaid||[]).reduce((s,m)=>s+(m.amt||0),0);
+      if(myrUnpaid>0.009)payTx.push({x:xx,amt:myrUnpaid});
+    }else{
+      const sent=(x.pgkOut||[]).reduce((s,m)=>s+(m.amt||0),0);
+      if(x.pgkOut&&(x.pgk||0)-sent>0.009)sendTx.push({x:xx,amt:(x.pgk||0)-sent});
+    }
   }));
-  const recvRows=Object.entries(inRecv).sort((a,b)=>b[1].amt-a[1].amt),payRows=Object.entries(inPay).sort((a,b)=>b[1].amt-a[1].amt);
+  const txRow=(t,color,label,suffix,fn,btn)=>{const xj=JSON.stringify(t.x).replace(/"/g,'&quot;');return`<div class="plat-row"><span style="display:flex;align-items:center;gap:9px"><b>${t.x.exchanger||'-'}</b><span style="color:var(--${color});font-weight:700">${label} ${fmt(t.amt)}${suffix}</span><span style="font-size:11px;color:var(--txt2)">${t.x.ref||''} · ${fD(t.x.date)}</span></span><button class="btn-plat" style="padding:6px 12px;font-size:11px" onclick="${fn}(${xj})">${btn}</button></div>`;};
+  const sec=(title,arr,color,label,suffix,fn,btn)=>arr.length?`<div style="font-size:11px;font-weight:700;color:var(--txt2);margin:10px 0 5px">${title}</div>`+arr.map(t=>txRow(t,color,label,suffix,fn,btn)).join(''):'';
   let html='';
   if(rows.length){
     html+=`<div style="font-size:11px;font-weight:700;color:var(--txt2);margin:2px 0 5px">${tr('ex_owed_myr')}</div>`+rows.map(([ex,v])=>`<div class="plat-row">
@@ -5209,12 +5231,9 @@ function renderExchDues(){
       <button class="btn-plat" style="padding:6px 14px;font-size:11px" onclick="openReceiveDue('${ex.replace(/'/g,"\\'")}')">💵 ${tr('ex_receive_payment')}</button>
     </div>`).join('');
   }
-  if(recvRows.length){
-    html+=`<div style="font-size:11px;font-weight:700;color:var(--txt2);margin:10px 0 5px">${tr('ex_they_owe_pgk')}</div>`+recvRows.map(([ex,v])=>`<div class="plat-row"><span style="display:flex;align-items:center;gap:9px"><b>${ex}</b><span style="color:var(--am);font-weight:700">${tr('ex_owes_plain')} ${fmt(v.amt)} PGK</span><span style="font-size:11px;color:var(--txt2)">(${v.n} ${tr('rc_txn')}, ${tr('ex_oldest')} ${fD(v.oldest)})</span></span></div>`).join('');
-  }
-  if(payRows.length){
-    html+=`<div style="font-size:11px;font-weight:700;color:var(--txt2);margin:10px 0 5px">${tr('ex_we_owe_myr')}</div>`+payRows.map(([ex,v])=>`<div class="plat-row"><span style="display:flex;align-items:center;gap:9px"><b>${ex}</b><span style="color:var(--pu);font-weight:700">${tr('ex_we_owe')} ${fmt(v.amt)}</span><span style="font-size:11px;color:var(--txt2)">(${v.n} ${tr('rc_txn')})</span></span></div>`).join('');
-  }
+  html+=sec(tr('ex_they_owe_pgk'),recvTx,'am',tr('ex_owes_plain'),' PGK','openReceivePGK','💵 '+tr('ex_recv_pgk_title'));
+  html+=sec(tr('ex_we_owe_myr'),payTx,'pu',tr('ex_we_owe'),'','openPayMYR','💵 '+tr('ex_pay_myr_title'));
+  html+=sec(tr('ex_to_send_pgk'),sendTx,'rd',tr('ex_to_send'),' PGK','openSendPGK','📤 '+tr('ex_send_pgk_title'));
   el.innerHTML=html||`<div class="recon-ok">✓ ${tr('ex_no_dues')}</div>`;
   const sEl=document.getElementById('exch-settlements');
   if(sEl){
@@ -5381,6 +5400,82 @@ function saveReceiptPGKEdit(orig,rid){
   r.date=date;r.amt=amt;r.note=document.getElementById('rpgk-edit-note')?.value||'';
   persist();closeModal();renderExchTab();if(typeof renderPGKRecon==='function')renderPGKRecon();showToast(tr('ex_receipt_updated')+' ✓');
 }
+// ── PGK→MYR: record the actual PGK sent out (dated leg) ──
+function findExchByRef(orig){
+  const dIdx=S.dayEntries.findIndex(e=>e.date===orig.date);if(dIdx<0)return null;
+  const xIdx=S.dayEntries[dIdx].exchanges.findIndex(x=>orig.ref&&x.ref?x.ref===orig.ref:
+    (x.dir===orig.dir&&x.exchanger===orig.exchanger&&Math.abs((x.pgk||0)-(orig.pgk||0))<0.001&&Math.abs((x.paid||0)-(orig.paid||0))<0.001));
+  if(xIdx<0)return null;return{dIdx,xIdx,x:S.dayEntries[dIdx].exchanges[xIdx]};
+}
+function openSendPGK(x){
+  const sent=(x.pgkOut||[]).reduce((s,m)=>s+(m.amt||0),0),owed=Math.max(0,(x.pgk||0)-sent);
+  const xJson=JSON.stringify(x).replace(/"/g,'&quot;');
+  openModal(tr('ex_send_pgk_title'),`
+    <div class="modal-section">${tr('ex_send_pgk_from')} ${x.platform||'-'} — ${tr('ex_pgk_to_send')} ${fmt(owed)} PGK<br><span style="font-size:11px;color:var(--txt2)">${x.ref||''} · ${x.exchanger||'-'}</span></div>
+    <div class="g2" style="gap:8px;margin-bottom:10px">
+      <div class="f"><label>${tr('ex_date_sent')}</label><input type="date" id="spgk-date" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="f"><label>${tr('ex_pgk_sent')}</label><input type="number" id="spgk-amt" value="${owed.toFixed(2)}" step="0.01"></div>
+      <div class="f" style="grid-column:1/-1"><label>${tr('ex_note_optional')}</label><input type="text" id="spgk-note"></div>
+    </div>
+    <button class="btn-pri" onclick="saveSendPGK(${xJson})">💾 ${tr('ex_save_send')}</button>`);
+}
+function saveSendPGK(orig){
+  const date=document.getElementById('spgk-date')?.value,amt=parseFloat(document.getElementById('spgk-amt')?.value)||0;
+  if(!date){showToast('Select date',true);return;}if(lockBlocked(date))return;if(amt<=0){showToast('Enter amount',true);return;}
+  const hit=findExchByRef(orig);if(!hit){showToast('Exchange not found',true);return;}
+  const x=hit.x;if(!x.pgkOut)x.pgkOut=[];
+  const sent=x.pgkOut.reduce((s,m)=>s+(m.amt||0),0),owed=Math.max(0,(x.pgk||0)-sent);
+  if(amt>owed+0.009&&!confirm(`${fmt(amt)} PGK > ${fmt(owed)} PGK to send. Save anyway?`))return;
+  x.pgkOut.push({id:'PGO-'+Date.now().toString(36)+Math.floor(Math.random()*1000),date,amt,note:document.getElementById('spgk-note')?.value||''});
+  persist();closeModal();renderExchTab();if(typeof renderPGKRecon==='function')renderPGKRecon();showToast(tr('ex_pgk_sent_toast')+' '+fmt(amt)+' PGK ✓');
+}
+function editSendPGK(orig,id){
+  const hit=findExchByRef(orig);if(!hit||!hit.x.pgkOut)return;const m=hit.x.pgkOut.find(r=>r.id===id);if(!m)return;
+  const amtStr=prompt(tr('ex_pgk_sent'),fmt(m.amt));if(amtStr===null)return;const amt=parseFloat(amtStr)||0;if(amt<=0){showToast('Enter amount',true);return;}
+  const dateStr=prompt(tr('ex_date_sent'),m.date);if(dateStr===null)return;if(lockBlocked(m.date))return;if(dateStr!==m.date&&lockBlocked(dateStr))return;
+  m.amt=amt;m.date=dateStr;persist();renderExchTab();if(typeof renderPGKRecon==='function')renderPGKRecon();viewEditExch(findExchByRef(orig).x);showToast(tr('ex_receipt_updated')+' ✓');
+}
+function deleteSendPGK(orig,id){
+  const hit=findExchByRef(orig);if(!hit||!hit.x.pgkOut)return;const m=hit.x.pgkOut.find(r=>r.id===id);if(!m)return;
+  if(lockBlocked(m.date))return;if(!confirm(tr('ex_del_movement_confirm')))return;
+  hit.x.pgkOut=hit.x.pgkOut.filter(r=>r.id!==id);persist();renderExchTab();if(typeof renderPGKRecon==='function')renderPGKRecon();viewEditExch(hit.x);showToast(tr('toast_deleted'));
+}
+// ── MYR→PGK: record the actual MYR paid out (dated leg) ──
+function openPayMYR(x){
+  const paidExtra=(x.myrPaid||[]).reduce((s,m)=>s+(m.amt||0),0),owed=Math.max(0,(x.myr||0)-(x.paid||0)-paidExtra);
+  const bankOpts=S.myrBanks.map(b=>`<option value="${b.name}" ${b.name===x.myrBank?'selected':''}>${b.name}</option>`).join('');
+  const xJson=JSON.stringify(x).replace(/"/g,'&quot;');
+  openModal(tr('ex_pay_myr_title'),`
+    <div class="modal-section">${tr('ex_pay_myr_to')} ${x.exchanger||'-'} — ${tr('ex_myr_to_pay')} RM ${fmt(owed)}<br><span style="font-size:11px;color:var(--txt2)">${x.ref||''}${x.platform?' · '+x.platform:''}</span></div>
+    <div class="g2" style="gap:8px;margin-bottom:10px">
+      <div class="f"><label>${tr('ex_date_paid')}</label><input type="date" id="pmyr-date" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="f"><label>${tr('ex_myr_paid_amt')}</label><input type="number" id="pmyr-amt" value="${owed.toFixed(2)}" step="0.01"></div>
+      <div class="f"><label>${tr('ex_from_bank')}</label><select id="pmyr-bank">${bankOpts}</select></div>
+      <div class="f"><label>${tr('ex_note_optional')}</label><input type="text" id="pmyr-note"></div>
+    </div>
+    <button class="btn-pri" onclick="savePayMYR(${xJson})">💾 ${tr('ex_save_pay')}</button>`);
+}
+function savePayMYR(orig){
+  const date=document.getElementById('pmyr-date')?.value,amt=parseFloat(document.getElementById('pmyr-amt')?.value)||0,bank=document.getElementById('pmyr-bank')?.value||'';
+  if(!date){showToast('Select date',true);return;}if(lockBlocked(date))return;if(amt<=0){showToast('Enter amount',true);return;}
+  const hit=findExchByRef(orig);if(!hit){showToast('Exchange not found',true);return;}
+  const x=hit.x;if(!x.myrPaid)x.myrPaid=[];
+  const owed=Math.max(0,(x.myr||0)-(x.paid||0)-x.myrPaid.reduce((s,m)=>s+(m.amt||0),0));
+  if(amt>owed+0.009&&!confirm(`RM ${fmt(amt)} > RM ${fmt(owed)} to pay. Save anyway?`))return;
+  x.myrPaid.push({id:'MYP-'+Date.now().toString(36)+Math.floor(Math.random()*1000),date,amt,bank,note:document.getElementById('pmyr-note')?.value||''});
+  persist();closeModal();renderExchTab();if(typeof renderRecon==='function')renderRecon();showToast(tr('ex_myr_paid_toast')+' RM '+fmt(amt)+' ✓');
+}
+function editPayMYR(orig,id){
+  const hit=findExchByRef(orig);if(!hit||!hit.x.myrPaid)return;const m=hit.x.myrPaid.find(r=>r.id===id);if(!m)return;
+  const amtStr=prompt(tr('ex_myr_paid_amt'),fmt(m.amt));if(amtStr===null)return;const amt=parseFloat(amtStr)||0;if(amt<=0){showToast('Enter amount',true);return;}
+  const dateStr=prompt(tr('ex_date_paid'),m.date);if(dateStr===null)return;if(lockBlocked(m.date))return;if(dateStr!==m.date&&lockBlocked(dateStr))return;
+  m.amt=amt;m.date=dateStr;persist();renderExchTab();if(typeof renderRecon==='function')renderRecon();viewEditExch(findExchByRef(orig).x);showToast(tr('ex_receipt_updated')+' ✓');
+}
+function deletePayMYR(orig,id){
+  const hit=findExchByRef(orig);if(!hit||!hit.x.myrPaid)return;const m=hit.x.myrPaid.find(r=>r.id===id);if(!m)return;
+  if(lockBlocked(m.date))return;if(!confirm(tr('ex_del_movement_confirm')))return;
+  hit.x.myrPaid=hit.x.myrPaid.filter(r=>r.id!==id);persist();renderExchTab();if(typeof renderRecon==='function')renderRecon();viewEditExch(hit.x);showToast(tr('toast_deleted'));
+}
 // ── EXCHANGER STATEMENT (movement trace) ──
 function exchStatementEvents(exchanger){
   const ev=[];
@@ -5496,7 +5591,7 @@ function viewEditExch(x){
   // MYR receipts linked to THIS PGK→MYR exchange (row-originated settlements tagged with its ref)
   const linkedSetts=(S.exchSettlements||[]).filter(s=>x.ref&&s.exchRef===x.ref).sort((a,b)=>a.date.localeCompare(b.date));
   const body=`
-    <div class="modal-section">Edit Exchange — ${fD(x.date)}</div>
+    <div class="modal-section">Edit Exchange — ${fD(x.date)}${x.ref?' · <span style="font-family:monospace;color:var(--bl)">'+x.ref+'</span>':''}</div>
     <div class="g2" style="gap:8px;margin-bottom:10px">
       <div class="f"><label>Direction</label>
         <select id="exch-edit-dir" onchange="exchEditDirLabels();exchEditCalcMYR()">
@@ -5519,6 +5614,12 @@ function viewEditExch(x){
         <tbody>${x.receipts.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>`<tr><td>${fD(r.date)}</td><td style="font-weight:700;color:var(--gr)">${fmt(r.amt)}</td><td style="color:var(--txt2)">${r.note||'-'}</td><td style="white-space:nowrap"><button class="del" title="${tr('ex_edit_receipt')}" onclick="editReceiptPGK(${xJson},'${r.id}')">✏️</button> <button class="del" onclick="deleteReceiptPGK(${xJson},'${r.id}')">🗑</button></td></tr>`).join('')}</tbody>
       </table></div>`:`<div class="empty">${tr('ex_no_receipts')}</div>`}
       <button class="btn-sec" style="width:100%;margin-top:8px;margin-bottom:4px" onclick="openReceivePGK(${xJson})">💵 ${tr('ex_recv_pgk_title')}</button>
+      <div class="modal-section">${tr('ex_myr_pay_section')} (MYR)</div>
+      ${(x.myrPaid&&x.myrPaid.length)?`<div class="tw"><table>
+        <thead><tr><th>${tr('ex_date_paid')}</th><th>RM</th><th>${tr('ex_from_bank')}</th><th></th></tr></thead>
+        <tbody>${x.myrPaid.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(m=>`<tr><td>${fD(m.date)}</td><td style="font-weight:700;color:var(--rd)">${fmt(m.amt)}</td><td style="color:var(--txt2)">${m.bank||'-'}</td><td style="white-space:nowrap"><button class="del" title="${tr('ex_edit_receipt')}" onclick="editPayMYR(${xJson},'${m.id}')">✏️</button> <button class="del" onclick="deletePayMYR(${xJson},'${m.id}')">🗑</button></td></tr>`).join('')}</tbody>
+      </table></div>`:`<div class="empty">${tr('ex_no_pays')}</div>`}
+      <button class="btn-sec" style="width:100%;margin-top:8px;margin-bottom:4px" onclick="openPayMYR(${xJson})">💵 ${tr('ex_pay_myr_title')}</button>
     `:`
       <div class="modal-section">${tr('ex_receipts')} (MYR)</div>
       ${linkedSetts.length?`<div class="tw"><table>
@@ -5526,6 +5627,12 @@ function viewEditExch(x){
         <tbody>${linkedSetts.map(s=>`<tr><td>${fD(s.date)}</td><td style="font-weight:700;color:var(--gr)">${fmt(s.amount)}</td><td style="color:var(--txt2)">${s.myrBank||'-'}</td><td style="white-space:nowrap"><button class="del" title="${tr('ex_edit_receipt')}" onclick="editSettlement('${s.id}')">✏️</button> <button class="del" onclick="deleteSettlement('${s.id}');viewEditExch(${xJson})">🗑</button></td></tr>`).join('')}</tbody>
       </table></div>`:`<div class="empty">${tr('ex_no_receipts')}</div>`}
       <button class="btn-sec" style="width:100%;margin-top:8px;margin-bottom:4px" onclick="openReceiveExch(${xJson})">💵 ${tr('ex_receive_payment')}</button>
+      <div class="modal-section">${tr('ex_pgk_send_section')} (PGK)</div>
+      ${(x.pgkOut&&x.pgkOut.length)?`<div class="tw"><table>
+        <thead><tr><th>${tr('ex_date_sent')}</th><th>PGK</th><th>${tr('note')}</th><th></th></tr></thead>
+        <tbody>${x.pgkOut.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(m=>`<tr><td>${fD(m.date)}</td><td style="font-weight:700;color:var(--rd)">${fmt(m.amt)}</td><td style="color:var(--txt2)">${m.note||'-'}</td><td style="white-space:nowrap"><button class="del" title="${tr('ex_edit_receipt')}" onclick="editSendPGK(${xJson},'${m.id}')">✏️</button> <button class="del" onclick="deleteSendPGK(${xJson},'${m.id}')">🗑</button></td></tr>`).join('')}</tbody>
+      </table></div>`:`<div class="empty">${tr('ex_no_sends')}</div>`}
+      <button class="btn-sec" style="width:100%;margin-top:8px;margin-bottom:4px" onclick="openSendPGK(${xJson})">📤 ${tr('ex_send_pgk_title')}</button>
     `}
     <div style="display:flex;gap:8px;margin-top:4px">
       <button class="btn-pri" style="flex:1" onclick="saveExchEdit(${xJson})">💾 Save changes</button>
