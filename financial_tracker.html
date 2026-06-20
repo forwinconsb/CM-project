@@ -723,7 +723,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
     <div class="ct">💰 <span data-i18n="ex_dues_title">Outstanding Dues — exchangers who still owe us (MYR)</span></div>
     <div id="exch-dues"><div class="empty">No outstanding dues</div></div>
     <details class="collapse-card" style="margin-top:12px">
-      <summary style="font-size:11px;font-weight:600;color:var(--txt2)" data-i18n="ex_pay_history">Received payments history</summary>
+      <summary style="font-size:11px;font-weight:600;color:var(--txt2)" data-i18n="ex_mv_title">Movements history (all receive / pay / send)</summary>
       <div id="exch-settlements" style="margin-top:8px"></div>
     </details>
   </div>
@@ -1074,7 +1074,7 @@ const LANG = {
     ex_new:'New exchange transaction', ex_save:'💾 Save exchange', ex_dir_out:'⬆ PGK → MYR (receive RM)', ex_dir_in:'⬇ MYR → PGK (top up)',
     ex_myr_sent:'MYR sent', ex_myr_recv:'MYR actually received', ex_myr_paid:'MYR actually paid', ex_saved:'Exchange saved ✓',
     ex_dues_title:'Outstanding — exchangers (MYR & PGK)', ex_no_dues:'No outstanding dues — all exchangers settled', ex_owed_myr:'Owed to us (MYR)', ex_they_owe_pgk:'They owe us (PGK)', ex_we_owe_myr:'We owe (MYR)', ex_owes_plain:'owes', ex_to_send_pgk:'We still to send (PGK)', ex_to_send:'to send', ex_send_pgk_title:'Send PGK', ex_send_pgk_from:'Send PGK from', ex_pgk_to_send:'PGK to send:', ex_date_sent:'Date sent', ex_pgk_sent:'PGK sent', ex_save_send:'Save send', ex_pgk_sent_toast:'PGK sent:', ex_no_sends:'Not sent yet — pending', ex_pgk_send_section:'PGK sent', ex_pay_myr_title:'Pay MYR', ex_pay_myr_to:'Pay MYR to', ex_myr_to_pay:'MYR to pay:', ex_date_paid:'Date paid', ex_myr_paid_amt:'MYR paid', ex_from_bank:'From MYR bank', ex_save_pay:'Save payment', ex_myr_paid_toast:'MYR paid:', ex_myr_pay_section:'MYR paid', ex_no_pays:'Not paid yet — pending', ex_del_movement_confirm:'Delete this movement? It becomes pending again.',
-    ex_pay_history:'Received payments history', ex_stmt_title:'Exchanger Statement — movement trace',
+    ex_pay_history:'Received payments history', ex_mv_title:'Movements history (all receive / pay / send)', ex_at_entry:'at entry', ex_for:'for', ex_mv_myr_in:'MYR received', ex_we_owe_plain:'we owe', ex_stmt_title:'Exchanger Statement — movement trace',
     ex_stmt_desc:'Every exchange and payment in date order with a running balance. Positive = exchanger owes us; negative = we owe the exchanger.',
     ex_clear_dates:'Clear dates', ex_select_exchanger:'Select an exchanger above', ex_listing_title:'Exchange transactions — full listing',
     ex_owes:'owes RM', ex_oldest:'oldest', ex_receive_payment:'Receive payment',
@@ -1337,7 +1337,7 @@ const LANG = {
     ex_new:'新增兑换交易', ex_save:'💾 保存兑换', ex_dir_out:'⬆ PGK → MYR（收 RM）', ex_dir_in:'⬇ MYR → PGK（充值）',
     ex_myr_sent:'MYR 转出', ex_myr_recv:'实际收到 MYR', ex_myr_paid:'实际支付 MYR', ex_saved:'兑换已保存 ✓',
     ex_dues_title:'未结 — 兑换商（MYR 和 PGK）', ex_no_dues:'无未收欠款 — 所有兑换商已结清', ex_owed_myr:'应收我们（MYR）', ex_they_owe_pgk:'对方欠我们（PGK）', ex_we_owe_myr:'我们应付（MYR）', ex_owes_plain:'欠', ex_to_send_pgk:'待发送（PGK）', ex_to_send:'待发', ex_send_pgk_title:'发送 PGK', ex_send_pgk_from:'从平台发送 PGK —', ex_pgk_to_send:'待发 PGK：', ex_date_sent:'发送日期', ex_pgk_sent:'已发送 PGK', ex_save_send:'保存发送', ex_pgk_sent_toast:'已发送 PGK：', ex_no_sends:'尚未发送 — 待发', ex_pgk_send_section:'PGK 发送', ex_pay_myr_title:'支付 MYR', ex_pay_myr_to:'支付 MYR —', ex_myr_to_pay:'待付 MYR：', ex_date_paid:'支付日期', ex_myr_paid_amt:'已付 MYR', ex_from_bank:'从 MYR 银行', ex_save_pay:'保存支付', ex_myr_paid_toast:'已付 MYR：', ex_myr_pay_section:'MYR 支付', ex_no_pays:'尚未支付 — 待付', ex_del_movement_confirm:'删除此记录？将重新变为待处理。',
-    ex_pay_history:'收款历史', ex_stmt_title:'兑换商对账单 — 流水追踪',
+    ex_pay_history:'收款历史', ex_mv_title:'流水历史（所有收 / 付 / 发）', ex_at_entry:'录入时', ex_for:'换', ex_mv_myr_in:'收到 MYR', ex_we_owe_plain:'我们欠', ex_stmt_title:'兑换商对账单 — 流水追踪',
     ex_stmt_desc:'按日期排列的所有兑换与收款及滚动余额。正数=兑换商欠我们；负数=我们欠兑换商。',
     ex_clear_dates:'清除日期', ex_select_exchanger:'请在上方选择兑换商', ex_listing_title:'兑换交易 — 完整列表',
     ex_owes:'欠 RM', ex_oldest:'最早', ex_receive_payment:'登记收款',
@@ -5235,14 +5235,26 @@ function renderExchDues(){
   html+=sec(tr('ex_we_owe_myr'),payTx,'pu',tr('ex_we_owe'),'','openPayMYR','💵 '+tr('ex_pay_myr_title'));
   html+=sec(tr('ex_to_send_pgk'),sendTx,'rd',tr('ex_to_send'),' PGK','openSendPGK','📤 '+tr('ex_send_pgk_title'));
   el.innerHTML=html||`<div class="recon-ok">✓ ${tr('ex_no_dues')}</div>`;
-  const sEl=document.getElementById('exch-settlements');
-  if(sEl){
-    const setts=[...(S.exchSettlements||[])].sort((a,b)=>b.date.localeCompare(a.date));
-    sEl.innerHTML=setts.length?`<div class="tw"><table>
-      <thead><tr><th>${tr('ex_date_received')}</th><th>${tr('exch_exchanger')}</th><th>${tr('ex_amount_rm')}</th><th>${tr('ex_into_bank')}</th><th>${tr('note')}</th><th></th></tr></thead>
-      <tbody>${setts.map(s=>`<tr><td>${fD(s.date)}</td><td>${s.exchanger}</td><td style="font-weight:700;color:var(--gr)">${fmt(s.amount)}</td><td>${s.myrBank||'-'}</td><td style="color:var(--txt2)">${s.note||'-'}</td><td style="white-space:nowrap"><button class="del" title="${tr('ex_edit_receipt')}" onclick="editSettlement('${s.id}')">✏️</button> <button class="del" onclick="deleteSettlement('${s.id}')">🗑</button></td></tr>`).join('')}</tbody>
-    </table></div>`:`<div class="empty">${tr('ex_no_payments')}</div>`;
-  }
+  renderExchMovements();
+}
+// Unified list of every receive / pay / send movement across all exchanges, each editable.
+function renderExchMovements(){
+  const sEl=document.getElementById('exch-settlements');if(!sEl)return;
+  const mv=[];
+  (S.exchSettlements||[]).forEach(s=>mv.push({date:s.date,exchanger:s.exchanger,ref:s.exchRef||'',type:'myr_recv',amt:s.amount||0,cur:'MYR',bank:s.myrBank||'',edit:`editSettlement('${s.id}')`,del:`deleteSettlement('${s.id}')`}));
+  S.dayEntries.forEach(d=>(d.exchanges||[]).forEach(x=>{
+    const o=JSON.stringify({...x,date:d.date}).replace(/"/g,'&quot;');
+    (x.receipts||[]).forEach(m=>mv.push({date:m.date,exchanger:x.exchanger,ref:x.ref||'',type:'pgk_recv',amt:m.amt||0,cur:'PGK',bank:'',edit:`editReceiptPGK(${o},'${m.id}')`,del:`deleteReceiptPGK(${o},'${m.id}')`}));
+    (x.myrPaid||[]).forEach(m=>mv.push({date:m.date,exchanger:x.exchanger,ref:x.ref||'',type:'myr_paid',amt:m.amt||0,cur:'MYR',bank:m.bank||'',edit:`editPayMYR(${o},'${m.id}')`,del:`deletePayMYR(${o},'${m.id}')`}));
+    (x.pgkOut||[]).forEach(m=>mv.push({date:m.date,exchanger:x.exchanger,ref:x.ref||'',type:'pgk_sent',amt:m.amt||0,cur:'PGK',bank:'',edit:`editSendPGK(${o},'${m.id}')`,del:`deleteSendPGK(${o},'${m.id}')`}));
+  }));
+  mv.sort((a,b)=>b.date.localeCompare(a.date));
+  const lbl={myr_recv:tr('ex_mv_myr_in'),pgk_recv:tr('ex_pgk_received'),myr_paid:tr('ex_myr_paid_amt'),pgk_sent:tr('ex_pgk_sent')};
+  const tag={myr_recv:'tag-in',pgk_recv:'tag-in',myr_paid:'tag-out',pgk_sent:'tag-out'};
+  sEl.innerHTML=mv.length?`<div class="tw"><table>
+    <thead><tr><th>${tr('date')}</th><th>${tr('exch_exchanger')}</th><th>${tr('type')}</th><th style="text-align:right">${tr('ex_amount_received').replace(' (RM)','')}</th><th>Ref</th><th></th></tr></thead>
+    <tbody>${mv.map(m=>`<tr><td>${fD(m.date)}</td><td>${m.exchanger||'-'}</td><td><span class="tag ${tag[m.type]}">${lbl[m.type]}</span></td><td style="text-align:right;font-weight:700;color:${m.type==='myr_paid'||m.type==='pgk_sent'?'var(--rd)':'var(--gr)'}">${m.cur==='MYR'?'RM '+fmt(m.amt):fmt(m.amt)+' PGK'}${m.bank?'<div style="font-size:9px;color:var(--txt2);font-weight:400">'+m.bank+'</div>':''}</td><td style="font-family:monospace;font-size:10px;color:var(--txt2)">${m.ref||'-'}</td><td style="white-space:nowrap"><button class="del" title="${tr('ex_edit_receipt')}" onclick="${m.edit}">✏️</button> <button class="del" onclick="${m.del}">🗑</button></td></tr>`).join('')}</tbody>
+  </table></div>`:`<div class="empty">${tr('ex_no_payments')}</div>`;
 }
 function openReceiveDue(exchanger){
   const{byEx}=exchDuesData();
@@ -5477,26 +5489,28 @@ function deletePayMYR(orig,id){
   hit.x.myrPaid=hit.x.myrPaid.filter(r=>r.id!==id);persist();renderExchTab();if(typeof renderRecon==='function')renderRecon();viewEditExch(hit.x);showToast(tr('toast_deleted'));
 }
 // ── EXCHANGER STATEMENT (movement trace) ──
+// Two-currency movement trace. Each event carries dMyr / dPgk where positive = they owe us,
+// negative = we owe them. PGK legs only tracked once the new dated arrays exist (legacy = settled same day).
 function exchStatementEvents(exchanger){
   const ev=[];
   S.dayEntries.forEach(d=>(d.exchanges||[]).forEach(x=>{
     if((x.exchanger||'')!==exchanger)return;
+    const ref=x.ref?' · '+x.ref:'';
     if(x.dir==='out'){
-      // they received PGK, owe us MYR; unpaid part increases their debt
-      ev.push({date:d.date,type:'Exchange PGK→MYR',out:true,
-        detail:`${fmt(x.pgk||0)} PGK @ ${x.rate||'-'} = RM ${fmt(x.myr||0)} · paid RM ${fmt(x.paid||0)}${x.platform?' · '+x.platform:''}`,
-        delta:(x.myr||0)-(x.paid||0)});
+      // PGK→MYR: they owe us MYR (x.myr); we deliver PGK (x.pgk)
+      ev.push({date:d.date,type:'ex_out',detail:`${fmt(x.pgk)} PGK @ ${x.rate} → RM ${fmt(x.myr)}${ref}`,dMyr:(x.myr||0),dPgk:x.pgkOut?-(x.pgk||0):0});
+      if((x.paid||0)>0)ev.push({date:d.date,type:'myr_recv',detail:`RM ${fmt(x.paid)} ${tr('ex_at_entry')}`,dMyr:-(x.paid||0),dPgk:0});
+      (x.pgkOut||[]).forEach(m=>ev.push({date:m.date,type:'pgk_sent',detail:`${fmt(m.amt)} PGK${m.note?' · '+m.note:''}`,dMyr:0,dPgk:(m.amt||0)}));
     }else{
-      // we received PGK, owe them MYR; unpaid part = we owe
-      ev.push({date:d.date,type:'Exchange MYR→PGK',out:false,
-        detail:`RM ${fmt(x.pgk||0)} for ${fmt(x.myr||0)} PGK · paid RM ${fmt(x.paid||0)}${x.platform?' · '+x.platform:''}`,
-        delta:-((x.pgk||0)-(x.paid||0))});
+      // MYR→PGK: we owe them MYR (x.myr); they deliver PGK (x.pgk)
+      ev.push({date:d.date,type:'ex_in',detail:`RM ${fmt(x.myr)} ${tr('ex_for')} ${fmt(x.pgk)} PGK @ ${x.rate}${ref}`,dMyr:-(x.myr||0),dPgk:x.receipts?(x.pgk||0):0});
+      if((x.paid||0)>0)ev.push({date:d.date,type:'myr_paid',detail:`RM ${fmt(x.paid)} ${tr('ex_at_entry')}`,dMyr:(x.paid||0),dPgk:0});
+      (x.receipts||[]).forEach(m=>ev.push({date:m.date,type:'pgk_recv',detail:`${fmt(m.amt)} PGK${m.note?' · '+m.note:''}`,dMyr:0,dPgk:-(m.amt||0)}));
+      (x.myrPaid||[]).forEach(m=>ev.push({date:m.date,type:'myr_paid',detail:`RM ${fmt(m.amt)}${m.bank?' · '+m.bank:''}`,dMyr:(m.amt||0),dPgk:0}));
     }
   }));
   (S.exchSettlements||[]).filter(s=>s.exchanger===exchanger).forEach(s=>{
-    ev.push({date:s.date,type:'Payment received',out:false,
-      detail:(s.myrBank?'into '+s.myrBank:'')+(s.note?' · '+s.note:''),
-      delta:-(s.amount||0)});
+    ev.push({date:s.date,type:'myr_recv',detail:`RM ${fmt(s.amount)}${s.myrBank?' · '+s.myrBank:''}${s.note?' · '+s.note:''}`,dMyr:-(s.amount||0),dPgk:0});
   });
   return ev.sort((a,b)=>a.date.localeCompare(b.date));
 }
@@ -5507,36 +5521,38 @@ function renderExchStatement(){
   const to=document.getElementById('stmt-to')?.value||'';
   if(!ex){el.innerHTML=`<div class="empty">${tr('ex_select_exchanger')}</div>`;return;}
   const all=exchStatementEvents(ex);
-  let bf=0;const rows=[];
+  let bfM=0,bfP=0;const rows=[];
   all.forEach(e=>{
-    if(from&&e.date<from){bf+=e.delta;return;}
+    if(from&&e.date<from){bfM+=e.dMyr||0;bfP+=e.dPgk||0;return;}
     if(to&&e.date>to)return;
     rows.push(e);
   });
-  const lbl=v=>v>0.009?`<span style="color:var(--am);font-weight:700">${tr('ex_owes_us')} ${fmt(v)}</span>`
-    :v<-0.009?`<span style="color:var(--pu);font-weight:700">${tr('ex_we_owe')} ${fmt(-v)}</span>`
-    :`<span style="color:var(--gr);font-weight:700">✓ ${tr('ex_settled')}</span>`;
-  const typeLbl=t=>t==='Payment received'?tr('ex_pay_received'):t==='Exchange PGK→MYR'?tr('ex_pgk_myr'):tr('ex_myr_pgk');
-  let bal=bf;
-  let html=`<div class="pr"><span style="color:var(--txt2)">${tr('ex_bf')}${from?' '+tr('ex_before')+' '+fD(from):''}</span><span>${lbl(bf)}</span></div>`;
+  const lbl=(v,cur)=>{const amt=cur==='PGK'?fmt(Math.abs(v))+' PGK':'RM '+fmt(Math.abs(v));return v>0.009?`<span style="color:var(--am);font-weight:600">${tr('ex_owes_plain')} ${amt}</span>`
+    :v<-0.009?`<span style="color:var(--pu);font-weight:600">${tr('ex_we_owe_plain')} ${amt}</span>`
+    :`<span style="color:var(--gr);font-weight:600">✓</span>`;};
+  const typeLbl=t=>({ex_out:tr('ex_pgk_myr'),ex_in:tr('ex_myr_pgk'),myr_recv:tr('ex_mv_myr_in'),myr_paid:tr('ex_myr_paid_amt'),pgk_recv:tr('ex_pgk_received'),pgk_sent:tr('ex_pgk_sent')}[t]||t);
+  const typeTag=t=>t==='ex_out'?'tag-out':t==='ex_in'?'tag-in':(t==='myr_recv'||t==='pgk_recv')?'tag-in':'tag-exch';
+  let balM=bfM,balP=bfP;
+  let html=`<div class="pr"><span style="color:var(--txt2)">${tr('ex_bf')}${from?' '+tr('ex_before')+' '+fD(from):''}</span><span>${lbl(bfM,'MYR')} &nbsp; ${lbl(bfP,'PGK')}</span></div>`;
   if(!rows.length){html+=`<div class="empty">${tr('ex_no_movements')}${from||to?' '+tr('ex_in_range'):''}</div>`;}
   else{
     html+=`<div class="tw"><table>
-      <thead><tr><th>${tr('date')}</th><th>${tr('type')}</th><th>${tr('ex_detail')}</th><th>${tr('ex_owes_more')}</th><th>${tr('ex_reduces')}</th><th>${tr('ex_running_bal')}</th></tr></thead><tbody>`;
+      <thead><tr><th>${tr('date')}</th><th>${tr('type')}</th><th>${tr('ex_detail')}</th><th style="text-align:right">MYR Δ</th><th style="text-align:right">PGK Δ</th><th style="text-align:right">${tr('ex_running_bal')}</th></tr></thead><tbody>`;
     rows.forEach(e=>{
-      bal+=e.delta;
+      balM+=e.dMyr||0;balP+=e.dPgk||0;
+      const dm=e.dMyr||0,dp=e.dPgk||0;
       html+=`<tr>
         <td>${fD(e.date)}</td>
-        <td><span class="tag ${e.type==='Payment received'?'tag-in':e.out?'tag-out':'tag-exch'}">${typeLbl(e.type)}</span></td>
+        <td><span class="tag ${typeTag(e.type)}">${typeLbl(e.type)}</span></td>
         <td style="color:var(--txt2);font-size:11px">${e.detail}</td>
-        <td style="color:var(--am);font-weight:600">${e.delta>0.009?'RM '+fmt(e.delta):''}</td>
-        <td style="color:var(--gr);font-weight:600">${e.delta<-0.009?'RM '+fmt(-e.delta):''}</td>
-        <td>${lbl(bal)}</td>
+        <td style="text-align:right;color:${dm>0?'var(--am)':dm<0?'var(--gr)':'var(--txt2)'}">${dm?(dm>0?'+':'−')+'RM '+fmt(Math.abs(dm)):'-'}</td>
+        <td style="text-align:right;color:${dp>0?'var(--am)':dp<0?'var(--gr)':'var(--txt2)'}">${dp?(dp>0?'+':'−')+fmt(Math.abs(dp)):'-'}</td>
+        <td style="text-align:right;font-size:11px">${lbl(balM,'MYR')}<br>${lbl(balP,'PGK')}</td>
       </tr>`;
     });
     html+=`</tbody></table></div>`;
   }
-  html+=`<div class="pr ptot"><span>${tr('ex_closing_bal')}${to?' '+tr('ex_at')+' '+fD(to):''}</span><span>${lbl(bal)}</span></div>`;
+  html+=`<div class="pr ptot"><span>${tr('ex_closing_bal')}${to?' '+tr('ex_at')+' '+fD(to):''}</span><span>${lbl(balM,'MYR')} &nbsp; ${lbl(balP,'PGK')}</span></div>`;
   el.innerHTML=html;
 }
 function renderExchTab(){
