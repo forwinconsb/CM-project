@@ -2553,6 +2553,7 @@ function renderExpListing(){
     const tot=g.lines.reduce((s,e)=>s+e.amt,0),e0=g.lines[0];
     const rk=(e0.ref||'').replace(/'/g,"\\'");
     const cats=g.lines.map(l=>l.cat).filter(Boolean).slice(0,3).join(', ')+(g.lines.length>3?'…':'');
+    const gAtt=voucherAttachment(e0.ref);
     html+=`<tr class="row-tap" style="cursor:pointer;background:var(--bg3)" onclick="openExpGroupModal('${rk}')">
       <td class="hide-sm" style="font-family:monospace;font-size:11px;color:var(--bl);font-weight:600">${e0.ref||'—'}</td>
       <td>${fD(e0.date)}</td>
@@ -2561,15 +2562,23 @@ function renderExpListing(){
       <td style="font-weight:700;color:var(--rd)">-RM ${fmt(tot)}</td>
       <td>${e0.paySource==='funder'?`<span style="font-size:10px;color:#7B1FA2;font-weight:600;background:#F3E5F5;padding:2px 7px;border-radius:20px">👤 ${e0.funderName}</span>`:(bDot(e0.bank)+' <span style="font-size:11px">'+e0.bank+'</span>')}</td>
       <td class="hide-sm"></td>
-      <td class="hide-sm"></td>
+      <td class="hide-sm">${gAtt?`<span class="attach-badge" onclick="event.stopPropagation();viewAttachment(${JSON.stringify(gAtt).replace(/"/g,'&quot;')})">📎</span>`:'-'}</td>
       <td class="hide-sm" style="text-align:right"><span class="pl-chev">›</span></td>
     </tr>`;
   });
   tbody.innerHTML=html;
 }
+// A voucher's receipt is stored once (on the first line) but belongs to every line
+// that shares the same reference. Resolve it by ref so each transaction shows it.
+function voucherAttachment(ref){
+  if(!ref)return null;
+  for(const d of S.dayEntries){for(const e of (d.expenses||[])){if((e.ref||'')===ref&&e.attachment)return e.attachment;}}
+  return null;
+}
 function expRowHtml(e,isDetail,grpKey){
   const cls=isDetail?('exp-grp-det grp-'+grpKey):'row-tap';
   const sty=isDetail?'display:none;cursor:pointer;background:var(--bg2)':'cursor:pointer';
+  const att=e.attachment||voucherAttachment(e.ref);
   return `<tr class="${cls}" style="${sty}" onclick="openExpEditModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">
     <td class="hide-sm" style="font-family:monospace;font-size:11px;color:var(--bl);font-weight:600">${e.ref||'—'}</td>
     <td>${isDetail?'<span style="color:var(--txt2)">↳</span> ':''}${fD(e.date)}${e.accrualMonth&&e.accrualMonth!==mk(e.date)?` <span class="pl-badge">📅 ${tr('exp_for')} ${ml(e.accrualMonth)}</span>`:''}</td>
@@ -2578,7 +2587,7 @@ function expRowHtml(e,isDetail,grpKey){
     <td style="font-weight:700;color:var(--rd)">-RM ${fmt(e.amt)}</td>
     <td>${e.paySource==='funder'?`<span style="font-size:10px;color:#7B1FA2;font-weight:600;background:#F3E5F5;padding:2px 7px;border-radius:20px">👤 ${e.funderName}</span>`:(bDot(e.bank)+' <span style="font-size:11px">'+e.bank+'</span>')}</td>
     <td class="hide-sm" style="color:var(--txt2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.note||'-'}</td>
-    <td class="hide-sm">${e.attachment?`<span class="attach-badge" onclick="event.stopPropagation();viewAttachment(${JSON.stringify(e.attachment).replace(/"/g,'&quot;')})">📎</span>`:'-'}</td>
+    <td class="hide-sm">${att?`<span class="attach-badge" onclick="event.stopPropagation();viewAttachment(${JSON.stringify(att).replace(/"/g,'&quot;')})">📎</span>`:'-'}</td>
     <td class="hide-sm" style="display:flex;gap:5px;white-space:nowrap">
       <button class="btn-sec" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();openExpEditModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">✏️ Edit</button>
       <button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteExpTxn(${e._dayIdx},${e._expIdx})">🗑</button>
@@ -2602,6 +2611,13 @@ function openExpGroupModal(ref){
   });
   body+=`<tr style="font-weight:700;background:var(--bg3)"><td>${tr('lbl_total')}</td><td style="text-align:right;color:var(--rd)">-RM ${fmt(tot)}</td><td></td></tr>`;
   body+=`</tbody></table></div>`;
+  const att=voucherAttachment(ref);
+  if(att){
+    const isImg=att.type&&att.type.startsWith('image/');
+    body+=`<div class="modal-section">${tr('attach')}</div>${isImg
+      ?`<img src="${att.data}" class="modal-img" style="cursor:pointer" onclick="viewAttachment(${JSON.stringify(att).replace(/"/g,'&quot;')})">`
+      :`<a href="${att.data}" target="_blank" class="attach-thumb">📄 ${att.name}</a>`}`;
+  }
   openModal(tr('exp_voucher'),body);
 }
 function delExpLineGroup(dayIdx,expIdx,ref){
@@ -2978,7 +2994,8 @@ function saveExchangeOne(){
   showToast(tr('ex_saved'));
 }
 function openExpEditModal(e){
-  const isImg=e.attachment&&e.attachment.type&&e.attachment.type.startsWith('image/');
+  const att=e.attachment||voucherAttachment(e.ref);
+  const isImg=att&&att.type&&att.type.startsWith('image/');
   const body=`
     <div class="modal-section">Edit — <span style="font-family:monospace;color:var(--bl)">${e.ref||'no ref'}</span></div>
     <div class="g2" style="gap:8px;margin-bottom:10px">
@@ -2991,9 +3008,9 @@ function openExpEditModal(e){
       ${e.paySource==='bank'?`<div class="f"><label>Paid from bank</label><select id="edit-exp-bank">${S.myrBanks.map(b=>`<option value="${b.name}" ${b.name===e.bank?'selected':''}>${b.name}</option>`).join('')}</select></div>`:`<div class="f"><label>Funder</label><select id="edit-exp-funder">${S.funders.map(f=>`<option value="${f.name}" ${f.name===e.funderName?'selected':''}>${f.name}</option>`).join('')}</select></div>`}
       <div class="f"><label data-i18n="exp_pay_to">Payment to (payee)</label><input type="text" id="edit-exp-payee" value="${(e.payee||'').replace(/"/g,'&quot;')}"></div>
     </div>
-    ${e.attachment?`<div class="modal-section">Current attachment</div>
-      ${isImg?`<img src="${e.attachment.data}" class="modal-img" style="cursor:pointer" onclick="viewAttachment(${JSON.stringify(e.attachment).replace(/"/g,'&quot;')})">`:
-        `<a href="${e.attachment.data}" target="_blank" class="attach-thumb">📄 ${e.attachment.name}</a>`}
+    ${att?`<div class="modal-section">Current attachment <span style="font-size:11px;color:var(--txt2);font-weight:400">(shared by all lines of this voucher)</span></div>
+      ${isImg?`<img src="${att.data}" class="modal-img" style="cursor:pointer" onclick="viewAttachment(${JSON.stringify(att).replace(/"/g,'&quot;')})">`:
+        `<a href="${att.data}" target="_blank" class="attach-thumb">📄 ${att.name}</a>`}
       <div style="margin-top:7px"><input type="file" id="edit-exp-reattach" accept="image/*,.pdf" style="display:none" onchange="reattachExpTab(this,'${e.id||e.ref||''}','${e.date}')"><button class="attach-btn" onclick="document.getElementById('edit-exp-reattach').click()">📎 Replace attachment</button></div>`:
       `<div style="margin-bottom:9px"><input type="file" id="edit-exp-reattach" accept="image/*,.pdf" style="display:none" onchange="reattachExpTab(this,'${e.id||e.ref||''}','${e.date}')"><button class="attach-btn" onclick="document.getElementById('edit-exp-reattach').click()">📎 Attach now</button></div>`}
     <button class="btn-sec" style="width:100%;margin-top:10px" onclick="addLineFromEdit(${JSON.stringify(e).replace(/"/g,'&quot;')})">${tr('exp_add_more')}</button>
@@ -3056,6 +3073,9 @@ async function reattachExpTab(input,key,date){
   const f=await fileToBase64(file);
   const dIdx=S.dayEntries.findIndex(e=>e.date===date);if(dIdx<0)return;
   const eIdx=S.dayEntries[dIdx].expenses.findIndex(e=>e.id===key||e.ref===key);if(eIdx<0)return;
+  const ref=S.dayEntries[dIdx].expenses[eIdx].ref;
+  // Voucher-level receipt: store once on this line, clear it from sibling lines
+  if(ref)S.dayEntries.forEach(d=>(d.expenses||[]).forEach(e=>{if((e.ref||'')===ref)delete e.attachment;}));
   S.dayEntries[dIdx].expenses[eIdx].attachment=f;
   persist();closeModal();renderExpListing();showToast('Attachment updated ✓');
 }
