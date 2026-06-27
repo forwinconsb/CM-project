@@ -2812,13 +2812,17 @@ function setExchSide(s){
 // Exchange summary bar — MYR row (dues) + a PGK-pending card (kept separate, never mixed)
 function renderExchMetrics(){
   const el=document.getElementById('exch-metrics-bar');if(!el)return;
-  const acc={};
+  // Use the SAME canonical figures as the Outstanding-dues list so the two never disagree.
+  // Receivable = PGK→MYR dues exchangers still owe us (net of FIFO settlements).
+  let owed=0;
+  const{byEx}=exchDuesData();
+  Object.values(byEx).forEach(v=>{if(v.owed>0.009)owed+=v.owed;});
+  // Payable = MYR→PGK top-ups we still owe (myr − paid at entry − myrPaid legs).
+  // Settled via "MYR paid" legs, NOT via exchange settlements — kept fully separate.
+  let owe=0;
   S.dayEntries.forEach(d=>(d.exchanges||[]).forEach(x=>{
-    if(x.dir==='out'){acc[x.exchanger]=acc[x.exchanger]||{out:0,set:0};acc[x.exchanger].out+=Math.max(0,(x.myr||0)-(x.paid||0));}
+    if(x.dir==='in'){const unpaid=(x.myr||0)-(x.paid||0)-(x.myrPaid||[]).reduce((s,m)=>s+(m.amt||0),0);if(unpaid>0.009)owe+=unpaid;}
   }));
-  (S.exchSettlements||[]).forEach(s=>{acc[s.exchanger]=acc[s.exchanger]||{out:0,set:0};acc[s.exchanger].set+=(s.amount||0);});
-  let owed=0,owe=0;
-  Object.values(acc).forEach(v=>{const net=v.out-v.set;if(net>0.009)owed+=net;else if(net<-0.009)owe+=-net;});
   let pgkPending=0;
   S.dayEntries.forEach(d=>(d.exchanges||[]).forEach(x=>{
     if(x.dir==='in'&&x.receipts){const r=x.receipts.reduce((a,b)=>a+(b.amt||0),0);pgkPending+=Math.max(0,(x.pgk||0)-r);}
