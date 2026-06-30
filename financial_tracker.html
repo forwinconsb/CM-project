@@ -3004,7 +3004,8 @@ function openExpEditModal(e){
     <div class="modal-section">Edit — <span style="font-family:monospace;color:var(--bl)">${e.ref||'no ref'}</span></div>
     <div class="g2" style="gap:8px;margin-bottom:10px">
       <div class="f"><label>Date</label><input type="date" id="edit-exp-date" value="${e.date}"></div>
-      <div class="f"><label>Category</label><input type="text" id="edit-exp-cat" value="${e.cat||''}"></div>
+      <div class="f"><label>${tr('type')}</label><select id="edit-exp-type" onchange="updEditExpCats()">${S.expTypes.map(t=>`<option value="${t.id}" ${t.id===e.type?'selected':''}>${t.name}</option>`).join('')}</select></div>
+      <div class="f"><label>${tr('category')} (G/L)</label><select id="edit-exp-cat"></select></div>
       <div class="f"><label>Amount (MYR)</label><input type="number" id="edit-exp-amt" value="${e.amt}" step="0.01"></div>
       <div class="f"><label>Note / Vendor</label><input type="text" id="edit-exp-note" value="${e.note||''}"></div>
       <div class="f"><label data-i18n="exp_accrual_short">Expense month (optional)</label><input type="month" id="edit-exp-accrual" value="${e.accrualMonth||''}"></div>
@@ -3023,6 +3024,19 @@ function openExpEditModal(e){
       <button class="btn-danger" onclick="deleteExpTxn(${e._dayIdx},${e._expIdx});closeModal()">🗑 Delete</button>
     </div>`;
   openModal('Edit Expense',body);
+  updEditExpCats(e.cat); // fill the category dropdown for the current type, keeping the saved category
+}
+// Fill the edit-modal category dropdown from the selected type's categories.
+// keepCat = the category to pre-select; preserved as an option even if it predates the type list.
+function updEditExpCats(keepCat){
+  const sel=document.getElementById('edit-exp-cat');if(!sel)return;
+  const tid=document.getElementById('edit-exp-type')?.value||'';
+  const t=S.expTypes.find(t=>t.id===tid);
+  const cats=(t?.cats||[]).slice();
+  let cur;
+  if(keepCat!=null){cur=keepCat;if(cur&&!cats.includes(cur))cats.unshift(cur);} // initial open: keep saved category (even legacy ones not in the list)
+  else{cur=cats[0]||'';} // type changed: default to the first category of the new type
+  sel.innerHTML=cats.map(c=>`<option value="${(c+'').replace(/"/g,'&quot;')}" ${c===cur?'selected':''}>${c}</option>`).join('');
 }
 function addLineFromEdit(e){
   closeModal();
@@ -3048,7 +3062,13 @@ function saveExpEdit(orig){
   const newDate=document.getElementById('edit-exp-date')?.value||orig.date;
   if(lockBlocked(orig.date)){closeModal();return;}
   if(newDate!==orig.date&&lockBlocked(newDate))return;
+  const tid=document.getElementById('edit-exp-type')?.value||orig.type;
+  const t=S.expTypes.find(t=>t.id===tid);
   const updated={...S.dayEntries[dIdx].expenses[eIdx],
+    type:tid,
+    typeName:t?.name||orig.typeName||'',
+    typeColor:t?.color||orig.typeColor||'#888',
+    plSection:t?.plSection||orig.plSection||'other',
     cat:document.getElementById('edit-exp-cat')?.value||orig.cat,
     amt:n(document.getElementById('edit-exp-amt')?.value),
     note:document.getElementById('edit-exp-note')?.value||'',
