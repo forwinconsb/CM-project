@@ -305,6 +305,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
     <div class="navmenu">
       <button class="nb" onclick="doNav('cashflow',this)" data-i18n="nav_cf">↔️ Cash Flow</button>
       <button class="nb" onclick="doNav('pl',this)" data-i18n="nav_pl">📊 P&L</button>
+      <button class="nb" onclick="doNav('assets',this)" data-i18n="nav_assets">🏷️ Assets</button>
       <button class="nb" onclick="doNav('funders',this)" data-i18n="nav_funders">👥 Funders</button>
     </div>
   </div>
@@ -554,6 +555,16 @@ details.collapse-card[open]>summary:before{content:'▾'}
   <div id="pl-compare-wrap" style="display:none">
     <div class="card"><div id="pl-compare"><div class="empty">No data yet</div></div></div>
   </div>
+</div>
+
+<!-- ASSETS -->
+<div id="pg-assets" class="pg">
+  <div class="info-box">🏷️ <b data-i18n="as_title">Assets</b> — <span data-i18n="as_info">What the business owns: cash at bank, deposits & equipment, money owed to you, and PGK balances. Deposit/asset categories here are kept off the P&L.</span></div>
+  <div class="filter-row">
+    <button class="btn-sec" onclick="exportAssetsCSV()">⬇ CSV</button>
+  </div>
+  <div id="assets-metrics" class="metrics"></div>
+  <div id="assets-content"><div class="empty">No data yet</div></div>
 </div>
 
 <!-- FUNDERS -->
@@ -870,6 +881,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
             <option value="operating">Operating & overhead</option>
             <option value="advertising">Advertising</option>
             <option value="capital">Capital & expansion</option>
+            <option value="asset">Asset / Deposit (balance sheet)</option>
             <option value="other">Other</option>
           </select>
         </div>
@@ -964,8 +976,13 @@ const LANG = {
     ln_lent_tag:'Lent out', ln_borrowed_tag:'Borrowed in', ln_settled:'Settled', ln_outstanding_word:'outstanding',
     ln_repay:'Repay', ln_saved:'Loan saved ✓', ln_repaid:'Repayment recorded ✓',
     ln_repay_amt:'Repayment amount (PGK)', ln_repay_date:'Repayment date (YYYY-MM-DD)', ln_confirm_del:'Delete this loan? This also removes its effect on reconciliation.',
-    nav_cf:'↔️ Cash Flow', nav_weekly:'📅 Weekly', nav_pl:'📊 P&L',
+    nav_cf:'↔️ Cash Flow', nav_weekly:'📅 Weekly', nav_pl:'📊 P&L', nav_assets:'🏷️ Assets',
     nav_funders:'👥 Funders', nav_fv:'📊 Funder View', nav_settings:'⚙️ Setup',
+    as_title:'Assets', as_info:'What the business owns: cash at bank, deposits & equipment, money owed to you, and PGK balances. Deposit/asset categories here are kept off the P&L.',
+    as_cash:'Cash at bank (MYR)', as_deposits:'Deposits & equipment (MYR)', as_receivable:'Exchanger receivable (MYR)', as_total_myr:'Total assets (MYR)',
+    as_total_note:'Cash at bank + deposits/equipment + exchanger receivable. PGK items are shown separately below.',
+    as_pgk_title:'PGK assets (shown separately)', as_iou:'Loans / IOU receivable (PGK)', as_plat_bal:'PGK platform balances',
+    as_none:'No banks set up', as_no_assets:'No asset categories yet — set a category type to "Asset / Deposit" in Setup', as_no_recv:'Nothing owed to you', as_no_iou:'No outstanding loans', as_no_plat:'No platform balances',
     // Common
     save:'Save', delete:'Delete', edit:'Edit', cancel:'Cancel', close:'Close',
     search:'Search', filter:'Filter', export_csv:'⬇ CSV', export_pdf:'⬇ PDF',
@@ -1227,8 +1244,13 @@ const LANG = {
     ln_lent_tag:'借出', ln_borrowed_tag:'借入', ln_settled:'已结清', ln_outstanding_word:'未结清',
     ln_repay:'还款', ln_saved:'借贷已保存 ✓', ln_repaid:'还款已记录 ✓',
     ln_repay_amt:'还款金额 (PGK)', ln_repay_date:'还款日期 (YYYY-MM-DD)', ln_confirm_del:'删除此借贷？同时会移除其对对账的影响。',
-    nav_cf:'↔️ 现金流', nav_weekly:'📅 每周汇总', nav_pl:'📊 损益表',
+    nav_cf:'↔️ 现金流', nav_weekly:'📅 每周汇总', nav_pl:'📊 损益表', nav_assets:'🏷️ 资产',
     nav_funders:'👥 资金方', nav_fv:'📊 资金方视图', nav_settings:'⚙️ 设置',
+    as_title:'资产', as_info:'企业拥有的资产：银行现金、押金与设备、应收款项，以及 PGK 余额。归入此处的押金/资产类别不计入损益表。',
+    as_cash:'银行现金 (MYR)', as_deposits:'押金与设备 (MYR)', as_receivable:'兑换商应收 (MYR)', as_total_myr:'资产总额 (MYR)',
+    as_total_note:'银行现金 + 押金/设备 + 兑换商应收。PGK 项目在下方单独列示。',
+    as_pgk_title:'PGK 资产（单独列示）', as_iou:'借出 / 欠条应收 (PGK)', as_plat_bal:'PGK 平台余额',
+    as_none:'尚未设置银行', as_no_assets:'暂无资产类别 — 在设置中将类别的损益分类设为「资产 / 押金」', as_no_recv:'无人欠你款项', as_no_iou:'无未结清借出', as_no_plat:'无平台余额',
     // Common
     save:'保存', delete:'删除', edit:'编辑', cancel:'取消', close:'关闭',
     search:'搜索', filter:'筛选', export_csv:'⬇ 导出CSV', export_pdf:'⬇ 导出PDF',
@@ -1764,13 +1786,14 @@ const ALL_TABS=[
   {id:'recon',label:'🏦 Reconciliation'},
   {id:'cashflow',label:'↔️ Cash Flow'},
   {id:'pl',label:'📊 P&L'},
+  {id:'assets',label:'🏷️ Assets'},
   {id:'funders',label:'👥 Funders'},
   {id:'settings',label:'⚙️ Setup'},
 ];
 const ROLE_PRESETS={
   operator:['pgk-entry','exchange-tab','exp-tab'],
-  manager:['pgk-entry','exchange-tab','fnd-tab','exp-tab','recon','cashflow','pl','funders'],
-  funder:['exchange-tab','fnd-tab','exp-tab','recon','cashflow','pl','funders'],
+  manager:['pgk-entry','exchange-tab','fnd-tab','exp-tab','recon','cashflow','pl','assets','funders'],
+  funder:['exchange-tab','fnd-tab','exp-tab','recon','cashflow','pl','assets','funders'],
   admin:ALL_TABS.map(t=>t.id)
 };
 let currentUser=null,loginSelId=null;
@@ -1955,7 +1978,7 @@ function restoreWorkTabs(){
   activateWorkTab(act);
   return true;
 }
-const TAB_LABELS={'entry':'✏️ Daily Entry','pgk-entry':'🎮 PGK Platforms','exchange-tab':'💱 Exchange','fnd-tab':'💰 Funder Transaction','exp-tab':'🧾 Expenses','cashflow':'↔️ Cash Flow','pl':'📊 P&L','funders':'👥 Funders','recon':'🏦 Reconciliation','settings':'⚙️ Setup'};
+const TAB_LABELS={'entry':'✏️ Daily Entry','pgk-entry':'🎮 PGK Platforms','exchange-tab':'💱 Exchange','fnd-tab':'💰 Funder Transaction','exp-tab':'🧾 Expenses','cashflow':'↔️ Cash Flow','pl':'📊 P&L','assets':'🏷️ Assets','funders':'👥 Funders','recon':'🏦 Reconciliation','settings':'⚙️ Setup'};
 function tabLabelFor(page,side){return page==='exchange-tab'?(side==='iou'?'🤝 IOU':'💱 Exchange'):(TAB_LABELS[page]||page);}
 function registerWorkTab(page){
   const side=page==='exchange-tab'?(typeof exchSide!=='undefined'?exchSide:'exch')||'exch':null;
@@ -2030,6 +2053,7 @@ function renderPage(p){
   if(p==='recon'){setSel('rc-month',mopts());setSel('rc-bank',[{v:'',l:'All MYR banks'},...S.myrBanks.map(b=>({v:b.name,l:b.name}))]);setSel('rc-pgk-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);const pgkYears=[...new Set(S.platEntries.map(e=>e.date.slice(0,4)))].sort((a,b)=>b.localeCompare(a));setSel('rc-pgk-year',(pgkYears.length?pgkYears:[String(new Date().getFullYear())]).map(y=>({v:y,l:y})));rcDetailOpen=false;renderRecon();renderPGKRecon();renderFrozen();setReconCur(rcCur);renderLockBtn();}
   if(p==='cashflow'){toggleCFCustom();setSel('cf-plat',[{v:'',l:'All platforms'},...S.platforms.map(q=>({v:q.name,l:q.name}))]);renderCF();}
   if(p==='pl'){setSel('pl-plat',[{v:'',l:tr('all_platforms')},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);togglePLCustom();renderPLActive();}
+  if(p==='assets'){renderAssets();return;}
   if(p==='funders'){toggleFNCustom();renderFundersTab();}
   if(p==='settings'){renderSettings();renderExpTypeSetup();renderSetupRail();}
   if(p==='funder-review'){initFunderReview();renderFunderReview();}
@@ -2568,6 +2592,12 @@ function renderExpListing(){
   });
   tbody.innerHTML=html;
 }
+// ── ASSET CLASSIFICATION ──
+// A category is an "asset" (balance-sheet item, NOT a P&L expense) if it belongs to any
+// expense type whose plSection is 'asset'. Matching by current category membership means
+// existing entries (whose stored plSection predates the change) are reclassified too — no migration.
+function assetCatSet(){return new Set((S.expTypes||[]).filter(t=>t.plSection==='asset').flatMap(t=>t.cats||[]));}
+function isAssetExpense(e){return !!e&&(e.plSection==='asset'||assetCatSet().has(e.cat));}
 // A voucher's receipt is stored once (on the first line) but belongs to every line
 // that shares the same reference. Resolve it by ref so each transaction shows it.
 function voucherAttachment(ref){
@@ -4013,7 +4043,7 @@ function plMonthStats(m,pf){
   const st=plFixedStats(from,to,pf);
   const accrualExps=S.dayEntries.flatMap(d=>(d.expenses||[]).map(x=>({...x,date:d.date}))).filter(x=>{const am=x.accrualMonth||mk(x.date);return am===m&&(!pf||x.platform===pf);});
   const bySec={};
-  accrualExps.forEach(x=>{const sec=x.plSection||'other';bySec[sec]=(bySec[sec]||0)+x.amt;});
+  accrualExps.forEach(x=>{if(isAssetExpense(x))return;const sec=x.plSection||'other';bySec[sec]=(bySec[sec]||0)+x.amt;});
   const opCost=Object.values(bySec).reduce((s,v)=>s+v,0);
   const rev=st.revMYR,fxGL=st.fxGL,pgkCost=st.pgkCostMYR;
   const totExp=opCost+pgkCost;
@@ -4086,6 +4116,7 @@ function renderPL(){
   const myrIn=allExch.filter(x=>x.dir==='out').reduce((s,x)=>s+(x.paid||0),0),myrOut=allExch.filter(x=>x.dir==='in').reduce((s,x)=>s+(x.paid||0),0);
   const secMap={};
   accrualExps.forEach(x=>{
+    if(isAssetExpense(x))return; // assets are balance-sheet items, not P&L expenses
     const sec=x.plSection||'other';
     if(!secMap[sec])secMap[sec]={name:x.typeName||sec,cats:{}};
     if(!secMap[sec].cats[x.cat])secMap[sec].cats[x.cat]=[];
@@ -4179,6 +4210,88 @@ function renderPL(){
   const totCF=fnNames.reduce((s,nm)=>s+(fnStats[nm].total_injected-fnStats[nm].total_returned),0);
   fsHtml+=`<div class="pr" style="font-weight:700;font-size:13px;border-top:2px solid #999;padding-top:8px;margin-top:4px"><span>Total outstanding (all funders)</span><span style="color:var(--pu)">RM ${fmt(totCF)}</span></div>`;
   setHTML('pl-funder-summary',fsHtml);
+}
+
+// ── ASSETS ──
+// Snapshot of what the business owns now. MYR items (bank cash + asset categories +
+// exchanger receivables) sum to a MYR total; PGK items (IOU receivable, platform balances)
+// are shown separately and never mixed into the MYR figure (MYR/PGK kept apart, per CLAUDE.md).
+function assetsData(){
+  const banks=(S.myrBanks||[]).map(b=>({name:b.name,bal:bankBalanceNow(b.name)}));
+  const cashTotal=banks.reduce((s,b)=>s+b.bal,0);
+  const byCat={};
+  S.dayEntries.forEach(d=>(d.expenses||[]).forEach(e=>{if(isAssetExpense(e))byCat[e.cat]=(byCat[e.cat]||0)+(e.amt||0);}));
+  const assetCats=Object.entries(byCat).filter(([,v])=>Math.abs(v)>0.009).sort((a,b)=>b[1]-a[1]);
+  const assetTotal=assetCats.reduce((s,[,v])=>s+v,0);
+  const{byEx}=exchDuesData();
+  const recv=Object.entries(byEx).filter(([,v])=>v.owed>0.009).map(([ex,v])=>({ex,owed:v.owed})).sort((a,b)=>b.owed-a.owed);
+  const recvTotal=recv.reduce((s,r)=>s+r.owed,0);
+  const totalMYR=cashTotal+assetTotal+recvTotal;
+  const lent=(S.pgkLoans||[]).filter(l=>l.dir==='lent').map(l=>({party:l.counterparty,os:loanOutstanding(l),date:l.date})).filter(l=>l.os>0.009).sort((a,b)=>b.os-a.os);
+  const lentTotal=lent.reduce((s,l)=>s+l.os,0);
+  const latest={};
+  (S.platEntries||[]).slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{latest[e.platform]={date:e.date,close:e.pgkClose||0};});
+  const plats=(S.platforms||[]).map(p=>({name:p.name,date:latest[p.name]?.date||null,close:latest[p.name]?.close||0})).filter(p=>p.date);
+  const pgkPlatTotal=plats.reduce((s,p)=>s+p.close,0);
+  return{banks,cashTotal,assetCats,assetTotal,recv,recvTotal,totalMYR,lent,lentTotal,plats,pgkPlatTotal};
+}
+function renderAssets(){
+  const a=assetsData();
+  setHTML('assets-metrics',
+    `<div class="mc"><div class="ml">${tr('as_cash')}</div><div class="mv pos">RM ${fmt(a.cashTotal)}</div></div>`+
+    `<div class="mc"><div class="ml">${tr('as_deposits')}</div><div class="mv">RM ${fmt(a.assetTotal)}</div></div>`+
+    `<div class="mc"><div class="ml">${tr('as_receivable')}</div><div class="mv">RM ${fmt(a.recvTotal)}</div></div>`+
+    `<div class="mc"><div class="ml">${tr('as_total_myr')}</div><div class="mv pos">RM ${fmt(a.totalMYR)}</div></div>`);
+  let html='';
+  // Cash at bank (MYR)
+  html+=`<div class="card"><div class="ct">🏦 ${tr('as_cash')}</div>`;
+  if(a.banks.length){
+    a.banks.forEach(b=>{html+=`<div class="pr"><span style="display:flex;align-items:center;gap:7px">${bDot(b.name)}${b.name}</span><span style="font-weight:600;color:${b.bal>=0?'var(--gr)':'var(--rd)'}">RM ${fmt(b.bal)}</span></div>`;});
+    html+=`<div class="pr ptot"><span>${tr('lbl_total')}</span><span style="color:var(--gr)">RM ${fmt(a.cashTotal)}</span></div>`;
+  }else html+=`<div class="empty">${tr('as_none')}</div>`;
+  html+=`</div>`;
+  // Deposits & equipment (asset categories, MYR)
+  html+=`<div class="card"><div class="ct">📦 ${tr('as_deposits')}</div>`;
+  if(a.assetCats.length){
+    a.assetCats.forEach(([c,v])=>{html+=`<div class="pr pi"><span>${c}</span><span style="font-weight:600">RM ${fmt(v)}</span></div>`;});
+    html+=`<div class="pr ptot"><span>${tr('lbl_total')}</span><span>RM ${fmt(a.assetTotal)}</span></div>`;
+  }else html+=`<div class="empty">${tr('as_no_assets')}</div>`;
+  html+=`</div>`;
+  // Exchanger receivables (MYR)
+  html+=`<div class="card"><div class="ct">💵 ${tr('as_receivable')}</div>`;
+  if(a.recv.length){
+    a.recv.forEach(r=>{html+=`<div class="pr pi"><span>${r.ex}</span><span style="font-weight:600;color:var(--am)">RM ${fmt(r.owed)}</span></div>`;});
+    html+=`<div class="pr ptot"><span>${tr('lbl_total')}</span><span style="color:var(--am)">RM ${fmt(a.recvTotal)}</span></div>`;
+  }else html+=`<div class="empty">${tr('as_no_recv')}</div>`;
+  html+=`</div>`;
+  // Total assets (MYR)
+  html+=`<div class="card" style="background:var(--bg3)"><div class="pr" style="font-weight:700;font-size:14px;border-bottom:none"><span>${tr('as_total_myr')}</span><span style="color:var(--gr)">RM ${fmt(a.totalMYR)}</span></div>
+    <div style="font-size:10px;color:var(--txt2);margin-top:2px">${tr('as_total_note')}</div></div>`;
+  // PGK items (shown separately, not added into the MYR total)
+  html+=`<div class="card"><div class="ct">🎰 ${tr('as_pgk_title')}</div>`;
+  html+=`<div class="sl" style="margin-top:0">${tr('as_iou')}</div>`;
+  if(a.lent.length){
+    a.lent.forEach(l=>{html+=`<div class="pr pi"><span>${l.party||'-'} <span style="font-size:10px;color:var(--txt2)">${fD(l.date)}</span></span><span style="font-weight:600">${fmt(l.os)} PGK</span></div>`;});
+    html+=`<div class="pr ptot"><span>${tr('lbl_total')}</span><span>${fmt(a.lentTotal)} PGK</span></div>`;
+  }else html+=`<div class="empty">${tr('as_no_iou')}</div>`;
+  html+=`<div class="sl">${tr('as_plat_bal')}</div>`;
+  if(a.plats.length){
+    a.plats.forEach(p=>{html+=`<div class="pr pi"><span>${p.name} <span style="font-size:10px;color:var(--txt2)">${fD(p.date)}</span></span><span style="font-weight:600">${fmt(p.close)} PGK</span></div>`;});
+    html+=`<div class="pr ptot"><span>${tr('lbl_total')}</span><span>${fmt(a.pgkPlatTotal)} PGK</span></div>`;
+  }else html+=`<div class="empty">${tr('as_no_plat')}</div>`;
+  html+=`</div>`;
+  setHTML('assets-content',html);
+}
+function exportAssetsCSV(){
+  const a=assetsData();
+  let csv='Section,Item,Currency,Amount\n';
+  a.banks.forEach(b=>{csv+=`Cash at bank,${(b.name||'').replace(/,/g,' ')},MYR,${b.bal.toFixed(2)}\n`;});
+  a.assetCats.forEach(([c,v])=>{csv+=`Deposits & equipment,${(c||'').replace(/,/g,' ')},MYR,${v.toFixed(2)}\n`;});
+  a.recv.forEach(r=>{csv+=`Exchanger receivable,${(r.ex||'').replace(/,/g,' ')},MYR,${r.owed.toFixed(2)}\n`;});
+  csv+=`Total assets,,MYR,${a.totalMYR.toFixed(2)}\n`;
+  a.lent.forEach(l=>{csv+=`IOU receivable,${(l.party||'').replace(/,/g,' ')},PGK,${l.os.toFixed(2)}\n`;});
+  a.plats.forEach(p=>{csv+=`PGK platform balance,${(p.name||'').replace(/,/g,' ')},PGK,${p.close.toFixed(2)}\n`;});
+  dlFile(csv,'text/csv','assets.csv');showToast('CSV exported ✓');
 }
 
 // ── FUNDERS ──
