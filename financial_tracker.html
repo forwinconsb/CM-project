@@ -1165,8 +1165,10 @@ const LANG = {
     sc_run:'🩺 Run data check', sc_title:'Data integrity check', sc_found:'Data check found', sc_issue:'issue', sc_issues:'issues',
     sc_view:'View', sc_dismiss:'Dismiss', sc_none:'No issues found — data looks consistent',
     sc_note:'These are consistency warnings, not automatic changes. Review the affected records; export a backup before making large corrections.',
-    sc_totalexp:'stored expense total does not match its lines', sc_dupid:'expense line(s) share a duplicate id — editing/deleting may hit the wrong line',
-    sc_badnum:'record(s) have an invalid (non-numeric) amount', sc_overpaid:'loan repayments exceed the amount lent', sc_multiatt:'voucher(s) hold more than one receipt',
+    sc_more:'more', sc_noref:'no ref', sc_missingref:'Missing reference', sc_ty_exp:'Expense', sc_ty_exch:'Exchange', sc_ty_fnd:'Funder move',
+    sc_refs_assigned:'Assigned reference numbers to older transactions ✓',
+    sc_totalexp:'Stored expense total does not match its lines', sc_dupid:'Duplicate expense id shared by',
+    sc_badnum:'Invalid (non-numeric) amount', sc_overpaid:'Loan over-repaid (repayments exceed amount lent)', sc_multiatt:'Voucher holds more than one receipt',
     setup_lang:'Language / 语言',
     // Toast / messages
     toast_saved:'Saved ✓', toast_deleted:'Deleted ✓', toast_updated:'Updated ✓',
@@ -1438,8 +1440,10 @@ const LANG = {
     sc_run:'🩺 数据检查', sc_title:'数据完整性检查', sc_found:'数据检查发现', sc_issue:'个问题', sc_issues:'个问题',
     sc_view:'查看', sc_dismiss:'忽略', sc_none:'未发现问题 — 数据一致',
     sc_note:'这些是一致性警告，不会自动更改数据。请检查相关记录；进行较大更正前请先导出备份。',
-    sc_totalexp:'存储的费用合计与明细不符', sc_dupid:'条费用明细的 id 重复 — 编辑/删除可能影响错误的行',
-    sc_badnum:'条记录金额无效（非数字）', sc_overpaid:'借出还款超过借出金额', sc_multiatt:'张凭证含多个收据',
+    sc_more:'条更多', sc_noref:'无编号', sc_missingref:'缺少参考编号', sc_ty_exp:'费用', sc_ty_exch:'兑换', sc_ty_fnd:'资金方交易',
+    sc_refs_assigned:'已为旧交易分配参考编号 ✓',
+    sc_totalexp:'存储的费用合计与明细不符', sc_dupid:'费用 id 重复，涉及',
+    sc_badnum:'金额无效（非数字）', sc_overpaid:'借出还款超过借出金额', sc_multiatt:'凭证含多个收据',
     setup_lang:'Language / 语言',
     // Toast / messages
     toast_saved:'已保存 ✓', toast_deleted:'已删除 ✓', toast_updated:'已更新 ✓',
@@ -6583,34 +6587,50 @@ function cloudRefresh(){const b=document.getElementById('cloud-banner');if(b)b.s
 // (denormalised totals drifting, duplicate ids, bad numbers) — they never change data,
 // only warn. Run on load and on demand (Setup button). Tolerant epsilon so healthy data
 // never false-alarms.
+// Guarantee every transaction carries a reference number. Assigns one to any legacy/
+// imported expense, exchange or funder move that is missing it (auto funder-from-expense
+// rows keep their AUTO- ref). Mirrors ensureUniqueLoanIds: run on load, persist if changed.
+function ensureTxnRefs(){
+  let changed=false;
+  (S.dayEntries||[]).forEach(d=>{
+    (d.expenses||[]).forEach(e=>{if(!e.ref){e.ref=genRef('EXP');changed=true;}});
+    (d.exchanges||[]).forEach(x=>{if(!x.ref){x.ref=genRef('EXC');changed=true;}});
+    (d.funderTxns||[]).forEach(t=>{if(!t.isAutoFromExpense&&!t.ref){t.ref=genRef('FND');changed=true;}});
+  });
+  return changed;
+}
 function runSelfChecks(){
   const issues=[];
   const okNum=v=>typeof v==='number'&&isFinite(v);
-  // 1) Each day's stored expense total must match the sum of its lines
+  const NR=tr('sc_noref');
+  const at=(ref,date,detail)=>`[${ref||NR}] ${fD(date)}${detail?' — '+detail:''}`;
+  // 1) Every transaction must carry a reference
+  (S.dayEntries||[]).forEach(d=>{
+    (d.expenses||[]).forEach(e=>{if(!e.ref)issues.push(`${tr('sc_missingref')} — ${tr('sc_ty_exp')} ${at('',d.date,(e.cat||'')+' RM '+fmt(e.amt||0))}`);});
+    (d.exchanges||[]).forEach(x=>{if(!x.ref)issues.push(`${tr('sc_missingref')} — ${tr('sc_ty_exch')} ${at('',d.date,(x.exchanger||'')+' '+fmt(x.pgk||0)+' PGK')}`);});
+    (d.funderTxns||[]).forEach(t=>{if(!t.isAutoFromExpense&&!t.ref)issues.push(`${tr('sc_missingref')} — ${tr('sc_ty_fnd')} ${at('',d.date,(t.funder||'')+' RM '+fmt(t.amount||0))}`);});
+  });
+  // 2) Each day's stored expense total must match the sum of its lines
   (S.dayEntries||[]).forEach(d=>{
     const sum=(d.expenses||[]).reduce((s,e)=>s+(okNum(e.amt)?e.amt:0),0);
-    if(Math.abs((d.totalExp||0)-sum)>0.01)issues.push(`${fD(d.date)}: ${tr('sc_totalexp')} (RM ${fmt(d.totalExp||0)} vs RM ${fmt(sum)})`);
+    if(Math.abs((d.totalExp||0)-sum)>0.01)issues.push(`${tr('sc_totalexp')} — ${fD(d.date)} (RM ${fmt(d.totalExp||0)} vs RM ${fmt(sum)})`);
   });
-  // 2) Expense line ids must be unique (edit/delete targets a single line by id)
-  const idCount={};
-  (S.dayEntries||[]).forEach(d=>(d.expenses||[]).forEach(e=>{if(e.id)idCount[e.id]=(idCount[e.id]||0)+1;}));
-  const dupIds=Object.keys(idCount).filter(k=>idCount[k]>1);
-  if(dupIds.length)issues.push(`${dupIds.length} ${tr('sc_dupid')}`);
-  // 3) No non-numeric amounts anywhere in the ledger
-  let bad=0;
+  // 3) Expense line ids must be unique — name the references sharing each id
+  const byId={};
+  (S.dayEntries||[]).forEach(d=>(d.expenses||[]).forEach(e=>{if(e.id)(byId[e.id]=byId[e.id]||[]).push(e.ref||NR);}));
+  Object.entries(byId).filter(([,refs])=>refs.length>1).forEach(([,refs])=>issues.push(`${tr('sc_dupid')}: ${refs.join(', ')}`));
+  // 4) No non-numeric amounts — name each offending transaction
   (S.dayEntries||[]).forEach(d=>{
-    (d.expenses||[]).forEach(e=>{if(!okNum(e.amt))bad++;});
-    (d.exchanges||[]).forEach(x=>{if(!okNum(x.myr)||!okNum(x.paid||0)||!okNum(x.pgk))bad++;});
-    (d.funderTxns||[]).forEach(t=>{if(!okNum(t.amount))bad++;});
+    (d.expenses||[]).forEach(e=>{if(!okNum(e.amt))issues.push(`${tr('sc_badnum')} — ${tr('sc_ty_exp')} ${at(e.ref,d.date,e.cat||'')}`);});
+    (d.exchanges||[]).forEach(x=>{if(!okNum(x.myr)||!okNum(x.paid||0)||!okNum(x.pgk))issues.push(`${tr('sc_badnum')} — ${tr('sc_ty_exch')} ${at(x.ref,d.date,x.exchanger||'')}`);});
+    (d.funderTxns||[]).forEach(t=>{if(!okNum(t.amount))issues.push(`${tr('sc_badnum')} — ${tr('sc_ty_fnd')} ${at(t.ref,d.date,t.funder||'')}`);});
   });
-  if(bad)issues.push(`${bad} ${tr('sc_badnum')}`);
-  // 4) A loan can't be repaid more than it was lent
-  (S.pgkLoans||[]).forEach(l=>{if(loanOutstanding(l)<-0.01)issues.push(`${l.counterparty||'?'}: ${tr('sc_overpaid')}`);});
-  // 5) A voucher (shared ref) should hold at most one receipt
+  // 5) A loan can't be repaid more than it was lent — include its reference
+  (S.pgkLoans||[]).forEach(l=>{if(loanOutstanding(l)<-0.01)issues.push(`${tr('sc_overpaid')}: ${at(l.id,l.date,l.counterparty||'?')}`);});
+  // 6) A voucher (shared ref) should hold at most one receipt
   const vAtt={};
   (S.dayEntries||[]).forEach(d=>(d.expenses||[]).forEach(e=>{if(e.ref&&e.attachment)vAtt[e.ref]=(vAtt[e.ref]||0)+1;}));
-  const multiAtt=Object.keys(vAtt).filter(k=>vAtt[k]>1);
-  if(multiAtt.length)issues.push(`${multiAtt.length} ${tr('sc_multiatt')}`);
+  Object.entries(vAtt).filter(([,n])=>n>1).forEach(([ref,n])=>issues.push(`${tr('sc_multiatt')}: [${ref}] (${n})`));
   return issues;
 }
 function renderSelfCheckBanner(){
@@ -6625,9 +6645,13 @@ function renderSelfCheckBanner(){
 }
 function showSelfCheckDetails(){
   const issues=runSelfChecks();
+  const CAP=50;
+  const shown=issues.slice(0,CAP);
+  const more=issues.length-shown.length;
   const body=issues.length
     ?`<div class="modal-section">${tr('sc_title')} — ${issues.length} ${issues.length>1?tr('sc_issues'):tr('sc_issue')}</div>
-      <ul style="margin:0;padding-left:18px;line-height:1.9;font-size:13px">${issues.map(i=>`<li>${i}</li>`).join('')}</ul>
+      <ul style="margin:0;padding-left:18px;line-height:1.9;font-size:13px">${shown.map(i=>`<li>${i}</li>`).join('')}</ul>
+      ${more>0?`<div style="font-size:12px;color:var(--txt2);margin-top:6px">… +${more} ${tr('sc_more')}</div>`:''}
       <div style="font-size:11px;color:var(--txt2);margin-top:10px">${tr('sc_note')}</div>`
     :`<div class="recon-ok">✓ ${tr('sc_none')}</div>`;
   openModal(tr('sc_title'),body);
@@ -6635,7 +6659,9 @@ function showSelfCheckDetails(){
 
 // ── INIT ──
 loadData();
+const _refsAssigned=ensureTxnRefs();if(_refsAssigned)persist();
 setTimeout(applyLang, 50);
+if(_refsAssigned)setTimeout(()=>showToast(tr('sc_refs_assigned')),900);
 setTimeout(renderSelfCheckBanner, 600);
 if(CLOUD_ENABLED&&cloudInit()){
   setTimeout(cloudBoot, 60);
