@@ -394,6 +394,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
     <div style="display:flex;gap:6px;margin-bottom:10px">
       <button id="exp-tab-src-bank" onclick="setExpTabSrc('bank')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid #378ADD;background:#378ADD;color:#fff;cursor:pointer" data-i18n="exp_bank_src">🏦 Paid from MYR bank</button>
       <button id="exp-tab-src-funder" onclick="setExpTabSrc('funder')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid var(--bdr2);background:none;color:var(--txt2);cursor:pointer" data-i18n="exp_funder_src">👤 Paid by funder (direct)</button>
+      <button id="exp-tab-src-usdwallet" onclick="setExpTabSrc('usdwallet')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid var(--bdr2);background:none;color:var(--txt2);cursor:pointer" data-i18n="exp_usd_src">💵 Paid from USD wallet</button>
     </div>
 
     <!-- Unified Payment Voucher entry: header + line grid (bank OR funder) -->
@@ -408,7 +409,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
       </div>
       <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:9px;flex-wrap:wrap">
         <div class="f" style="max-width:280px"><label data-i18n="exp_pay_to">Payment to (payee)</label><input type="text" id="exp-tab-payee" placeholder="e.g. supplier / payee name"></div>
-        <div class="f" style="max-width:170px"><label data-i18n="cur_label">Currency</label>
+        <div class="f" id="exp-cur-toggle" style="max-width:170px"><label data-i18n="cur_label">Currency</label>
           <div style="display:flex;gap:6px">
             <button type="button" id="exp-cur-myr" onclick="setExpTabCur('MYR')">RM</button>
             <button type="button" id="exp-cur-usd" onclick="setExpTabCur('USD')">US$</button>
@@ -751,6 +752,26 @@ details.collapse-card[open]>summary:before{content:'▾'}
     </div>
     <button class="btn-pri" style="max-width:220px" onclick="saveExchangeOne()" data-i18n="ex_save">💾 Save exchange</button>
   </div>
+  <!-- USD WALLET -->
+  <div class="card">
+    <div class="ct">💵 <span data-i18n="uw_title">USD Wallet</span></div>
+    <div id="uw-summary" style="margin-bottom:10px"></div>
+    <div class="op-only">
+      <div class="sl" style="margin-top:0" data-i18n="uw_buy_title">Buy USD (RM → USD)</div>
+      <div class="g4" style="margin-bottom:9px">
+        <div class="f"><label data-i18n="date">Date</label><input type="date" id="uw-buy-date"></div>
+        <div class="f"><label data-i18n="uw_usd_amt">USD amount</label><input type="number" id="uw-buy-usd" placeholder="0.00" step="0.01" oninput="uwBuyCalc()"></div>
+        <div class="f"><label data-i18n="cur_usd_rate">USD → RM rate</label><input type="number" id="uw-buy-rate" placeholder="e.g. 4.70" step="0.0001" oninput="uwBuyCalc()"></div>
+        <div class="f"><label data-i18n="uw_from_bank">From MYR bank</label><select id="uw-buy-bank"></select></div>
+      </div>
+      <div id="uw-buy-hint" style="font-size:11px;color:var(--txt2);margin-bottom:8px"></div>
+      <button class="btn-pri" style="max-width:200px" onclick="saveUsdBuy()" data-i18n="uw_buy_save">💾 Buy USD</button>
+    </div>
+    <details class="collapse-card" style="margin-top:12px">
+      <summary style="font-size:11px;font-weight:600;color:var(--txt2)" data-i18n="uw_mv_title">USD wallet movements</summary>
+      <div id="uw-movements" style="margin-top:8px"></div>
+    </details>
+  </div>
   <div class="card">
     <div class="ct">💰 <span data-i18n="ex_dues_title">Outstanding Dues — exchangers who still owe us (MYR)</span></div>
     <div id="exch-dues"><div class="empty">No outstanding dues</div></div>
@@ -1014,6 +1035,12 @@ const LANG = {
     no_data:'No data yet', no_entries:'No entries yet', no_results:'No results found',
     date:'Date', amount:'Amount (MYR)', description:'Description', note:'Note / Vendor',
     cur_label:'Currency', cur_usd_rate:'USD → RM rate', exp_amt_myr:'Amount (MYR)', exp_amt_usd:'Amount (USD)', cur_amt_usd:'Amount received (USD)', cur_need_rate:'Enter the USD → RM rate',
+    exp_usd_src:'💵 Paid from USD wallet', uw_title:'USD Wallet', uw_balance:'Balance', uw_avg_cost:'Avg cost rate', uw_value_cost:'Value at cost (MYR)', uw_empty:'No USD held',
+    uw_pay_from:'Paid from (USD wallet)', uw_buy_title:'Buy USD (RM → USD)', uw_usd_amt:'USD amount', uw_from_bank:'From MYR bank', uw_buy_save:'💾 Buy USD',
+    uw_mv_title:'USD wallet movements', uw_no_mv:'No USD movements yet', uw_buy_label:'Buy USD', uw_in:'USD in', uw_out:'USD spent', uw_cost:'cost',
+    uw_cost_hint:'= RM {rm} leaves the bank', uw_bought:'Bought US${usd} ✓', uw_enter_usd:'Enter USD amount', uw_pick_bank:'Pick a bank', uw_del_confirm:'Delete this USD purchase?',
+    uw_need_usd:'USD wallet payments must be in USD', uw_over_confirm:'Spending US${need} but the wallet holds US${have}. Save anyway?', uw_add_to_wallet:'Add to USD wallet (instead of bank)',
+    sc_usd_neg:'USD wallet went negative (spent more than held)',
     bank:'MYR Bank', ref:'Reference No.', type:'Type', category:'Category', remark:'Remark',
     attach:'📎 Attach file', attach_day:'📎 Attach day document',
     // Daily Entry
@@ -1290,6 +1317,12 @@ const LANG = {
     no_data:'暂无数据', no_entries:'暂无记录', no_results:'未找到结果',
     date:'日期', amount:'金额 (MYR)', description:'描述', note:'备注 / 供应商',
     cur_label:'货币', cur_usd_rate:'美元→令吉汇率', exp_amt_myr:'金额 (MYR)', exp_amt_usd:'金额 (USD)', cur_amt_usd:'收到金额 (USD)', cur_need_rate:'请输入美元→令吉汇率',
+    exp_usd_src:'💵 从 USD 钱包支付', uw_title:'USD 钱包', uw_balance:'余额', uw_avg_cost:'平均成本汇率', uw_value_cost:'成本价值 (MYR)', uw_empty:'暂无持有 USD',
+    uw_pay_from:'付款方式（USD 钱包）', uw_buy_title:'买入 USD (RM → USD)', uw_usd_amt:'USD 金额', uw_from_bank:'从 MYR 银行', uw_buy_save:'💾 买入 USD',
+    uw_mv_title:'USD 钱包流水', uw_no_mv:'暂无 USD 流水', uw_buy_label:'买入 USD', uw_in:'USD 入', uw_out:'USD 支出', uw_cost:'成本',
+    uw_cost_hint:'= 将从银行支出 RM {rm}', uw_bought:'已买入 US${usd} ✓', uw_enter_usd:'请输入 USD 金额', uw_pick_bank:'请选择银行', uw_del_confirm:'删除此 USD 买入？',
+    uw_need_usd:'USD 钱包付款必须为 USD', uw_over_confirm:'支出 US${need}，但钱包仅有 US${have}。仍要保存？', uw_add_to_wallet:'存入 USD 钱包（而非银行）',
+    sc_usd_neg:'USD 钱包出现负数（支出超过持有）',
     bank:'MYR银行', ref:'参考编号', type:'类型', category:'类别', remark:'备注',
     attach:'📎 上传附件', attach_day:'📎 上传当日文件',
     // Daily Entry
@@ -1573,6 +1606,7 @@ let S={
   fxRates:{},
   accounts:[],
   stmtBalances:{},
+  usdBuys:[],
   schemaVersion:1
 };
 
@@ -2080,7 +2114,7 @@ function renderPage(p){
     if(exSel){exSel.innerHTML='<option value="">All exchangers</option>'+S.exchangers.map(e=>`<option value="${e}">${e}</option>`).join('');}
     setSel('exch-tab-platform',[{v:'',l:'All platforms'},...S.platforms.map(pl=>({v:pl.name,l:pl.name}))]);
     setSel('stmt-exchanger',[{v:'',l:'Select exchanger…'},...S.exchangers.map(e=>({v:e,l:e}))]);
-    initExchEntry();renderExchTab();
+    initExchEntry();renderExchTab();initUsdWallet();
     setSel('ln-list-month',[{v:'',l:'All months'},...mopts()]);
     initLoansTab();fillLoanSelects();renderIOU();
     setExchSide(exchSide);
@@ -2529,17 +2563,28 @@ function initExpTab(){
 }
 function setExpTabSrc(src){
   expTabSrc=src;
-  const bb=document.getElementById('exp-tab-src-bank'),bf=document.getElementById('exp-tab-src-funder');
+  const isBank=src==='bank',isFunder=src==='funder',isWallet=src==='usdwallet';
+  const bb=document.getElementById('exp-tab-src-bank'),bf=document.getElementById('exp-tab-src-funder'),bw=document.getElementById('exp-tab-src-usdwallet');
   const bankSel=document.getElementById('exp-tab-bank'),funderSel=document.getElementById('exp-tab-funder');
   const balWrap=document.getElementById('exp-tab-bankbal-wrap'),note=document.getElementById('exp-tab-funder-note'),lbl=document.getElementById('exp-tab-payby-label');
-  const isBank=src==='bank';
-  if(bb){bb.style.background=isBank?'#378ADD':'none';bb.style.color=isBank?'#fff':'var(--txt2)';bb.style.borderColor=isBank?'#378ADD':'var(--bdr2)';}
-  if(bf){bf.style.background=isBank?'none':'#7B1FA2';bf.style.color=isBank?'var(--txt2)':'#fff';bf.style.borderColor=isBank?'var(--bdr2)':'#7B1FA2';}
+  const curToggle=document.getElementById('exp-cur-toggle');
+  const style=(btn,active,color)=>{if(!btn)return;btn.style.background=active?color:'none';btn.style.color=active?'#fff':'var(--txt2)';btn.style.borderColor=active?color:'var(--bdr2)';};
+  style(bb,isBank,'#378ADD');style(bf,isFunder,'#7B1FA2');style(bw,isWallet,'#0F6E56');
   if(bankSel)bankSel.style.display=isBank?'':'none';
-  if(funderSel)funderSel.style.display=isBank?'none':'';
-  if(balWrap)balWrap.style.visibility=isBank?'visible':'hidden';
-  if(note)note.style.display=isBank?'none':'block';
-  if(lbl)lbl.textContent=isBank?tr('exp_pay_by'):tr('exp_pay_by_fnd');
+  if(funderSel)funderSel.style.display=isFunder?'':'none';
+  if(balWrap)balWrap.style.visibility=(isBank||isWallet)?'visible':'hidden';
+  if(note)note.style.display=isFunder?'block':'none';
+  if(lbl)lbl.textContent=isBank?tr('exp_pay_by'):isFunder?tr('exp_pay_by_fnd'):tr('uw_pay_from');
+  // USD wallet spends are always in USD (rate = today's spot); hide the RM/USD toggle, force USD.
+  if(curToggle)curToggle.style.display=isWallet?'none':'';
+  if(isWallet){setExpTabCur('USD');refreshExpWalletBal();}
+  else{refreshExpBankBal();}
+}
+function refreshExpWalletBal(){
+  const el=document.getElementById('exp-tab-bankbal');if(!el)return;
+  const w=usdWalletState();
+  el.textContent='US$'+fmt(w.balance);
+  el.style.color=w.balance>0?'var(--gr)':'var(--txt2)';
 }
 function updExpTabCats(){const tid=document.getElementById('exp-tab-type')?.value;const t=S.expTypes.find(t=>t.id===tid);setSel('exp-tab-cat',(t?.cats||[]).map(c=>({v:c,l:c})));}
 async function handleExpTabFile(input){
@@ -2558,6 +2603,7 @@ async function handleExpTabFile(input){
 }
 function saveExpTxn(){
   const isFunder=expTabSrc==='funder';
+  const isWallet=expTabSrc==='usdwallet';
   const date=document.getElementById('exp-tab-date')?.value;if(!date){showToast('Select date',true);return;}
   if(lockBlocked(date))return;
   const accrual=document.getElementById('exp-tab-accrual')?.value||'';
@@ -2575,9 +2621,16 @@ function saveExpTxn(){
   const platform=document.getElementById('exp-tab-platform')?.value||'';
   if(cat&&entered){const money=expLineAmount(entered);if(!money)return;const t=S.expTypes.find(t=>t.id===tid);exps.push({type:tid,typeName:t?.name||'',typeColor:t?.color||'#888',plSection:t?.plSection||'other',cat,note,platform,accrualMonth:accrual,...money});}
   if(!exps.length){showToast('Add at least one line (category & amount)',true);return;}
+  // USD wallet: all lines must be in USD (they draw down the held balance), and can't exceed it
+  if(isWallet){
+    if(exps.some(x=>x.cur!=='USD')){showToast(tr('uw_need_usd'),true);return;}
+    const need=exps.reduce((s,x)=>s+(x.origAmt||0),0),have=usdWalletState().balance;
+    if(need>have+0.009&&!confirm(tr('uw_over_confirm').replace('{need}',fmt(need)).replace('{have}',fmt(have))))return;
+  }
   // Apply the voucher header (source + payee) to every line; one shared ref, unique id each
   exps.forEach((x,i)=>{
     if(isFunder){x.paySource='funder';x.funderName=funderName;x.bank=null;}
+    else if(isWallet){x.paySource='usdwallet';x.bank=null;x.funderName=null;}
     else{x.paySource='bank';x.bank=bank;}
     x.payee=payee;
   });
@@ -2599,9 +2652,9 @@ function saveExpTxn(){
   expTabPending=[];renderExpTabPending();
   // Clear form fields
   ['exp-tab-amt','exp-tab-note','exp-tab-accrual','exp-tab-payee','exp-usd-rate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  setExpTabCur('MYR');
+  if(isWallet)setExpTabSrc('usdwallet'); // stay in wallet mode, refresh the (now lower) balance
+  else{setExpTabCur('MYR');refreshExpBankBal();}
   document.getElementById('exp-tab-file-preview').innerHTML='';
-  refreshExpBankBal();
   // Refresh ref
   const re=document.getElementById('exp-tab-ref');if(re)re.value=genRef('EXP');
   renderExpListing();
@@ -2681,7 +2734,7 @@ function expRowHtml(e,isDetail,grpKey){
     <td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:${e.typeColor||'#888'};display:inline-block"></span>${e.cat}${e.platform?` <span class="pl-badge">🎮 ${e.platform}</span>`:''}${(!isDetail&&e.payee)?` <span style="color:var(--txt2);font-size:11px">→ ${e.payee}</span>`:''}</span></td>
     <td class="hide-sm" style="color:var(--txt2);font-size:11px">${e.typeName||'-'}</td>
     <td style="font-weight:700;color:var(--rd)">-RM ${fmt(e.amt)}${e.cur==='USD'?`<div style="font-size:10px;color:var(--txt2);font-weight:400">US$${fmt(e.origAmt)} @ ${e.fxRate}</div>`:''}</td>
-    <td>${e.paySource==='funder'?`<span style="font-size:10px;color:#7B1FA2;font-weight:600;background:#F3E5F5;padding:2px 7px;border-radius:20px">👤 ${e.funderName}</span>`:(bDot(e.bank)+' <span style="font-size:11px">'+e.bank+'</span>')}</td>
+    <td>${e.paySource==='funder'?`<span style="font-size:10px;color:#7B1FA2;font-weight:600;background:#F3E5F5;padding:2px 7px;border-radius:20px">👤 ${e.funderName}</span>`:e.paySource==='usdwallet'?`<span style="font-size:10px;color:#0F6E56;font-weight:600;background:#E7F5F0;padding:2px 7px;border-radius:20px">💵 ${tr('uw_title')}</span>`:(bDot(e.bank)+' <span style="font-size:11px">'+e.bank+'</span>')}</td>
     <td class="hide-sm" style="color:var(--txt2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.note||'-'}</td>
     <td class="hide-sm">${att?`<span class="attach-badge" onclick="event.stopPropagation();viewAttachment(${JSON.stringify(att).replace(/"/g,'&quot;')})">📎</span>`:'-'}</td>
     <td class="hide-sm" style="display:flex;gap:5px;white-space:nowrap">
@@ -3562,15 +3615,110 @@ function saveDay(){
 }
 
 // ── LEDGER ──
+// ── USD WALLET ──
+// The owner buys/holds USD (and can route exchanger USD receipts into it) to pay USD-only costs.
+// Weighted-average cost: acquiring USD adds to balance+cost (no P&L); spending USD on an expense
+// books the expense at the day's spot rate and the difference vs average cost as realized FX gain/
+// loss. Everything is derived by replaying events in date order — single source of truth.
+function usdWalletEvents(){
+  const ev=[];
+  (S.usdBuys||[]).forEach(b=>ev.push({date:b.date,kind:'in',src:'buy',usd:b.usd||0,rate:b.rate||0,label:tr('uw_buy_label'),ref:b.id||''}));
+  (S.exchSettlements||[]).forEach(s=>{if(s.toWallet&&s.cur==='USD')ev.push({date:s.date,kind:'in',src:'settle',usd:s.origAmt||0,rate:s.fxRate||0,label:(s.exchanger||'exchanger'),ref:s.id||''});});
+  S.dayEntries.forEach(d=>(d.expenses||[]).forEach(e=>{if(e.paySource==='usdwallet')ev.push({date:d.date,kind:'out',src:'spend',usd:e.origAmt||0,spot:e.fxRate||0,label:(e.cat||'expense'),ref:e.ref||''});}));
+  return ev.sort((a,b)=>a.date.localeCompare(b.date));
+}
+// Replay to a point in time. Returns balance (USD), cost (RM), avgRate, and (optionally) the list
+// of spend events with their realized FX gain/loss. Stops after `asOf` date if given.
+function usdWalletReplay(asOf){
+  let balance=0,cost=0;const spends=[];
+  for(const e of usdWalletEvents()){
+    if(asOf&&e.date>asOf)break;
+    if(e.kind==='in'){balance+=e.usd;cost+=e.usd*e.rate;}
+    else{
+      const avg=balance>0?cost/balance:0;
+      const gl=e.usd*((e.spot||0)-avg); // spot > avg cost = gain
+      cost-=e.usd*avg;balance-=e.usd;
+      spends.push({date:e.date,usd:e.usd,spot:e.spot||0,avg,gl,label:e.label,ref:e.ref,balAfter:balance});
+    }
+  }
+  return{balance,cost,avgRate:balance>0?cost/balance:0,spends};
+}
+function usdWalletState(){const r=usdWalletReplay();return{balance:r.balance,cost:r.cost,avgRate:r.avgRate};}
+// Realized FX gain/loss from USD-wallet spends within [from,to]; rows for the P&L FX detail.
+function usdWalletFx(from,to){
+  const rows=usdWalletReplay(to).spends.filter(s=>s.date>=from&&s.date<=to);
+  return{total:rows.reduce((s,r)=>s+r.gl,0),rows};
+}
+// ── USD WALLET UI (Exchange tab card) ──
+function initUsdWallet(){
+  const d=document.getElementById('uw-buy-date');if(d&&!d.value)d.value=new Date().toISOString().slice(0,10);
+  setSel('uw-buy-bank',S.myrBanks.map(b=>({v:b.name,l:b.name})));
+  renderUsdWallet();
+}
+function uwBuyCalc(){
+  const usd=n(document.getElementById('uw-buy-usd')?.value),rate=parseFloat(document.getElementById('uw-buy-rate')?.value)||0;
+  const el=document.getElementById('uw-buy-hint');if(el)el.textContent=(usd&&rate)?tr('uw_cost_hint').replace('{rm}',fmt(usd*rate)):'';
+}
+function saveUsdBuy(){
+  const date=document.getElementById('uw-buy-date')?.value;if(!date){showToast('Select date',true);return;}
+  if(lockBlocked(date))return;
+  const usd=n(document.getElementById('uw-buy-usd')?.value),rate=parseFloat(document.getElementById('uw-buy-rate')?.value)||0,bank=document.getElementById('uw-buy-bank')?.value||'';
+  if(!(usd>0)){showToast(tr('uw_enter_usd'),true);return;}
+  if(!(rate>0)){showToast(tr('cur_need_rate'),true);return;}
+  if(!bank){showToast(tr('uw_pick_bank'),true);return;}
+  if(!S.usdBuys)S.usdBuys=[];
+  S.usdBuys.push({id:genRef('USD'),date,usd,rate,bank});
+  persist();
+  ['uw-buy-usd','uw-buy-rate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const h=document.getElementById('uw-buy-hint');if(h)h.textContent='';
+  renderUsdWallet();if(typeof renderRecon==='function')renderRecon();
+  showToast(tr('uw_bought').replace('{usd}',fmt(usd)));
+}
+function deleteUsdBuy(id){
+  const b=(S.usdBuys||[]).find(x=>x.id===id);if(!b)return;
+  if(lockBlocked(b.date))return;
+  if(!confirm(tr('uw_del_confirm')))return;
+  S.usdBuys=(S.usdBuys||[]).filter(x=>x.id!==id);
+  persist();renderUsdWallet();if(typeof renderRecon==='function')renderRecon();showToast(tr('toast_deleted'));
+}
+function renderUsdWallet(){
+  const s=document.getElementById('uw-summary');
+  if(s){const w=usdWalletState();s.innerHTML=`<div class="metrics">
+    <div class="mc"><div class="ml">${tr('uw_balance')}</div><div class="mv">US$${fmt(w.balance)}</div></div>
+    <div class="mc"><div class="ml">${tr('uw_avg_cost')}</div><div class="mv">${w.balance>0.009?w.avgRate.toFixed(4):'—'}</div></div>
+    <div class="mc"><div class="ml">${tr('uw_value_cost')}</div><div class="mv pos">RM ${fmt(w.cost)}</div></div></div>`;}
+  const mvEl=document.getElementById('uw-movements');if(!mvEl)return;
+  let bal=0,cost=0;const rows=[];
+  usdWalletEvents().forEach(e=>{
+    if(e.kind==='in'){bal+=e.usd;cost+=e.usd*e.rate;rows.push({...e,shownRate:e.rate,bal});}
+    else{const avg=bal>0?cost/bal:0;const gl=e.usd*((e.spot||0)-avg);cost-=e.usd*avg;bal-=e.usd;rows.push({...e,shownRate:e.spot,gl,bal});}
+  });
+  rows.reverse();
+  mvEl.innerHTML=rows.length?`<div class="tw"><table>
+    <thead><tr><th>${tr('date')}</th><th>${tr('type')}</th><th style="text-align:right">USD</th><th style="text-align:right">${tr('cur_usd_rate')}</th><th style="text-align:right">${tr('uw_balance')}</th><th></th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td>${fD(r.date)}</td>
+      <td><span class="tag ${r.kind==='in'?'tag-in':'tag-out'}">${r.src==='buy'?tr('uw_buy_label'):r.src==='settle'?tr('uw_in'):tr('uw_out')}</span> <span style="font-size:11px;color:var(--txt2)">${r.label}${r.ref?' · '+r.ref:''}</span></td>
+      <td style="text-align:right;font-weight:700;color:${r.kind==='in'?'var(--gr)':'var(--rd)'}">${r.kind==='in'?'+':'-'}US$${fmt(r.usd)}</td>
+      <td style="text-align:right">${(r.shownRate||0).toFixed(4)}</td>
+      <td style="text-align:right">US$${fmt(r.bal)}</td>
+      <td style="white-space:nowrap">${r.src==='buy'?`<button class="del" onclick="deleteUsdBuy('${r.ref}')">🗑</button>`:''}</td>
+    </tr>`).join('')}</tbody></table></div>`:`<div class="empty">${tr('uw_no_mv')}</div>`;
+}
 function buildLedger(date,d){
   const txns=[];
   (d.exchanges||[]).forEach(x=>{
     if(x.dir==='out'&&x.paid>0)txns.push({bank:x.myrBank||'',type:'exchange',desc:'Exchange in — '+(x.exchanger||'')+' (PGK→MYR)',in:x.paid,out:0,attachment:null});
     if(x.dir==='in'&&x.paid>0)txns.push({bank:x.myrBank||'',type:'exchange',desc:'Exchange out — '+(x.exchanger||'')+' (MYR→PGK)',in:0,out:x.paid,attachment:null});
   });
-  // Exchanger due payments received — counted on the date received, in the bank they arrived
-  (S.exchSettlements||[]).filter(s=>s.date===date).forEach(s=>{
+  // Exchanger due payments received — counted on the date received, in the bank they arrived.
+  // Skip receipts routed to the USD wallet: no RM hits a bank (the USD funds the wallet instead).
+  (S.exchSettlements||[]).filter(s=>s.date===date&&!s.toWallet).forEach(s=>{
     txns.push({bank:s.myrBank||'',type:'exchange',desc:'Due received — '+(s.exchanger||'')+(s.note?' ('+s.note+')':''),in:s.amount||0,out:0,attachment:null});
+  });
+  // Buying USD moves RM out of the chosen bank into the USD wallet (balance-sheet transfer).
+  (S.usdBuys||[]).filter(b=>b.date===date).forEach(b=>{
+    txns.push({bank:b.bank||'',type:'exchange',desc:'Buy USD — US$'+fmt(b.usd||0)+' @ '+(b.rate||0),in:0,out:Math.round((b.usd||0)*(b.rate||0)*100)/100,attachment:null});
   });
   // MYR→PGK MYR paid out later — counted on the actual payment date, from the bank used
   S.dayEntries.forEach(dd=>(dd.exchanges||[]).forEach(x=>{
@@ -3583,8 +3731,8 @@ function buildLedger(date,d){
     if(t.type==='return')txns.push({bank:t.bank||'',type:'funder',desc:'Capital return — '+(t.funder||''),in:0,out:t.amount||0,attachment:null});
     if(t.type==='profit')txns.push({bank:t.bank||'',type:'funder',desc:'Profit distribution — '+(t.funder||''),in:0,out:t.amount||0,attachment:null});
   });
-  // Only bank-paid expenses go into bank ledger; funder-direct excluded
-  (d.expenses||[]).filter(e=>e.paySource!=='funder').forEach(e=>{txns.push({bank:e.bank||'',type:'expense',desc:(e.cat||'')+(e.note?' ('+e.note+')':''),in:0,out:e.amt||0,attachment:e.attachment||null,expRef:e});});
+  // Only bank-paid expenses go into bank ledger; funder-direct and USD-wallet-paid excluded
+  (d.expenses||[]).filter(e=>e.paySource==='bank').forEach(e=>{txns.push({bank:e.bank||'',type:'expense',desc:(e.cat||'')+(e.note?' ('+e.note+')':''),in:0,out:e.amt||0,attachment:e.attachment||null,expRef:e});});
   return txns;
 }
 
@@ -4235,7 +4383,9 @@ function renderPL(){
       <summary><span class="pr" style="flex:1;border-bottom:none;font-weight:700"><span>${tr('pl_fxgl_title')} <span style="font-size:10px;color:var(--bl)">(${fxRows.length} ${tr('pl_click_detail')})</span></span><span style="color:${fxGL>=0?'var(--gr)':'var(--rd)'}">${fxGL>=0?'+':'-'}RM ${fmt(Math.abs(fxGL))}</span></span></summary>
       <div class="tw" style="margin-top:8px"><table>
         <thead><tr><th>${tr('date')}</th><th>${tr('pl_dir')}</th><th>${tr('exch_exchanger')}</th><th>PGK</th><th>${tr('pl_real_myr')}</th><th>${tr('pl_fixed_rate')}</th><th>${tr('pl_gainloss')}</th></tr></thead>
-        <tbody>${fxRows.map(f=>`<tr><td>${fD(f.date)}</td><td>${f.dir==='out'?'PGK→MYR':'MYR→PGK'}</td><td>${f.exchanger}</td><td>${fmt(f.pgk)}</td><td>RM ${fmt(f.myr)}</td><td>RM ${fmt(f.pgk*f.rate)}</td><td style="font-weight:700;color:${f.gl>=0?'var(--gr)':'var(--rd)'}">${f.gl>=0?'+':'-'}RM ${fmt(Math.abs(f.gl))}</td></tr>`).join('')}</tbody>
+        <tbody>${fxRows.map(f=>f.cur==='USD'
+          ?`<tr><td>${fD(f.date)}</td><td>USD</td><td>${f.label||'-'}</td><td>US$${fmt(f.usd)}</td><td>RM ${fmt(f.usd*f.spot)}</td><td>${tr('uw_cost')} ${f.avg.toFixed(4)}</td><td style="font-weight:700;color:${f.gl>=0?'var(--gr)':'var(--rd)'}">${f.gl>=0?'+':'-'}RM ${fmt(Math.abs(f.gl))}</td></tr>`
+          :`<tr><td>${fD(f.date)}</td><td>${f.dir==='out'?'PGK→MYR':'MYR→PGK'}</td><td>${f.exchanger}</td><td>${fmt(f.pgk)}</td><td>RM ${fmt(f.myr)}</td><td>RM ${fmt(f.pgk*f.rate)}</td><td style="font-weight:700;color:${f.gl>=0?'var(--gr)':'var(--rd)'}">${f.gl>=0?'+':'-'}RM ${fmt(Math.abs(f.gl))}</td></tr>`).join('')}</tbody>
       </table></div>
       <div style="font-size:10px;color:var(--txt2);margin-top:4px">${tr('pl_fxgl_note')}</div>
     </details>`;
@@ -4292,14 +4442,15 @@ function assetsData(){
   const{byEx}=exchDuesData();
   const recv=Object.entries(byEx).filter(([,v])=>v.owed>0.009).map(([ex,v])=>({ex,owed:v.owed})).sort((a,b)=>b.owed-a.owed);
   const recvTotal=recv.reduce((s,r)=>s+r.owed,0);
-  const totalMYR=cashTotal+assetTotal+recvTotal;
+  const usd=usdWalletState(); // {balance (USD), cost (RM), avgRate}
+  const totalMYR=cashTotal+assetTotal+recvTotal+(usd.cost>0.009?usd.cost:0);
   const lent=(S.pgkLoans||[]).filter(l=>l.dir==='lent').map(l=>({party:l.counterparty,os:loanOutstanding(l),date:l.date})).filter(l=>l.os>0.009).sort((a,b)=>b.os-a.os);
   const lentTotal=lent.reduce((s,l)=>s+l.os,0);
   const latest={};
   (S.platEntries||[]).slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{latest[e.platform]={date:e.date,close:e.pgkClose||0};});
   const plats=(S.platforms||[]).map(p=>({name:p.name,date:latest[p.name]?.date||null,close:latest[p.name]?.close||0})).filter(p=>p.date);
   const pgkPlatTotal=plats.reduce((s,p)=>s+p.close,0);
-  return{banks,cashTotal,assetCats,assetTotal,recv,recvTotal,totalMYR,lent,lentTotal,plats,pgkPlatTotal};
+  return{banks,cashTotal,assetCats,assetTotal,recv,recvTotal,usd,totalMYR,lent,lentTotal,plats,pgkPlatTotal};
 }
 function renderAssets(){
   const a=assetsData();
@@ -4307,6 +4458,7 @@ function renderAssets(){
     `<div class="mc"><div class="ml">${tr('as_cash')}</div><div class="mv pos">RM ${fmt(a.cashTotal)}</div></div>`+
     `<div class="mc"><div class="ml">${tr('as_deposits')}</div><div class="mv">RM ${fmt(a.assetTotal)}</div></div>`+
     `<div class="mc"><div class="ml">${tr('as_receivable')}</div><div class="mv">RM ${fmt(a.recvTotal)}</div></div>`+
+    (a.usd.balance>0.009?`<div class="mc"><div class="ml">${tr('uw_title')}</div><div class="mv">US$${fmt(a.usd.balance)}</div></div>`:'')+
     `<div class="mc"><div class="ml">${tr('as_total_myr')}</div><div class="mv pos">RM ${fmt(a.totalMYR)}</div></div>`);
   let html='';
   // Cash at bank (MYR)
@@ -4329,6 +4481,14 @@ function renderAssets(){
     a.recv.forEach(r=>{html+=`<div class="pr pi"><span>${r.ex}</span><span style="font-weight:600;color:var(--am)">RM ${fmt(r.owed)}</span></div>`;});
     html+=`<div class="pr ptot"><span>${tr('lbl_total')}</span><span style="color:var(--am)">RM ${fmt(a.recvTotal)}</span></div>`;
   }else html+=`<div class="empty">${tr('as_no_recv')}</div>`;
+  html+=`</div>`;
+  // USD wallet (held USD, valued at cost)
+  html+=`<div class="card"><div class="ct">💵 ${tr('uw_title')}</div>`;
+  if(a.usd.balance>0.009){
+    html+=`<div class="pr"><span>${tr('uw_balance')}</span><span style="font-weight:700">US$${fmt(a.usd.balance)}</span></div>`;
+    html+=`<div class="pr"><span>${tr('uw_avg_cost')}</span><span>${a.usd.avgRate.toFixed(4)}</span></div>`;
+    html+=`<div class="pr ptot"><span>${tr('uw_value_cost')}</span><span style="color:var(--gr)">RM ${fmt(a.usd.cost)}</span></div>`;
+  }else html+=`<div class="empty">${tr('uw_empty')}</div>`;
   html+=`</div>`;
   // Total assets (MYR)
   html+=`<div class="card" style="background:var(--bg3)"><div class="pr" style="font-weight:700;font-size:14px;border-bottom:none"><span>${tr('as_total_myr')}</span><span style="color:var(--gr)">RM ${fmt(a.totalMYR)}</span></div>
@@ -4721,6 +4881,13 @@ function plFixedStats(from,to,pf){
       o.fxRows.push({date:d.date,dir:x.dir,exchanger:x.exchanger||'-',pgk:x.pgk||0,myr:x.myr||0,rate,gl});
     }));
   });
+  // Realized FX gain/loss from spending held USD (not platform-attributable, so only when no
+  // platform filter). Folds into the same fxGL line as PGK conversions.
+  if(!pf){
+    const uw=usdWalletFx(from,to);
+    o.fxGL+=uw.total;
+    uw.rows.forEach(r=>o.fxRows.push({cur:'USD',date:r.date,label:r.label,usd:r.usd,spot:r.spot,avg:r.avg,gl:r.gl}));
+  }
   return o;
 }
 function saveFxRate(){
@@ -5490,6 +5657,7 @@ function setDueCur(c){
   if(my)my.style.cssText=dueCur==='MYR'?on:off;
   if(us)us.style.cssText=dueCur==='USD'?on:off;
   if(rw)rw.style.display=dueCur==='USD'?'':'none';
+  const ww=document.getElementById('due-wallet-wrap');if(ww)ww.style.display=dueCur==='USD'?'':'none';
   if(lbl)lbl.textContent=dueCur==='USD'?tr('cur_amt_usd'):tr('ex_amount_received');
 }
 function openReceiveDue(exchanger){
@@ -5502,6 +5670,7 @@ function openReceiveDue(exchanger){
       <div class="f" style="max-width:160px"><label data-i18n="cur_label">Currency</label>
         <div style="display:flex;gap:6px"><button type="button" id="due-cur-myr" onclick="setDueCur('MYR')">RM</button><button type="button" id="due-cur-usd" onclick="setDueCur('USD')">US$</button></div></div>
       <div class="f" id="due-usd-rate-wrap" style="max-width:150px;display:none"><label data-i18n="cur_usd_rate">USD → RM rate</label><input type="number" id="due-usd-rate" step="0.0001" placeholder="e.g. 4.70"></div>
+      <div class="f" id="due-wallet-wrap" style="max-width:230px;display:none"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;height:34px"><input type="checkbox" id="due-to-wallet" checked> ${tr('uw_add_to_wallet')}</label></div>
     </div>
     <div class="g2" style="gap:8px;margin-bottom:10px">
       <div class="f"><label>${tr('ex_date_received')}</label><input type="date" id="due-date" value="${new Date().toISOString().slice(0,10)}"></div>
@@ -5527,6 +5696,7 @@ function saveDueReceipt(exchanger){
     const rate=parseFloat(document.getElementById('due-usd-rate')?.value)||0;
     if(!(rate>0)){showToast(tr('cur_need_rate'),true);return;}
     amt=Math.round(entered*rate*100)/100;usdMeta={cur:'USD',origAmt:entered,fxRate:rate};
+    if(document.getElementById('due-to-wallet')?.checked)usdMeta.toWallet=true; // USD goes into the wallet, not an RM bank
   }
   const{byEx}=exchDuesData();
   const owed=byEx[exchanger]?.owed||0;
@@ -5814,7 +5984,7 @@ function renderExchTab(){
   const platF=document.getElementById('exch-tab-platform')?.value||'';
   const allExch=S.dayEntries.filter(e=>!month||mk(e.date)===month).flatMap(d=>(d.exchanges||[]).map(x=>({...x,date:d.date})));
   const filtered=allExch.filter(x=>(!dir||x.dir===dir)&&(!exName||x.exchanger===exName)&&(!platF||x.platform===platF));
-  renderExchDues();renderExchStatement();if(typeof renderExchMetrics==='function')renderExchMetrics();
+  renderExchDues();renderExchStatement();if(typeof renderExchMetrics==='function')renderExchMetrics();if(typeof renderUsdWallet==='function')renderUsdWallet();
   const tbody=document.getElementById('exch-tab-body');if(!tbody)return;
   if(!filtered.length){tbody.innerHTML=`<tr><td colspan="11" class="empty">No exchange transactions${month?' for '+ml(month):''}</td></tr>`;setHTML('exch-tab-metrics','');return;}
   const{owedByKey}=exchDuesData();
@@ -6699,6 +6869,8 @@ function runSelfChecks(){
   const vAtt={};
   (S.dayEntries||[]).forEach(d=>(d.expenses||[]).forEach(e=>{if(e.ref&&e.attachment)vAtt[e.ref]=(vAtt[e.ref]||0)+1;}));
   Object.entries(vAtt).filter(([,n])=>n>1).forEach(([ref,n])=>issues.push(`${tr('sc_multiatt')}: [${ref}] (${n})`));
+  // 7) USD wallet can't go negative (spent more USD than was held at that point)
+  usdWalletReplay().spends.forEach(s=>{if(s.balAfter<-0.01)issues.push(`${tr('sc_usd_neg')} — ${at(s.ref,s.date,'US$'+fmt(s.usd))}`);});
   return issues;
 }
 function renderSelfCheckBanner(){
