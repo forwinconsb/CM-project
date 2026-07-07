@@ -1037,6 +1037,7 @@ const LANG = {
     no_data:'No data yet', no_entries:'No entries yet', no_results:'No results found',
     date:'Date', amount:'Amount (MYR)', description:'Description', note:'Note / Vendor',
     ed_edit:'Edit', ed_title:'Edit Expense', ed_paid_bank:'Paid from bank', ed_funder:'Funder', ed_cur_attach:'Current attachment', ed_shared:'(shared by all lines of this voucher)', ed_replace:'📎 Replace attachment', ed_attach_now:'📎 Attach now', ed_save:'💾 Save changes', ed_delete:'🗑 Delete',
+    uic_cancel:'Cancel', uic_ok:'Confirm',
     cur_label:'Currency', cur_usd_rate:'USD → RM rate', exp_amt_myr:'Amount (MYR)', exp_amt_usd:'Amount (USD)', cur_amt_usd:'Amount received (USD)', cur_need_rate:'Enter the USD → RM rate',
     exp_usd_src:'💵 Paid from USD wallet', uw_title:'USD Wallet', uw_balance:'Balance', uw_avg_cost:'Avg cost rate', uw_value_cost:'Value at cost (MYR)', uw_empty:'No USD held',
     uw_pay_from:'Paid from (USD wallet)', uw_buy_title:'Buy USD (RM → USD)', uw_usd_amt:'USD amount', uw_from_bank:'From MYR bank', uw_buy_save:'💾 Buy USD',
@@ -1320,6 +1321,7 @@ const LANG = {
     no_data:'暂无数据', no_entries:'暂无记录', no_results:'未找到结果',
     date:'日期', amount:'金额 (MYR)', description:'描述', note:'备注 / 供应商',
     ed_edit:'编辑', ed_title:'编辑费用', ed_paid_bank:'付款银行', ed_funder:'资金方', ed_cur_attach:'当前附件', ed_shared:'（此凭证所有明细共享）', ed_replace:'📎 替换附件', ed_attach_now:'📎 添加附件', ed_save:'💾 保存更改', ed_delete:'🗑 删除',
+    uic_cancel:'取消', uic_ok:'确定',
     cur_label:'货币', cur_usd_rate:'美元→令吉汇率', exp_amt_myr:'金额 (MYR)', exp_amt_usd:'金额 (USD)', cur_amt_usd:'收到金额 (USD)', cur_need_rate:'请输入美元→令吉汇率',
     exp_usd_src:'💵 从 USD 钱包支付', uw_title:'USD 钱包', uw_balance:'余额', uw_avg_cost:'平均成本汇率', uw_value_cost:'成本价值 (MYR)', uw_empty:'暂无持有 USD',
     uw_pay_from:'付款方式（USD 钱包）', uw_buy_title:'买入 USD (RM → USD)', uw_usd_amt:'USD 金额', uw_from_bank:'从 MYR 银行', uw_buy_save:'💾 买入 USD',
@@ -1716,6 +1718,26 @@ function openModal(title,bodyHTML){
 }
 function closeModal(){document.getElementById('modal-overlay').classList.add('hidden');}
 function closeModalOnBg(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
+// Styled async confirmation (replaces native confirm() for common delete actions).
+// Returns a Promise<boolean>; use as: if(!await uiConfirm(msg))return;
+function uiConfirm(message){
+  return new Promise(resolve=>{
+    let ov=document.getElementById('ui-confirm');
+    if(!ov){ov=document.createElement('div');ov.id='ui-confirm';document.body.appendChild(ov);}
+    ov.style.cssText='position:fixed;inset:0;z-index:13000;background:rgba(15,30,50,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+    ov.innerHTML=`<div style="background:var(--bg2);border-radius:var(--rlg);max-width:380px;width:100%;padding:18px 18px 14px;box-shadow:0 10px 40px rgba(0,0,0,.3)">
+      <div style="font-size:13px;line-height:1.6;color:var(--txt);white-space:pre-wrap;margin-bottom:16px">${(message||'').replace(/</g,'&lt;')}</div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-sec" id="uic-no">${tr('uic_cancel')}</button>
+        <button class="btn-danger" id="uic-yes" style="background:var(--rd);color:#fff;border-color:var(--rd)">${tr('uic_ok')}</button>
+      </div></div>`;
+    const done=v=>{ov.style.display='none';ov.innerHTML='';resolve(v);};
+    document.getElementById('uic-no').onclick=()=>done(false);
+    document.getElementById('uic-yes').onclick=()=>done(true);
+    ov.onclick=e=>{if(e.target===ov)done(false);};
+    document.getElementById('uic-yes').focus();
+  });
+}
 
 // ── ATTACHMENT FILE HANDLING ──
 function fileToBase64(file){
@@ -2773,10 +2795,10 @@ function openExpGroupModal(ref){
   }
   openModal(tr('exp_voucher'),body);
 }
-function delExpLineGroup(dayIdx,expIdx,ref){
+async function delExpLineGroup(dayIdx,expIdx,ref){
   if(dayIdx<0||dayIdx>=S.dayEntries.length)return;
   if(lockBlocked(S.dayEntries[dayIdx].date))return;
-  if(!confirm(tr('confirm_delete_exp')))return;
+  if(!await uiConfirm(tr('confirm_delete_exp')))return;
   S.dayEntries[dayIdx].expenses.splice(expIdx,1);
   S.dayEntries[dayIdx].totalExp=(S.dayEntries[dayIdx].expenses||[]).reduce((s,e)=>s+e.amt,0);
   persist();renderExpListing();showToast(tr('toast_deleted'));
@@ -2855,10 +2877,10 @@ function repayLoanPrompt(id,reopen){
   l.repayments.push({date:dateStr,amt});
   persist();renderIOU();renderPGKRecon();if(reopen)viewEditLoan(id);showToast(tr('ln_repaid'));
 }
-function deleteLoan(id){
+async function deleteLoan(id){
   const l=(S.pgkLoans||[]).find(x=>x.id===id);if(!l)return;
   if(lockBlocked(l.date))return;
-  if(!confirm(tr('ln_confirm_del')))return;
+  if(!await uiConfirm(tr('ln_confirm_del')))return;
   S.pgkLoans=(S.pgkLoans||[]).filter(x=>x.id!==id);
   persist();closeModal();fillLoanSelects();renderIOU();renderPGKRecon();showToast(tr('toast_deleted'));
 }
@@ -2912,11 +2934,11 @@ function editLoanRepay(id,idx,fromHist){
   r.amt=amt;r.date=dateStr;
   persist();renderIOU();renderPGKRecon();if(!fromHist)viewEditLoan(id);showToast(tr('ln_updated'));
 }
-function deleteLoanRepay(id,idx,fromHist){
+async function deleteLoanRepay(id,idx,fromHist){
   const l=(S.pgkLoans||[]).find(x=>x.id===id);if(!l||!(l.repayments||[])[idx])return;
   const r=l.repayments[idx];
   if(lockBlocked(r.date))return;
-  if(!confirm(tr('ln_del_repay_confirm')))return;
+  if(!await uiConfirm(tr('ln_del_repay_confirm')))return;
   l.repayments.splice(idx,1);
   persist();renderIOU();renderPGKRecon();if(!fromHist)viewEditLoan(id);showToast(tr('toast_deleted'));
 }
@@ -3174,7 +3196,7 @@ function openExpEditModal(e){
     <button class="btn-sec" style="width:100%;margin-top:10px" onclick="addLineFromEdit(${JSON.stringify(e).replace(/"/g,'&quot;')})">${tr('exp_add_more')}</button>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="btn-pri" style="flex:1" onclick="saveExpEdit(${JSON.stringify(e).replace(/"/g,'&quot;')})">${tr('ed_save')}</button>
-      <button class="btn-danger" onclick="deleteExpTxn(${e._dayIdx},${e._expIdx});closeModal()">${tr('ed_delete')}</button>
+      <button class="btn-danger" onclick="(async()=>{if(await deleteExpTxn(${e._dayIdx},${e._expIdx}))closeModal()})()">${tr('ed_delete')}</button>
     </div>`;
   openModal(tr('ed_title'),body);
   updEditExpCats(e.cat); // fill the category dropdown for the current type, keeping the saved category
@@ -3256,14 +3278,15 @@ async function reattachExpTab(input,key,date){
   S.dayEntries[dIdx].expenses[eIdx].attachment=f;
   persist();closeModal();renderExpListing();showToast('Attachment updated ✓');
 }
-function deleteExpTxn(dayIdx,expIdx){
-  if(dayIdx>=0&&dayIdx<S.dayEntries.length&&lockBlocked(S.dayEntries[dayIdx].date))return;
-  if(!confirm(tr('confirm_delete_exp')))return;
-  if(dayIdx<0||dayIdx>=S.dayEntries.length)return;
-  if(expIdx<0||expIdx>=S.dayEntries[dayIdx].expenses.length)return;
+async function deleteExpTxn(dayIdx,expIdx){
+  if(dayIdx>=0&&dayIdx<S.dayEntries.length&&lockBlocked(S.dayEntries[dayIdx].date))return false;
+  if(!await uiConfirm(tr('confirm_delete_exp')))return false;
+  if(dayIdx<0||dayIdx>=S.dayEntries.length)return false;
+  if(expIdx<0||expIdx>=S.dayEntries[dayIdx].expenses.length)return false;
   S.dayEntries[dayIdx].expenses.splice(expIdx,1);
   S.dayEntries[dayIdx].totalExp=S.dayEntries[dayIdx].expenses.reduce((s,e)=>s+e.amt,0);
   persist();renderExpListing();showToast(tr('toast_deleted'));
+  return true;
 }
 function exportExpCSV(){
   const all=S.dayEntries.flatMap(d=>(d.expenses||[]).map(e=>({...e,date:d.date}))).sort((a,b)=>b.date.localeCompare(a.date));
@@ -3678,10 +3701,10 @@ function saveUsdBuy(){
   renderUsdWallet();if(typeof renderRecon==='function')renderRecon();
   showToast(tr('uw_bought').replace('{usd}',fmt(usd)));
 }
-function deleteUsdBuy(id){
+async function deleteUsdBuy(id){
   const b=(S.usdBuys||[]).find(x=>x.id===id);if(!b)return;
   if(lockBlocked(b.date))return;
-  if(!confirm(tr('uw_del_confirm')))return;
+  if(!await uiConfirm(tr('uw_del_confirm')))return;
   S.usdBuys=(S.usdBuys||[]).filter(x=>x.id!==id);
   persist();renderUsdWallet();if(typeof renderRecon==='function')renderRecon();showToast(tr('toast_deleted'));
 }
@@ -5719,10 +5742,10 @@ function saveDueReceipt(exchanger){
   persist();closeModal();renderExchTab();renderRecon();
   showToast('Payment received: RM '+fmt(amt)+' from '+exchanger+' ✓');
 }
-function deleteSettlement(id){
+async function deleteSettlement(id){
   const s=(S.exchSettlements||[]).find(x=>x.id===id);if(!s)return;
   if(lockBlocked(s.date))return;
-  if(!confirm(`Delete received payment of RM ${fmt(s.amount)} from ${s.exchanger} on ${fD(s.date)}?\nThe due will become outstanding again.`))return;
+  if(!await uiConfirm(`Delete received payment of RM ${fmt(s.amount)} from ${s.exchanger} on ${fD(s.date)}?\nThe due will become outstanding again.`))return;
   S.exchSettlements=S.exchSettlements.filter(x=>x.id!==id);
   persist();renderExchTab();renderRecon();showToast('Payment record deleted ✓');
 }
@@ -5811,11 +5834,11 @@ function saveReceivePGK(orig){
   persist();closeModal();renderExchTab();if(typeof renderPGKRecon==='function')renderPGKRecon();
   showToast(tr('ex_pgk_received_toast')+' '+fmt(amt)+' PGK ✓');
 }
-function deleteReceiptPGK(orig,rid){
+async function deleteReceiptPGK(orig,rid){
   const hit=findInExch(orig);if(!hit||!hit.x.receipts)return;
   const r=hit.x.receipts.find(r=>r.id===rid);if(!r)return;
   if(lockBlocked(r.date))return;
-  if(!confirm(tr('ex_del_receipt_confirm')))return;
+  if(!await uiConfirm(tr('ex_del_receipt_confirm')))return;
   hit.x.receipts=hit.x.receipts.filter(r=>r.id!==rid);
   persist();closeModal();renderExchTab();if(typeof renderPGKRecon==='function')renderPGKRecon();showToast(tr('toast_deleted'));
 }
@@ -5880,9 +5903,9 @@ function editSendPGK(orig,id){
   const dateStr=prompt(tr('ex_date_sent'),m.date);if(dateStr===null)return;if(lockBlocked(m.date))return;if(dateStr!==m.date&&lockBlocked(dateStr))return;
   m.amt=amt;m.date=dateStr;persist();renderExchTab();if(typeof renderPGKRecon==='function')renderPGKRecon();viewEditExch(findExchByRef(orig).x);showToast(tr('ex_receipt_updated')+' ✓');
 }
-function deleteSendPGK(orig,id){
+async function deleteSendPGK(orig,id){
   const hit=findExchByRef(orig);if(!hit||!hit.x.pgkOut)return;const m=hit.x.pgkOut.find(r=>r.id===id);if(!m)return;
-  if(lockBlocked(m.date))return;if(!confirm(tr('ex_del_movement_confirm')))return;
+  if(lockBlocked(m.date))return;if(!await uiConfirm(tr('ex_del_movement_confirm')))return;
   hit.x.pgkOut=hit.x.pgkOut.filter(r=>r.id!==id);persist();renderExchTab();if(typeof renderPGKRecon==='function')renderPGKRecon();viewEditExch(hit.x);showToast(tr('toast_deleted'));
 }
 // ── MYR→PGK: record the actual MYR paid out (dated leg) ──
@@ -5916,9 +5939,9 @@ function editPayMYR(orig,id){
   const dateStr=prompt(tr('ex_date_paid'),m.date);if(dateStr===null)return;if(lockBlocked(m.date))return;if(dateStr!==m.date&&lockBlocked(dateStr))return;
   m.amt=amt;m.date=dateStr;persist();renderExchTab();if(typeof renderRecon==='function')renderRecon();viewEditExch(findExchByRef(orig).x);showToast(tr('ex_receipt_updated')+' ✓');
 }
-function deletePayMYR(orig,id){
+async function deletePayMYR(orig,id){
   const hit=findExchByRef(orig);if(!hit||!hit.x.myrPaid)return;const m=hit.x.myrPaid.find(r=>r.id===id);if(!m)return;
-  if(lockBlocked(m.date))return;if(!confirm(tr('ex_del_movement_confirm')))return;
+  if(lockBlocked(m.date))return;if(!await uiConfirm(tr('ex_del_movement_confirm')))return;
   hit.x.myrPaid=hit.x.myrPaid.filter(r=>r.id!==id);persist();renderExchTab();if(typeof renderRecon==='function')renderRecon();viewEditExch(hit.x);showToast(tr('toast_deleted'));
 }
 // ── EXCHANGER STATEMENT (movement trace) ──
