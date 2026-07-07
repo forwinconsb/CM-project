@@ -1099,7 +1099,7 @@ const LANG = {
     cmp_title:'Monthly comparison', cmp_metric:'Metric', cmp_delta:'Δ latest', cmp_wl:'Win/Lose (PGK)',
     cmp_note:'Δ = change vs the previous month (green = better). Showing up to the last 12 months.',
     pl_net:'Net Profit / (Loss)', pl_margin:'Margin', pl_myr_out:'MYR sent to top up PGK',
-    pl_fxgl:'FX gain/loss', pl_rev_wl:'Revenue (net win/lose @ monthly rate)', pl_rates:'Rates',
+    pl_fxgl:'FX gain/loss', pl_fxgl_pgk:'FX gain/loss — PGK conversions', pl_fxgl_usd:'FX gain/loss — USD wallet', pl_rev_wl:'Revenue (net win/lose @ monthly rate)', pl_rates:'Rates',
     pl_norate:'No rate set for', pl_norate2:"these months' PGK figures are excluded — set rates in Setup",
     pl_pgk_costs:'PGK Costs (@ monthly rate)', pl_pgk_charges:'PGK bank charges',
     pl_writeoffs:'Frozen-fund write-offs', pl_recoveries:'Frozen-fund recoveries', pl_total_pgk_costs:'Total PGK costs',
@@ -1381,7 +1381,7 @@ const LANG = {
     cmp_title:'月度对比', cmp_metric:'指标', cmp_delta:'Δ 最近', cmp_wl:'输赢 (PGK)',
     cmp_note:'Δ = 与上月相比的变化（绿色=更好）。最多显示最近12个月。',
     pl_net:'净利润 / （亏损）', pl_margin:'利润率', pl_myr_out:'MYR转出用于PGK充值',
-    pl_fxgl:'FX汇兑盈亏', pl_rev_wl:'收入（净输赢 @ 月度汇率）', pl_rates:'汇率',
+    pl_fxgl:'FX汇兑盈亏', pl_fxgl_pgk:'汇兑盈亏 — PGK 兑换', pl_fxgl_usd:'汇兑盈亏 — USD 钱包', pl_rev_wl:'收入（净输赢 @ 月度汇率）', pl_rates:'汇率',
     pl_norate:'未设定汇率：', pl_norate2:'这些月份的PGK数据已排除 — 请到设置中设定汇率',
     pl_pgk_costs:'PGK成本（@ 月度汇率）', pl_pgk_charges:'PGK银行手续费',
     pl_writeoffs:'冻结资金核销', pl_recoveries:'冻结资金收回', pl_total_pgk_costs:'PGK成本总计',
@@ -4342,7 +4342,7 @@ function renderPL(){
   const totalCost=Object.values(secMap).reduce((s,sec)=>s+Object.values(sec.cats).reduce((ss,arr)=>ss+arr.reduce((sss,e)=>sss+e.amt,0),0),0);
   const totWL=platRows.reduce((s,e)=>s+e.winLose,0);
   // ── Fixed-rate translation per month (S.fxRates) ──
-  const{revMYR,fxGL,pgkChargesPGK,pgkLossPGK,pgkRecPGK,pgkChargesMYR,pgkLossMYR,pgkRecMYR,pgkCostMYR,rateNotes,noRateMonths,fxRows}=plFixedStats(from,to,pf);
+  const{revMYR,fxGL,pgkFxGL,usdFxGL,pgkChargesPGK,pgkLossPGK,pgkRecPGK,pgkChargesMYR,pgkLossMYR,pgkRecMYR,pgkCostMYR,rateNotes,noRateMonths,fxRows}=plFixedStats(from,to,pf);
   const rev=revMYR,gross=rev-sumSec('direct'),net=rev-pgkCostMYR-totalCost+fxGL;
   const pct=v=>rev?((v/rev)*100).toFixed(1)+'%':'—';
   setHTML('pl-metrics',`<div class="mc"><div class="ml">${tr('lbl_period')}</div><div class="mv" style="font-size:11px">${rangeLabel}</div></div><div class="mc"><div class="ml">${tr('pl_revenue')} (PGK @ rate)</div><div class="mv pos">RM ${fmt(rev)}</div></div><div class="mc"><div class="ml">${tr('pl_fxgl')}</div><div class="mv ${fxGL>=0?'pos':'neg'}">${fxGL>=0?'+':'-'}RM ${fmt(Math.abs(fxGL))}</div></div><div class="mc"><div class="ml" >${tr('lbl_total_exp')}</div><div class="mv neg">-RM ${fmt(totalCost+pgkCostMYR)}</div></div><div class="mc"><div class="ml">${tr('pl_net')}</div><div class="mv ${net>=0?'pos':'neg'}">${net>=0?'':'('}RM ${fmt(Math.abs(net))}${net>=0?'':')'}</div></div><div class="mc"><div class="ml">${tr('pl_margin')}</div><div class="mv ${net>=0?'pos':'neg'}">${pct(net)}</div></div>`);
@@ -4377,10 +4377,16 @@ function renderPL(){
     if(pgkRecPGK)plHtml+=`<div class="pr pi"><span>${tr('pl_recoveries')} (${fmt(pgkRecPGK)} PGK)</span><span style="color:var(--gr)">+RM ${fmt(pgkRecMYR)}</span></div>`;
     plHtml+=`<div class="pr ptot"><span>${tr('pl_total_pgk_costs')} (${fmt(pgkChargesPGK+pgkLossPGK-pgkRecPGK)} PGK)</span><span style="color:${pgkCostMYR>0?'var(--rd)':'var(--gr)'}">${pgkCostMYR>0?'-':'+'}RM ${fmt(Math.abs(pgkCostMYR))}</span></div>`;
   }
-  // FX gain/loss — click to expand per-exchange detail
+  // FX gain/loss — split by currency (PGK conversions vs USD wallet), with a detail table
   if(fxRows.length){
-    plHtml+=`<details class="collapse-card" style="margin-top:12px">
-      <summary><span class="pr" style="flex:1;border-bottom:none;font-weight:700"><span>${tr('pl_fxgl_title')} <span style="font-size:10px;color:var(--bl)">(${fxRows.length} ${tr('pl_click_detail')})</span></span><span style="color:${fxGL>=0?'var(--gr)':'var(--rd)'}">${fxGL>=0?'+':'-'}RM ${fmt(Math.abs(fxGL))}</span></span></summary>
+    const hasPgk=fxRows.some(f=>f.cur!=='USD'),hasUsd=fxRows.some(f=>f.cur==='USD');
+    const fxLine=(label,v)=>`<div class="pr pi"><span>${label}</span><span style="font-weight:600;color:${v>=0?'var(--gr)':'var(--rd)'}">${v>=0?'+':'-'}RM ${fmt(Math.abs(v))}</span></div>`;
+    plHtml+=`<div class="sl" style="margin-top:14px;display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:2px;background:#0C447C;display:inline-block"></span>${tr('pl_fxgl')}</div>`;
+    if(hasPgk)plHtml+=fxLine(tr('pl_fxgl_pgk'),pgkFxGL);
+    if(hasUsd)plHtml+=fxLine(tr('pl_fxgl_usd'),usdFxGL);
+    plHtml+=`<div class="pr ptot"><span>${tr('pl_fxgl')} · ${tr('lbl_total')}</span><span style="color:${fxGL>=0?'var(--gr)':'var(--rd)'}">${fxGL>=0?'+':'-'}RM ${fmt(Math.abs(fxGL))}</span></div>`;
+    plHtml+=`<details class="collapse-card" style="margin-top:6px">
+      <summary style="font-size:11px;font-weight:600;color:var(--txt2)">${fxRows.length} ${tr('pl_click_detail')}</summary>
       <div class="tw" style="margin-top:8px"><table>
         <thead><tr><th>${tr('date')}</th><th>${tr('pl_dir')}</th><th>${tr('exch_exchanger')}</th><th>PGK</th><th>${tr('pl_real_myr')}</th><th>${tr('pl_fixed_rate')}</th><th>${tr('pl_gainloss')}</th></tr></thead>
         <tbody>${fxRows.map(f=>f.cur==='USD'
@@ -4856,7 +4862,7 @@ function plFixedStats(from,to,pf){
   const months=[...new Set([...platRows.map(e=>mk(e.date)),...dayRows.map(d=>mk(d.date)),
     ...(S.pgkFrozen||[]).filter(f=>f.dateResolved&&f.dateResolved>=from&&f.dateResolved<=to).map(f=>mk(f.dateResolved)),
     ...(S.pgkFrozen||[]).filter(f=>f.dateRecovered&&f.dateRecovered>=from&&f.dateRecovered<=to).map(f=>mk(f.dateRecovered))])].sort();
-  const o={revPGK:platRows.reduce((s,e)=>s+e.winLose,0),revMYR:0,fxGL:0,
+  const o={revPGK:platRows.reduce((s,e)=>s+e.winLose,0),revMYR:0,fxGL:0,pgkFxGL:0,usdFxGL:0,
     pgkChargesPGK:0,pgkLossPGK:0,pgkRecPGK:0,pgkChargesMYR:0,pgkLossMYR:0,pgkRecMYR:0,pgkCostMYR:0,
     rateNotes:[],noRateMonths:[],fxRows:[]};
   months.forEach(m=>{
@@ -4877,17 +4883,18 @@ function plFixedStats(from,to,pf){
       //  PGK→MYR: real MYR received − fixed-rate value of PGK = myr − pgk*rate
       //  MYR→PGK: fixed-rate value of PGK received − MYR paid = pgk*rate − myr
       const gl=x.dir==='out'?(x.myr||0)-(x.pgk||0)*rate:(x.pgk||0)*rate-(x.myr||0);
-      o.fxGL+=gl;
+      o.pgkFxGL+=gl;
       o.fxRows.push({date:d.date,dir:x.dir,exchanger:x.exchanger||'-',pgk:x.pgk||0,myr:x.myr||0,rate,gl});
     }));
   });
   // Realized FX gain/loss from spending held USD (not platform-attributable, so only when no
-  // platform filter). Folds into the same fxGL line as PGK conversions.
+  // platform filter). Tracked separately but shown alongside PGK FX in the P&L.
   if(!pf){
     const uw=usdWalletFx(from,to);
-    o.fxGL+=uw.total;
+    o.usdFxGL=uw.total;
     uw.rows.forEach(r=>o.fxRows.push({cur:'USD',date:r.date,label:r.label,usd:r.usd,spot:r.spot,avg:r.avg,gl:r.gl}));
   }
+  o.fxGL=o.pgkFxGL+o.usdFxGL;
   return o;
 }
 function saveFxRate(){
