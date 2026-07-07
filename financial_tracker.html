@@ -1036,6 +1036,7 @@ const LANG = {
     all_exchangers:'All exchangers', all_sources:'All sources',
     no_data:'No data yet', no_entries:'No entries yet', no_results:'No results found',
     date:'Date', amount:'Amount (MYR)', description:'Description', note:'Note / Vendor',
+    ed_edit:'Edit', ed_title:'Edit Expense', ed_paid_bank:'Paid from bank', ed_funder:'Funder', ed_cur_attach:'Current attachment', ed_shared:'(shared by all lines of this voucher)', ed_replace:'📎 Replace attachment', ed_attach_now:'📎 Attach now', ed_save:'💾 Save changes', ed_delete:'🗑 Delete',
     cur_label:'Currency', cur_usd_rate:'USD → RM rate', exp_amt_myr:'Amount (MYR)', exp_amt_usd:'Amount (USD)', cur_amt_usd:'Amount received (USD)', cur_need_rate:'Enter the USD → RM rate',
     exp_usd_src:'💵 Paid from USD wallet', uw_title:'USD Wallet', uw_balance:'Balance', uw_avg_cost:'Avg cost rate', uw_value_cost:'Value at cost (MYR)', uw_empty:'No USD held',
     uw_pay_from:'Paid from (USD wallet)', uw_buy_title:'Buy USD (RM → USD)', uw_usd_amt:'USD amount', uw_from_bank:'From MYR bank', uw_buy_save:'💾 Buy USD',
@@ -1318,6 +1319,7 @@ const LANG = {
     all_exchangers:'所有兑换商', all_sources:'所有来源',
     no_data:'暂无数据', no_entries:'暂无记录', no_results:'未找到结果',
     date:'日期', amount:'金额 (MYR)', description:'描述', note:'备注 / 供应商',
+    ed_edit:'编辑', ed_title:'编辑费用', ed_paid_bank:'付款银行', ed_funder:'资金方', ed_cur_attach:'当前附件', ed_shared:'（此凭证所有明细共享）', ed_replace:'📎 替换附件', ed_attach_now:'📎 添加附件', ed_save:'💾 保存更改', ed_delete:'🗑 删除',
     cur_label:'货币', cur_usd_rate:'美元→令吉汇率', exp_amt_myr:'金额 (MYR)', exp_amt_usd:'金额 (USD)', cur_amt_usd:'收到金额 (USD)', cur_need_rate:'请输入美元→令吉汇率',
     exp_usd_src:'💵 从 USD 钱包支付', uw_title:'USD 钱包', uw_balance:'余额', uw_avg_cost:'平均成本汇率', uw_value_cost:'成本价值 (MYR)', uw_empty:'暂无持有 USD',
     uw_pay_from:'付款方式（USD 钱包）', uw_buy_title:'买入 USD (RM → USD)', uw_usd_amt:'USD 金额', uw_from_bank:'从 MYR 银行', uw_buy_save:'💾 买入 USD',
@@ -3152,29 +3154,29 @@ function openExpEditModal(e){
   const att=e.attachment||voucherAttachment(e.ref);
   const isImg=att&&att.type&&att.type.startsWith('image/');
   const body=`
-    <div class="modal-section">Edit — <span style="font-family:monospace;color:var(--bl)">${e.ref||'no ref'}</span></div>
+    <div class="modal-section">${tr('ed_edit')} — <span style="font-family:monospace;color:var(--bl)">${e.ref||'no ref'}</span></div>
     <div class="g2" style="gap:8px;margin-bottom:10px">
-      <div class="f"><label>Date</label><input type="date" id="edit-exp-date" value="${e.date}"></div>
+      <div class="f"><label>${tr('date')}</label><input type="date" id="edit-exp-date" value="${e.date}"></div>
       <div class="f"><label>${tr('type')}</label><select id="edit-exp-type" onchange="updEditExpCats()">${S.expTypes.map(t=>`<option value="${t.id}" ${t.id===e.type?'selected':''}>${t.name}</option>`).join('')}</select></div>
       <div class="f"><label>${tr('category')} (G/L)</label><select id="edit-exp-cat"></select></div>
-      <div class="f"><label>Amount (MYR)</label><input type="number" id="edit-exp-amt" value="${e.amt}" step="0.01"></div>
-      <div class="f"><label>Note / Vendor</label><input type="text" id="edit-exp-note" value="${e.note||''}"></div>
+      <div class="f"><label>${tr('amount')}</label><input type="number" id="edit-exp-amt" value="${e.amt}" step="0.01"></div>
+      <div class="f"><label>${tr('note')}</label><input type="text" id="edit-exp-note" value="${e.note||''}"></div>
       <div class="f"><label data-i18n="exp_accrual_short">Expense month (optional)</label><input type="month" id="edit-exp-accrual" value="${e.accrualMonth||''}"></div>
       <div class="f"><label data-i18n="exp_platform">Platform (optional)</label><select id="edit-exp-platform"><option value="">${tr('exp_no_platform')}</option>${S.platforms.map(p=>`<option value="${p.name}" ${p.name===e.platform?'selected':''}>${p.name}</option>`).join('')}</select></div>
-      ${e.paySource==='bank'?`<div class="f"><label>Paid from bank</label><select id="edit-exp-bank">${S.myrBanks.map(b=>`<option value="${b.name}" ${b.name===e.bank?'selected':''}>${b.name}</option>`).join('')}</select></div>`:`<div class="f"><label>Funder</label><select id="edit-exp-funder">${S.funders.map(f=>`<option value="${f.name}" ${f.name===e.funderName?'selected':''}>${f.name}</option>`).join('')}</select></div>`}
+      ${e.paySource==='bank'?`<div class="f"><label>${tr('ed_paid_bank')}</label><select id="edit-exp-bank">${S.myrBanks.map(b=>`<option value="${b.name}" ${b.name===e.bank?'selected':''}>${b.name}</option>`).join('')}</select></div>`:`<div class="f"><label>${tr('ed_funder')}</label><select id="edit-exp-funder">${S.funders.map(f=>`<option value="${f.name}" ${f.name===e.funderName?'selected':''}>${f.name}</option>`).join('')}</select></div>`}
       <div class="f"><label data-i18n="exp_pay_to">Payment to (payee)</label><input type="text" id="edit-exp-payee" value="${(e.payee||'').replace(/"/g,'&quot;')}"></div>
     </div>
-    ${att?`<div class="modal-section">Current attachment <span style="font-size:11px;color:var(--txt2);font-weight:400">(shared by all lines of this voucher)</span></div>
+    ${att?`<div class="modal-section">${tr('ed_cur_attach')} <span style="font-size:11px;color:var(--txt2);font-weight:400">${tr('ed_shared')}</span></div>
       ${isImg?`<img src="${att.data}" class="modal-img" style="cursor:pointer" onclick="viewAttachment(${JSON.stringify(att).replace(/"/g,'&quot;')})">`:
         `<a href="${att.data}" target="_blank" class="attach-thumb">📄 ${att.name}</a>`}
-      <div style="margin-top:7px"><input type="file" id="edit-exp-reattach" accept="image/*,.pdf" style="display:none" onchange="reattachExpTab(this,'${e.id||e.ref||''}','${e.date}')"><button class="attach-btn" onclick="document.getElementById('edit-exp-reattach').click()">📎 Replace attachment</button></div>`:
-      `<div style="margin-bottom:9px"><input type="file" id="edit-exp-reattach" accept="image/*,.pdf" style="display:none" onchange="reattachExpTab(this,'${e.id||e.ref||''}','${e.date}')"><button class="attach-btn" onclick="document.getElementById('edit-exp-reattach').click()">📎 Attach now</button></div>`}
+      <div style="margin-top:7px"><input type="file" id="edit-exp-reattach" accept="image/*,.pdf" style="display:none" onchange="reattachExpTab(this,'${e.id||e.ref||''}','${e.date}')"><button class="attach-btn" onclick="document.getElementById('edit-exp-reattach').click()">${tr('ed_replace')}</button></div>`:
+      `<div style="margin-bottom:9px"><input type="file" id="edit-exp-reattach" accept="image/*,.pdf" style="display:none" onchange="reattachExpTab(this,'${e.id||e.ref||''}','${e.date}')"><button class="attach-btn" onclick="document.getElementById('edit-exp-reattach').click()">${tr('ed_attach_now')}</button></div>`}
     <button class="btn-sec" style="width:100%;margin-top:10px" onclick="addLineFromEdit(${JSON.stringify(e).replace(/"/g,'&quot;')})">${tr('exp_add_more')}</button>
     <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="btn-pri" style="flex:1" onclick="saveExpEdit(${JSON.stringify(e).replace(/"/g,'&quot;')})">💾 Save changes</button>
-      <button class="btn-danger" onclick="deleteExpTxn(${e._dayIdx},${e._expIdx});closeModal()">🗑 Delete</button>
+      <button class="btn-pri" style="flex:1" onclick="saveExpEdit(${JSON.stringify(e).replace(/"/g,'&quot;')})">${tr('ed_save')}</button>
+      <button class="btn-danger" onclick="deleteExpTxn(${e._dayIdx},${e._expIdx});closeModal()">${tr('ed_delete')}</button>
     </div>`;
-  openModal('Edit Expense',body);
+  openModal(tr('ed_title'),body);
   updEditExpCats(e.cat); // fill the category dropdown for the current type, keeping the saved category
 }
 // Fill the edit-modal category dropdown from the selected type's categories.
