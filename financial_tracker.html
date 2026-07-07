@@ -63,9 +63,11 @@ body.readonly table .btn-sec{display:none!important}
 .pos{color:var(--gr)}.neg{color:var(--rd)}.warn{color:var(--am)}.pur{color:var(--pu)}
 .tw{overflow-x:auto}
 .fn-pos-cards{display:none}
-table{width:100%;border-collapse:collapse;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
 th{text-align:left;padding:7px 9px;color:var(--txt2);border-bottom:1px solid var(--bdr);font-weight:700;white-space:nowrap;background:var(--bg3);font-size:11px}
 td{padding:7px 9px;border-bottom:1px solid var(--bdr);white-space:nowrap;font-size:12px}
+/* money/number columns tagged by labelizeTables() are right-aligned on desktop for easy scanning */
+@media(min-width:641px){th.num,td.num{text-align:right}}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--bg3)}
 .del{background:none;border:none;color:var(--txt2);cursor:pointer;font-size:12px;padding:3px 5px;border-radius:4px}
@@ -6719,14 +6721,23 @@ function exportPDF(type){
 // Tag each cell with its column header so the mobile CSS can show "Label: value"
 // cards. Runs on any DOM change (debounced); observer watches childList only,
 // so setAttribute below never re-triggers it (no loop).
+// Columns whose header names money/a number → right-aligned on desktop. Matched on the header
+// text so we never mis-align a text column (dates, refs, notes stay left).
+const NUM_COL_RE=/amount|\bMYR\b|\bPGK\b|\bRM\b|\bUSD\b|US\$|win|lose|deposit|withdraw|balance|outstanding|close|open|diff|rate|charge|repaid|\bsent\b|received|\bnet\b|owe|owed|owes|gain|loss|金额|余额|存款|提款|输赢|汇率|盈亏|应收|应付|净额|期初|期末|未偿|未结|买|卖/i;
 function labelizeTables(){
   document.querySelectorAll('.tw table').forEach(tbl=>{
     const ths=[...tbl.querySelectorAll('thead th')].map(th=>th.textContent.trim());
     if(!ths.length)return;
+    const numCols=ths.map(h=>NUM_COL_RE.test(h));
+    ths.forEach((h,i)=>{const th=tbl.querySelectorAll('thead th')[i];if(th)th.classList.toggle('num',numCols[i]);});
     tbl.querySelectorAll('tbody tr').forEach(tr=>{
       const tds=[...tr.children];
       if(tds.length===1&&tds[0].hasAttribute('colspan'))return;
-      tds.forEach((td,i)=>{const lbl=ths[i]!==undefined?ths[i]:'';if(td.getAttribute('data-label')!==lbl)td.setAttribute('data-label',lbl);});
+      tds.forEach((td,i)=>{
+        const lbl=ths[i]!==undefined?ths[i]:'';if(td.getAttribute('data-label')!==lbl)td.setAttribute('data-label',lbl);
+        // don't right-align a cell that holds an action button/control
+        td.classList.toggle('num',!!numCols[i]&&!td.querySelector('button,input,select'));
+      });
     });
   });
 }
