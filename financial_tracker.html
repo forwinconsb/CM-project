@@ -752,6 +752,11 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <div class="f"><label id="exch-ent-paid-label">MYR actually received</label><input type="number" id="exch-ent-paid" placeholder="0.00" step="0.01"></div>
       <div class="f"><label data-i18n="bank">MYR bank</label><select id="exch-ent-bank"></select></div>
     </div>
+    <div class="f" style="margin-bottom:9px;max-width:300px"><label data-i18n="ex_attach_receipt">Attach receipt (paid / received)</label>
+      <input type="file" id="exch-ent-file" accept="image/*,.pdf" style="display:none" onchange="handleExchEntFile(this)">
+      <button class="attach-btn" onclick="document.getElementById('exch-ent-file').click()" style="height:36px" data-i18n="attach">📎 Attach file</button>
+    </div>
+    <div id="exch-ent-file-preview" style="margin-bottom:9px"></div>
     <button class="btn-pri" style="max-width:220px" onclick="saveExchangeOne()" data-i18n="ex_save">💾 Save exchange</button>
   </div>
   <!-- USD WALLET -->
@@ -1046,7 +1051,7 @@ const LANG = {
     uw_need_usd:'USD wallet payments must be in USD', uw_over_confirm:'Spending US${need} but the wallet holds US${have}. Save anyway?', uw_add_to_wallet:'Add to USD wallet (instead of bank)',
     sc_usd_neg:'USD wallet went negative (spent more than held)',
     bank:'MYR Bank', ref:'Reference No.', type:'Type', category:'Category', remark:'Remark',
-    attach:'📎 Attach file', attach_day:'📎 Attach day document',
+    attach:'📎 Attach file', attach_day:'📎 Attach day document', ex_attach_receipt:'Attach receipt (paid / received)',
     // Daily Entry
     daily_title:'Daily Entry', daily_info:'PGK → PGK Platforms tab. Exchanges → Exchanges tab. Funder Movements → Funder Movements tab. Expenses → Expenses tab. Here: save MYR Bank Balances only.',
     myr_bank_step:'① MYR Bank Closing Balance — once per day (opening carries from yesterday)',
@@ -1330,7 +1335,7 @@ const LANG = {
     uw_need_usd:'USD 钱包付款必须为 USD', uw_over_confirm:'支出 US${need}，但钱包仅有 US${have}。仍要保存？', uw_add_to_wallet:'存入 USD 钱包（而非银行）',
     sc_usd_neg:'USD 钱包出现负数（支出超过持有）',
     bank:'MYR银行', ref:'参考编号', type:'类型', category:'类别', remark:'备注',
-    attach:'📎 上传附件', attach_day:'📎 上传当日文件',
+    attach:'📎 上传附件', attach_day:'📎 上传当日文件', ex_attach_receipt:'上传收据（付款 / 收款）',
     // Daily Entry
     daily_title:'每日录入', daily_info:'PGK → PGK平台标签。兑换 → 兑换交易标签。资金方动账 → 资金方动账标签。费用 → 费用标签。此处：仅保存MYR银行余额。',
     myr_bank_step:'① MYR银行期末余额 — 每日录入（期初自动延续昨日）',
@@ -3124,6 +3129,25 @@ function exportLoanCSV(){
 }
 // ══ EXCHANGE ENTRY (Exchanges tab — single transaction) ══
 let exchEntryDir='out';
+let pendingExchFile=null;
+async function handleExchEntFile(input){
+  const file=input.files[0];if(!file)return;
+  if(file.size>3*1024*1024){showToast('File too large (max 3MB)',true);input.value='';return;}
+  pendingExchFile=await fileToBase64(file);
+  const el=document.getElementById('exch-ent-file-preview');
+  if(el){const isImg=pendingExchFile.type.startsWith('image/');
+    el.innerHTML=`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#f0faf5;border:1px solid #9FE1CB;border-radius:var(--r);font-size:11px">
+      <span>📎 ${pendingExchFile.name}</span>${isImg?`<img src="${pendingExchFile.data}" style="height:40px;border-radius:4px">`:' '}
+      <button class="del" onclick="pendingExchFile=null;document.getElementById('exch-ent-file-preview').innerHTML=''" style="margin-left:auto">✕</button></div>`;}
+  input.value='';
+}
+async function reattachExch(orig,input){
+  const file=input.files[0];if(!file)return;
+  if(file.size>3*1024*1024){showToast('File too large (max 3MB)',true);return;}
+  const f=await fileToBase64(file);
+  const hit=findExchByRef(orig);if(!hit){showToast('Exchange not found',true);return;}
+  hit.x.attachment=f;persist();renderExchTab();showToast('Attachment updated ✓');viewEditExch(hit.x);
+}
 function setExchEntryDir(d){
   exchEntryDir=d;
   const a=document.getElementById('exch-ent-dir-out'),b=document.getElementById('exch-ent-dir-in'),isOut=d==='out';
@@ -3161,12 +3185,13 @@ function saveExchangeOne(){
   const myrBank=document.getElementById('exch-ent-bank')?.value||'';
   if(!pgk){showToast('Enter the amount',true);return;}
   const myr=exchMyrEquiv(exchEntryDir,pgk,rate);
-  const ex={dir:exchEntryDir,platform,exchanger,pgk,rate,myr,paid,myrBank,ref:genRef('EXC'),receipts:[],pgkOut:[],myrPaid:[]};
+  const ex={dir:exchEntryDir,platform,exchanger,pgk,rate,myr,paid,myrBank,ref:genRef('EXC'),receipts:[],pgkOut:[],myrPaid:[],attachment:pendingExchFile||null};
   let day=S.dayEntries.find(e=>e.date===date);
   if(!day){day={date,exchanges:[],myrBanks:[],funderTxns:[],expenses:[],totalExp:0};S.dayEntries.push(day);S.dayEntries.sort((a,b)=>a.date.localeCompare(b.date));}
   if(!day.exchanges)day.exchanges=[];
   day.exchanges.push(ex);
   persist();
+  pendingExchFile=null;const fp=document.getElementById('exch-ent-file-preview');if(fp)fp.innerHTML='';
   ['exch-ent-pgk','exch-ent-paid'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   exchEntryCalc();
   renderExchTab();if(typeof renderExchDues==='function')renderExchDues();if(typeof renderPGKRecon==='function')renderPGKRecon();
@@ -6042,7 +6067,7 @@ function renderExchTab(){
       <td>${fD(x.date)}</td>
       <td><span class="tag ${x.dir==='out'?'tag-out':'tag-in'}">${x.dir==='out'?'PGK→MYR':'MYR→PGK'}</span></td>
       <td class="hide-sm">${x.platform?`<span style="background:#E6F1FB;color:#0C447C;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700">${x.platform}</span>`:'-'}</td>
-      <td>${x.exchanger||'-'}</td><td>${fmt(x.pgk||0)}</td><td class="hide-sm">${x.rate}</td>
+      <td>${x.exchanger||'-'}${x.attachment?` <span class="attach-badge" onclick="event.stopPropagation();viewAttachment(${JSON.stringify(x.attachment).replace(/"/g,'&quot;')})">📎</span>`:''}</td><td>${fmt(x.pgk||0)}</td><td class="hide-sm">${x.rate}</td>
       <td class="hide-sm">${fmt(x.myr||0)}</td>
       <td style="color:${x.dir==='out'?'var(--gr)':'var(--rd)'}">${fmt(x.paid||0)}</td>
       <td style="color:${owed>0.01?'var(--am)':'var(--gr)'};font-weight:700">${owedCell}</td>
@@ -6060,6 +6085,11 @@ function viewEditExch(x){
   const exchOpts=S.exchangers.map(e=>`<option value="${e}" ${e===x.exchanger?'selected':''}>${e}</option>`).join('');
   const bankOpts=S.myrBanks.map(b=>`<option value="${b.name}" ${b.name===x.myrBank?'selected':''}>${b.name}</option>`).join('');
   const xJson=JSON.stringify(x).replace(/"/g,'&quot;');
+  const att=x.attachment,attImg=att&&att.type&&att.type.startsWith('image/');
+  const attHtml=`<div class="modal-section">${tr('ed_cur_attach')}</div>`+(att
+    ?`${attImg?`<img src="${att.data}" class="modal-img" style="cursor:pointer" onclick="viewAttachment(${JSON.stringify(att).replace(/"/g,'&quot;')})">`:`<a href="${att.data}" target="_blank" class="attach-thumb">📄 ${att.name}</a>`}
+      <div style="margin-top:7px"><input type="file" id="exch-edit-reattach" accept="image/*,.pdf" style="display:none" onchange="reattachExch(${xJson},this)"><button class="attach-btn" onclick="document.getElementById('exch-edit-reattach').click()">${tr('ed_replace')}</button></div>`
+    :`<div style="margin-bottom:9px"><input type="file" id="exch-edit-reattach" accept="image/*,.pdf" style="display:none" onchange="reattachExch(${xJson},this)"><button class="attach-btn" onclick="document.getElementById('exch-edit-reattach').click()">${tr('ed_attach_now')}</button></div>`);
   // MYR receipts linked to THIS PGK→MYR exchange (row-originated settlements tagged with its ref)
   const linkedSetts=(S.exchSettlements||[]).filter(s=>x.ref&&s.exchRef===x.ref).sort((a,b)=>a.date.localeCompare(b.date));
   const body=`
@@ -6106,7 +6136,8 @@ function viewEditExch(x){
       </table></div>`:`<div class="empty">${tr('ex_no_sends')}</div>`}
       <button class="btn-sec" style="width:100%;margin-top:8px;margin-bottom:4px" onclick="openSendPGK(${xJson})">📤 ${tr('ex_send_pgk_title')}</button>
     `}
-    <div style="display:flex;gap:8px;margin-top:4px">
+    ${attHtml}
+    <div style="display:flex;gap:8px;margin-top:10px">
       <button class="btn-pri" style="flex:1" onclick="saveExchEdit(${xJson})">💾 Save changes</button>
       <button class="btn-danger" onclick="deleteExchEntry(${xJson})">🗑 Delete</button>
     </div>`;
