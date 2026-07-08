@@ -397,6 +397,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <button id="exp-tab-src-bank" onclick="setExpTabSrc('bank')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid #378ADD;background:#378ADD;color:#fff;cursor:pointer" data-i18n="exp_bank_src">🏦 Paid from MYR bank</button>
       <button id="exp-tab-src-funder" onclick="setExpTabSrc('funder')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid var(--bdr2);background:none;color:var(--txt2);cursor:pointer" data-i18n="exp_funder_src">👤 Paid by funder (direct)</button>
       <button id="exp-tab-src-usdwallet" onclick="setExpTabSrc('usdwallet')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid var(--bdr2);background:none;color:var(--txt2);cursor:pointer" data-i18n="exp_usd_src">💵 Paid from USD wallet</button>
+      <button id="exp-tab-src-pgk" onclick="setExpTabSrc('pgk')" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:var(--r);border:2px solid var(--bdr2);background:none;color:var(--txt2);cursor:pointer" data-i18n="exp_pgk_src">💠 Paid in PGK</button>
     </div>
 
     <!-- Unified Payment Voucher entry: header + line grid (bank OR funder) -->
@@ -404,7 +405,7 @@ details.collapse-card[open]>summary:before{content:'▾'}
       <div id="exp-tab-funder-note" style="display:none;background:#F3E5F5;border:.5px solid #CE93D8;border-radius:var(--r);padding:8px 11px;margin-bottom:9px;font-size:11px;color:#6A1B9A">&#128101; <span data-i18n="exp_funder_note">Funder pays the vendor directly — each line auto-creates a matching capital injection. No bank movement.</span></div>
       <!-- Voucher header (applies to the whole payment) -->
       <div class="g4" style="margin-bottom:9px">
-        <div class="f"><label data-i18n="date">Date</label><input type="date" id="exp-tab-date"></div>
+        <div class="f"><label data-i18n="date">Date</label><input type="date" id="exp-tab-date" onchange="if(expTabCur==='PGK')updExpPgkHint()"></div>
         <div class="f"><label id="exp-tab-payby-label" data-i18n="exp_pay_by">Payment by (bank)</label><select id="exp-tab-bank" onchange="refreshExpBankBal()"></select><select id="exp-tab-funder" style="display:none"></select></div>
         <div class="f" id="exp-tab-bankbal-wrap"><label data-i18n="exp_bank_bal_now">Bank balance</label><div id="exp-tab-bankbal" style="height:34px;display:flex;align-items:center;padding:0 9px;font-weight:700;background:var(--bg3);border:1px solid var(--bdr2);border-radius:var(--r);color:var(--gr)">RM —</div></div>
         <div class="f"><label data-i18n="exp_voucher_no">Voucher no. (auto)</label><input type="text" id="exp-tab-ref" readonly style="background:var(--bg3);color:var(--txt2);font-family:monospace"></div>
@@ -418,6 +419,8 @@ details.collapse-card[open]>summary:before{content:'▾'}
           </div>
         </div>
         <div class="f" id="exp-usd-rate-wrap" style="max-width:150px;display:none"><label data-i18n="cur_usd_rate">USD → RM rate</label><input type="number" id="exp-usd-rate" step="0.0001" placeholder="e.g. 4.70" oninput="renderExpTabPending()"></div>
+        <div class="f" id="exp-pgk-bank-wrap" style="max-width:180px;display:none"><label data-i18n="exp_pgk_from_bank">From PGK bank</label><select id="exp-pgk-bank"></select></div>
+        <div id="exp-pgk-rate-hint" style="display:none;font-size:11px;color:var(--txt2);align-self:center"></div>
       </div>
       <hr class="divider">
       <div class="sl" style="margin-top:0" data-i18n="exp_lines_label">Lines — add one or more</div>
@@ -1049,6 +1052,7 @@ const LANG = {
     uw_mv_title:'USD wallet movements', uw_no_mv:'No USD movements yet', uw_buy_label:'Buy USD', uw_in:'USD in', uw_out:'USD spent', uw_cost:'cost',
     uw_cost_hint:'= RM {rm} leaves the bank', uw_bought:'Bought US${usd} ✓', uw_enter_usd:'Enter USD amount', uw_pick_bank:'Pick a bank', uw_del_confirm:'Delete this USD purchase?',
     uw_need_usd:'USD wallet payments must be in USD', uw_over_confirm:'Spending US${need} but the wallet holds US${have}. Save anyway?', uw_add_to_wallet:'Add to USD wallet (instead of bank)',
+    exp_pgk_src:'💠 Paid in PGK', exp_pgk_from:'Paid in PGK', exp_pgk_from_bank:'From PGK bank', exp_amt_pgk:'Amount (PGK)', exp_pgk_rate_at:'Fixed rate for', exp_pgk_no_rate:'Set this month’s PGK fixed rate in Setup first', exp_pgk_need_pgk:'PGK payments must be in PGK', cf_pgk_exp_memo:'PGK expenses paid this period', sc_pgk_norate:'PGK expense has no fixed rate',
     sc_usd_neg:'USD wallet went negative (spent more than held)',
     bank:'MYR Bank', ref:'Reference No.', type:'Type', category:'Category', remark:'Remark',
     attach:'📎 Attach file', attach_day:'📎 Attach day document', ex_attach_receipt:'Attach receipt (paid / received)',
@@ -1333,6 +1337,7 @@ const LANG = {
     uw_mv_title:'USD 钱包流水', uw_no_mv:'暂无 USD 流水', uw_buy_label:'买入 USD', uw_in:'USD 入', uw_out:'USD 支出', uw_cost:'成本',
     uw_cost_hint:'= 将从银行支出 RM {rm}', uw_bought:'已买入 US${usd} ✓', uw_enter_usd:'请输入 USD 金额', uw_pick_bank:'请选择银行', uw_del_confirm:'删除此 USD 买入？',
     uw_need_usd:'USD 钱包付款必须为 USD', uw_over_confirm:'支出 US${need}，但钱包仅有 US${have}。仍要保存？', uw_add_to_wallet:'存入 USD 钱包（而非银行）',
+    exp_pgk_src:'💠 用 PGK 支付', exp_pgk_from:'用 PGK 支付', exp_pgk_from_bank:'从 PGK 账户', exp_amt_pgk:'金额 (PGK)', exp_pgk_rate_at:'固定汇率', exp_pgk_no_rate:'请先在设置中为该月份设定 PGK 固定汇率', exp_pgk_need_pgk:'PGK 付款金额必须为 PGK', cf_pgk_exp_memo:'本期用 PGK 支付的费用', sc_pgk_norate:'PGK 费用缺少固定汇率',
     sc_usd_neg:'USD 钱包出现负数（支出超过持有）',
     bank:'MYR银行', ref:'参考编号', type:'类型', category:'类别', remark:'备注',
     attach:'📎 上传附件', attach_day:'📎 上传当日文件', ex_attach_receipt:'上传收据（付款 / 收款）',
@@ -2506,23 +2511,37 @@ let expTabPending=[];
 let expTabCur='MYR';
 function expUsdRate(){return parseFloat(document.getElementById('exp-usd-rate')?.value)||0;}
 function setExpTabCur(c){
-  expTabCur=c==='USD'?'USD':'MYR';
-  const my=document.getElementById('exp-cur-myr'),us=document.getElementById('exp-cur-usd'),rw=document.getElementById('exp-usd-rate-wrap'),lbl=document.getElementById('exp-amt-label');
+  expTabCur=(c==='USD'||c==='PGK')?c:'MYR';
+  const my=document.getElementById('exp-cur-myr'),us=document.getElementById('exp-cur-usd'),rw=document.getElementById('exp-usd-rate-wrap'),lbl=document.getElementById('exp-amt-label'),pgkHint=document.getElementById('exp-pgk-rate-hint');
   const on='padding:8px 14px;font-size:12px;font-weight:600;border-radius:var(--r);border:2px solid #378ADD;background:#378ADD;color:#fff;cursor:pointer';
   const off='padding:8px 14px;font-size:12px;font-weight:600;border-radius:var(--r);border:2px solid var(--bdr2);background:none;color:var(--txt2);cursor:pointer';
   if(my)my.style.cssText=expTabCur==='MYR'?on:off;
   if(us)us.style.cssText=expTabCur==='USD'?on:off;
   if(rw)rw.style.display=expTabCur==='USD'?'':'none';
-  if(lbl)lbl.textContent=expTabCur==='USD'?tr('exp_amt_usd'):tr('exp_amt_myr');
+  if(pgkHint)pgkHint.style.display=expTabCur==='PGK'?'':'none';
+  if(lbl)lbl.textContent=expTabCur==='USD'?tr('exp_amt_usd'):expTabCur==='PGK'?tr('exp_amt_pgk'):tr('exp_amt_myr');
+  if(expTabCur==='PGK')updExpPgkHint();
   renderExpTabPending();
 }
-// Build a pending/expense line from the entered amount, converting USD->RM at the voucher rate.
-// Returns null (and toasts) if USD is selected without a valid rate.
+// PGK expenses translate at the voucher month's fixed rate (like PGK revenue) — show it live.
+function pgkExpRate(){const d=document.getElementById('exp-tab-date')?.value||'';return d?(fxRateFor(mk(d)).rate):null;}
+function updExpPgkHint(){
+  const el=document.getElementById('exp-pgk-rate-hint');if(!el)return;
+  const d=document.getElementById('exp-tab-date')?.value||'';const rate=pgkExpRate();
+  el.innerHTML=rate?`${tr('exp_pgk_rate_at')} ${d?ml(mk(d)):''}: <b>${rate.toFixed(4)}</b>`:`<span style="color:var(--am)">⚠ ${tr('exp_pgk_no_rate')}</span>`;
+}
+// Build a pending/expense line from the entered amount, converting to RM at the voucher rate.
+// Returns null (and toasts) if the needed rate is missing.
 function expLineAmount(entered){
   if(expTabCur==='USD'){
     const rate=expUsdRate();
     if(!(rate>0)){showToast(tr('cur_need_rate'),true);return null;}
     return {amt:Math.round(entered*rate*100)/100,cur:'USD',origAmt:entered,fxRate:rate};
+  }
+  if(expTabCur==='PGK'){
+    const rate=pgkExpRate();
+    if(!(rate>0)){showToast(tr('exp_pgk_no_rate'),true);return null;}
+    return {amt:Math.round(entered*rate*100)/100,cur:'PGK',origAmt:entered,fxRate:rate};
   }
   return {amt:entered,cur:'MYR'};
 }
@@ -2550,7 +2569,7 @@ function renderExpTabPending(){
     <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:6px">${tr('exp_lines_pending')}</div>
     ${expTabPending.map((e,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:3px 0;font-size:12px">
       <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="width:8px;height:8px;border-radius:2px;background:${e.typeColor};display:inline-block;margin-right:5px"></span>${e.cat}${e.platform?` <span class="pl-badge">🎮 ${e.platform}</span>`:''}${e.accrualMonth?` <span class="pl-badge">📅 ${ml(e.accrualMonth)}</span>`:''}${e.note?' — '+e.note:''}</span>
-      <span style="display:flex;align-items:center;gap:8px;flex-shrink:0"><b style="color:var(--rd)">-RM ${fmt(e.amt)}</b>${e.cur==='USD'?`<span style="font-size:10px;color:var(--txt2)">US$${fmt(e.origAmt)} @ ${e.fxRate}</span>`:''}<button class="del" onclick="removeExpLine(${i})">🗑</button></span>
+      <span style="display:flex;align-items:center;gap:8px;flex-shrink:0"><b style="color:var(--rd)">-RM ${fmt(e.amt)}</b>${e.cur==='USD'?`<span style="font-size:10px;color:var(--txt2)">US$${fmt(e.origAmt)} @ ${e.fxRate}</span>`:e.cur==='PGK'?`<span style="font-size:10px;color:var(--txt2)">${fmt(e.origAmt)} PGK @ ${e.fxRate}</span>`:''}<button class="del" onclick="removeExpLine(${i})">🗑</button></span>
     </div>`).join('')}
     <div style="display:flex;justify-content:flex-end;border-top:1px solid var(--bdr);margin-top:5px;padding-top:5px;font-size:12px;font-weight:700">${tr('lbl_total')}: <span style="color:var(--rd);margin-left:6px">-RM ${fmt(tot)}</span></div>
   </div>`;
@@ -2594,22 +2613,24 @@ function initExpTab(){
 }
 function setExpTabSrc(src){
   expTabSrc=src;
-  const isBank=src==='bank',isFunder=src==='funder',isWallet=src==='usdwallet';
-  const bb=document.getElementById('exp-tab-src-bank'),bf=document.getElementById('exp-tab-src-funder'),bw=document.getElementById('exp-tab-src-usdwallet');
+  const isBank=src==='bank',isFunder=src==='funder',isWallet=src==='usdwallet',isPgk=src==='pgk';
+  const bb=document.getElementById('exp-tab-src-bank'),bf=document.getElementById('exp-tab-src-funder'),bw=document.getElementById('exp-tab-src-usdwallet'),bp=document.getElementById('exp-tab-src-pgk');
   const bankSel=document.getElementById('exp-tab-bank'),funderSel=document.getElementById('exp-tab-funder');
   const balWrap=document.getElementById('exp-tab-bankbal-wrap'),note=document.getElementById('exp-tab-funder-note'),lbl=document.getElementById('exp-tab-payby-label');
-  const curToggle=document.getElementById('exp-cur-toggle');
+  const curToggle=document.getElementById('exp-cur-toggle'),pgkBankWrap=document.getElementById('exp-pgk-bank-wrap');
   const style=(btn,active,color)=>{if(!btn)return;btn.style.background=active?color:'none';btn.style.color=active?'#fff':'var(--txt2)';btn.style.borderColor=active?color:'var(--bdr2)';};
-  style(bb,isBank,'#378ADD');style(bf,isFunder,'#7B1FA2');style(bw,isWallet,'#0F6E56');
+  style(bb,isBank,'#378ADD');style(bf,isFunder,'#7B1FA2');style(bw,isWallet,'#0F6E56');style(bp,isPgk,'#0C447C');
   if(bankSel)bankSel.style.display=isBank?'':'none';
   if(funderSel)funderSel.style.display=isFunder?'':'none';
   if(balWrap)balWrap.style.visibility=(isBank||isWallet)?'visible':'hidden';
   if(note)note.style.display=isFunder?'block':'none';
-  if(lbl)lbl.textContent=isBank?tr('exp_pay_by'):isFunder?tr('exp_pay_by_fnd'):tr('uw_pay_from');
-  // USD wallet spends are always in USD (rate = today's spot); hide the RM/USD toggle, force USD.
-  if(curToggle)curToggle.style.display=isWallet?'none':'';
+  if(lbl)lbl.textContent=isBank?tr('exp_pay_by'):isFunder?tr('exp_pay_by_fnd'):isWallet?tr('uw_pay_from'):tr('exp_pgk_from');
+  // USD-wallet and PGK spends have an implicit currency; hide the RM/US$ toggle for both.
+  if(curToggle)curToggle.style.display=(isWallet||isPgk)?'none':'';
+  if(pgkBankWrap)pgkBankWrap.style.display=isPgk?'':'none';
   if(isWallet){setExpTabCur('USD');refreshExpWalletBal();}
-  else{refreshExpBankBal();}
+  else if(isPgk){setSel('exp-pgk-bank',activePgkBanks().map(b=>({v:b.name,l:b.name})));setExpTabCur('PGK');}
+  else{setExpTabCur('MYR');refreshExpBankBal();}
 }
 function refreshExpWalletBal(){
   const el=document.getElementById('exp-tab-bankbal');if(!el)return;
@@ -2635,16 +2656,18 @@ async function handleExpTabFile(input){
 function saveExpTxn(){
   const isFunder=expTabSrc==='funder';
   const isWallet=expTabSrc==='usdwallet';
+  const isPgk=expTabSrc==='pgk';
   const date=document.getElementById('exp-tab-date')?.value;if(!date){showToast('Select date',true);return;}
   if(lockBlocked(date))return;
   const accrual=document.getElementById('exp-tab-accrual')?.value||'';
   const payee=document.getElementById('exp-tab-payee')?.value||'';
   const bank=document.getElementById('exp-tab-bank')?.value||'';
   const funderName=document.getElementById('exp-tab-funder')?.value||'';
+  const pgkBank=document.getElementById('exp-pgk-bank')?.value||'';
   if(isFunder&&!funderName){showToast('Select funder',true);return;}
   // Build the list of expense lines (queued lines + the current form line)
   const exps=[];
-  expTabPending.forEach(p=>exps.push({type:p.type,typeName:p.typeName,typeColor:p.typeColor,plSection:p.plSection,cat:p.cat,amt:p.amt,note:p.note,platform:p.platform,accrualMonth:p.accrualMonth||'',...(p.cur==='USD'?{cur:'USD',origAmt:p.origAmt,fxRate:p.fxRate}:{})}));
+  expTabPending.forEach(p=>exps.push({type:p.type,typeName:p.typeName,typeColor:p.typeColor,plSection:p.plSection,cat:p.cat,amt:p.amt,note:p.note,platform:p.platform,accrualMonth:p.accrualMonth||'',...((p.cur==='USD'||p.cur==='PGK')?{cur:p.cur,origAmt:p.origAmt,fxRate:p.fxRate}:{})}));
   const tid=document.getElementById('exp-tab-type')?.value||'';
   const cat=document.getElementById('exp-tab-cat')?.value||'';
   const entered=n(document.getElementById('exp-tab-amt')?.value);
@@ -2658,10 +2681,14 @@ function saveExpTxn(){
     const need=exps.reduce((s,x)=>s+(x.origAmt||0),0),have=usdWalletState().balance;
     if(need>have+0.009&&!confirm(tr('uw_over_confirm').replace('{need}',fmt(need)).replace('{have}',fmt(have))))return;
   }
+  // PGK: all lines must be PGK (translated at the month's fixed rate). expLineAmount already
+  // blocked lines with no rate, so any line here is valid.
+  if(isPgk&&exps.some(x=>x.cur!=='PGK')){showToast(tr('exp_pgk_need_pgk'),true);return;}
   // Apply the voucher header (source + payee) to every line; one shared ref, unique id each
   exps.forEach((x,i)=>{
     if(isFunder){x.paySource='funder';x.funderName=funderName;x.bank=null;}
     else if(isWallet){x.paySource='usdwallet';x.bank=null;x.funderName=null;}
+    else if(isPgk){x.paySource='pgk';x.bank=null;x.funderName=null;x.pgkBank=pgkBank;}
     else{x.paySource='bank';x.bank=bank;}
     x.payee=payee;
   });
@@ -2684,6 +2711,7 @@ function saveExpTxn(){
   // Clear form fields
   ['exp-tab-amt','exp-tab-note','exp-tab-accrual','exp-tab-payee','exp-usd-rate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   if(isWallet)setExpTabSrc('usdwallet'); // stay in wallet mode, refresh the (now lower) balance
+  else if(isPgk)setExpTabSrc('pgk'); // stay in PGK mode
   else{setExpTabCur('MYR');refreshExpBankBal();}
   document.getElementById('exp-tab-file-preview').innerHTML='';
   // Refresh ref
@@ -2764,8 +2792,8 @@ function expRowHtml(e,isDetail,grpKey){
     <td>${isDetail?'<span style="color:var(--txt2)">↳</span> ':''}${fD(e.date)}${e.accrualMonth&&e.accrualMonth!==mk(e.date)?` <span class="pl-badge">📅 ${tr('exp_for')} ${ml(e.accrualMonth)}</span>`:''}</td>
     <td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:${e.typeColor||'#888'};display:inline-block"></span>${e.cat}${e.platform?` <span class="pl-badge">🎮 ${e.platform}</span>`:''}${(!isDetail&&e.payee)?` <span style="color:var(--txt2);font-size:11px">→ ${e.payee}</span>`:''}</span></td>
     <td class="hide-sm" style="color:var(--txt2);font-size:11px">${e.typeName||'-'}</td>
-    <td style="font-weight:700;color:var(--rd)">-RM ${fmt(e.amt)}${e.cur==='USD'?`<div style="font-size:10px;color:var(--txt2);font-weight:400">US$${fmt(e.origAmt)} @ ${e.fxRate}</div>`:''}</td>
-    <td>${e.paySource==='funder'?`<span style="font-size:10px;color:#7B1FA2;font-weight:600;background:#F3E5F5;padding:2px 7px;border-radius:20px">👤 ${e.funderName}</span>`:e.paySource==='usdwallet'?`<span style="font-size:10px;color:#0F6E56;font-weight:600;background:#E7F5F0;padding:2px 7px;border-radius:20px">💵 ${tr('uw_title')}</span>`:(bDot(e.bank)+' <span style="font-size:11px">'+e.bank+'</span>')}</td>
+    <td style="font-weight:700;color:var(--rd)">-RM ${fmt(e.amt)}${e.cur==='USD'?`<div style="font-size:10px;color:var(--txt2);font-weight:400">US$${fmt(e.origAmt)} @ ${e.fxRate}</div>`:e.cur==='PGK'?`<div style="font-size:10px;color:var(--txt2);font-weight:400">${fmt(e.origAmt)} PGK @ ${e.fxRate}</div>`:''}</td>
+    <td>${e.paySource==='funder'?`<span style="font-size:10px;color:#7B1FA2;font-weight:600;background:#F3E5F5;padding:2px 7px;border-radius:20px">👤 ${e.funderName}</span>`:e.paySource==='usdwallet'?`<span style="font-size:10px;color:#0F6E56;font-weight:600;background:#E7F5F0;padding:2px 7px;border-radius:20px">💵 ${tr('uw_title')}</span>`:e.paySource==='pgk'?`<span style="font-size:10px;color:#0C447C;font-weight:600;background:#E6F1FB;padding:2px 7px;border-radius:20px">💠 PGK${e.pgkBank?' · '+e.pgkBank:''}</span>`:(bDot(e.bank)+' <span style="font-size:11px">'+e.bank+'</span>')}</td>
     <td class="hide-sm" style="color:var(--txt2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.note||'-'}</td>
     <td class="hide-sm">${att?`<span class="attach-badge" onclick="event.stopPropagation();viewAttachment(${JSON.stringify(att).replace(/"/g,'&quot;')})">📎</span>`:'-'}</td>
     <td class="hide-sm" style="display:flex;gap:5px;white-space:nowrap">
@@ -4167,8 +4195,12 @@ function renderCFPgkBal(from,to){
   }).filter(r=>r.open||r.close||r.frozen);
   if(!rows.length){body.innerHTML=`<tr><td colspan="5" class="empty">${tr('no_entries')}</td></tr>`;return;}
   const tO=rows.reduce((s,r)=>s+r.open,0),tC=rows.reduce((s,r)=>s+r.close,0),tM=rows.reduce((s,r)=>s+r.mv,0),tF=rows.reduce((s,r)=>s+r.frozen,0);
+  // Memo: PGK paid out as expenses in the period (drawn from PGK banks; not auto-deducted above)
+  const pgkExp=S.dayEntries.filter(d=>d.date>=from&&d.date<=to).flatMap(d=>(d.expenses||[])).filter(e=>e.paySource==='pgk');
+  const pgkExpTot=pgkExp.reduce((s,e)=>s+(e.origAmt||0),0),pgkExpRM=pgkExp.reduce((s,e)=>s+(e.amt||0),0);
+  const memo=pgkExpTot>0.009?`<tr><td colspan="5" style="font-size:11px;color:var(--txt2);background:var(--bg2)">💠 ${tr('cf_pgk_exp_memo')}: <b>${fmt(pgkExpTot)} PGK</b> (RM ${fmt(pgkExpRM)})</td></tr>`:'';
   body.innerHTML=rows.map(r=>`<tr><td>🎰 ${r.name}</td><td style="text-align:right">${fmt(r.open)}</td><td style="text-align:right;color:${r.mv>=0?'var(--gr)':'var(--rd)'}">${fmt(r.mv)}</td><td style="text-align:right;font-weight:700">${fmt(r.close)}</td><td style="text-align:right;color:${r.frozen?'var(--am)':'var(--txt2)'}">${r.frozen?fmt(r.frozen):'-'}</td></tr>`).join('')+
-    `<tr style="font-weight:700;background:var(--bg3)"><td>${tr('lbl_total')}</td><td style="text-align:right">${fmt(tO)}</td><td style="text-align:right">${fmt(tM)}</td><td style="text-align:right">${fmt(tC)}</td><td style="text-align:right;color:${tF?'var(--am)':'inherit'}">${tF?fmt(tF):'-'}</td></tr>`;
+    `<tr style="font-weight:700;background:var(--bg3)"><td>${tr('lbl_total')}</td><td style="text-align:right">${fmt(tO)}</td><td style="text-align:right">${fmt(tM)}</td><td style="text-align:right">${fmt(tC)}</td><td style="text-align:right;color:${tF?'var(--am)':'inherit'}">${tF?fmt(tF):'-'}</td></tr>`+memo;
 }
 function renderCFExchSummary(dayRows,rangeLabel){
   const el=document.getElementById('cf-exsum');if(!el)return;
@@ -6945,6 +6977,8 @@ function runSelfChecks(){
   Object.entries(vAtt).filter(([,n])=>n>1).forEach(([ref,n])=>issues.push(`${tr('sc_multiatt')}: [${ref}] (${n})`));
   // 7) USD wallet can't go negative (spent more USD than was held at that point)
   usdWalletReplay().spends.forEach(s=>{if(s.balAfter<-0.01)issues.push(`${tr('sc_usd_neg')} — ${at(s.ref,s.date,'US$'+fmt(s.usd))}`);});
+  // 8) PGK-paid expenses must have a fixed rate (else the RM value is wrong)
+  (S.dayEntries||[]).forEach(d=>(d.expenses||[]).forEach(e=>{if(e.paySource==='pgk'&&!(e.fxRate>0))issues.push(`${tr('sc_pgk_norate')} — ${at(e.ref,d.date,(e.cat||'')+' '+fmt(e.origAmt||0)+' PGK')}`);}));
   return issues;
 }
 function renderSelfCheckBanner(){
