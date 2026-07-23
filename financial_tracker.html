@@ -6889,8 +6889,11 @@ async function cloudPull(seedIfEmpty){
     if(error)throw error;
     if(data&&data.data){
       let p=migrateData(data.data);S={...S,...p};
+      // Cloud data replaces local — re-apply the same repairs the local load does, or they'd be lost.
+      const _f1=ensureTxnRefs(),_f2=ensureLedgerDayEntries();
       cloudLoadedAt=data.updated_at;
       try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}
+      if(_f1||_f2)cloudPushDebounced(); // persist the repair back to the shared cloud copy
       initForms();reRenderCurrent();
     }else if(seedIfEmpty){
       await cloudPushNow(); // first run — create the shared row from current data
