@@ -3748,6 +3748,7 @@ function saveUsdBuy(){
   if(!bank){showToast(tr('uw_pick_bank'),true);return;}
   if(!S.usdBuys)S.usdBuys=[];
   S.usdBuys.push({id:genRef('USD'),date,usd,rate,bank});
+  ensureLedgerDayEntries();
   persist();
   ['uw-buy-usd','uw-buy-rate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const h=document.getElementById('uw-buy-hint');if(h)h.textContent='';
@@ -5796,6 +5797,7 @@ function saveDueReceipt(exchanger){
   const exchRef=document.getElementById('due-exchref')?.value||'';
   S.exchSettlements.push({id:genRef('SET'),date,exchanger,amount:amt,myrBank:bank,note:document.getElementById('due-note')?.value||'',...usdMeta,...(exchRef?{exchRef}:{})});
   dueCur='MYR';
+  ensureLedgerDayEntries();
   persist();closeModal();renderExchTab();renderRecon();
   showToast('Payment received: RM '+fmt(amt)+' from '+exchanger+' ✓');
 }
@@ -5829,6 +5831,7 @@ function saveSettlementEdit(id){
   if(date!==s.date&&lockBlocked(date))return;     // moving into a locked month?
   if(amt<=0){showToast('Enter amount',true);return;}
   s.date=date;s.amount=amt;s.myrBank=document.getElementById('set-edit-bank')?.value||s.myrBank;s.note=document.getElementById('set-edit-note')?.value||'';
+  ensureLedgerDayEntries();
   persist();closeModal();renderExchTab();renderRecon&&renderRecon();showToast(tr('ex_receipt_updated')+' ✓');
 }
 // ── PER-ROW RECEIVE (actual amount + date the money arrived) ──
@@ -5988,13 +5991,14 @@ function savePayMYR(orig){
   const owed=Math.max(0,(x.myr||0)-(x.paid||0)-x.myrPaid.reduce((s,m)=>s+(m.amt||0),0));
   if(amt>owed+0.009&&!confirm(`RM ${fmt(amt)} > RM ${fmt(owed)} to pay. Save anyway?`))return;
   x.myrPaid.push({id:'MYP-'+Date.now().toString(36)+Math.floor(Math.random()*1000),date,amt,bank,note:document.getElementById('pmyr-note')?.value||''});
+  ensureLedgerDayEntries();
   persist();closeModal();renderExchTab();if(typeof renderRecon==='function')renderRecon();showToast(tr('ex_myr_paid_toast')+' RM '+fmt(amt)+' ✓');
 }
 function editPayMYR(orig,id){
   const hit=findExchByRef(orig);if(!hit||!hit.x.myrPaid)return;const m=hit.x.myrPaid.find(r=>r.id===id);if(!m)return;
   const amtStr=prompt(tr('ex_myr_paid_amt'),fmt(m.amt));if(amtStr===null)return;const amt=parseFloat(amtStr)||0;if(amt<=0){showToast('Enter amount',true);return;}
   const dateStr=prompt(tr('ex_date_paid'),m.date);if(dateStr===null)return;if(lockBlocked(m.date))return;if(dateStr!==m.date&&lockBlocked(dateStr))return;
-  m.amt=amt;m.date=dateStr;persist();renderExchTab();if(typeof renderRecon==='function')renderRecon();viewEditExch(findExchByRef(orig).x);showToast(tr('ex_receipt_updated')+' ✓');
+  m.amt=amt;m.date=dateStr;ensureLedgerDayEntries();persist();renderExchTab();if(typeof renderRecon==='function')renderRecon();viewEditExch(findExchByRef(orig).x);showToast(tr('ex_receipt_updated')+' ✓');
 }
 async function deletePayMYR(orig,id){
   const hit=findExchByRef(orig);if(!hit||!hit.x.myrPaid)return;const m=hit.x.myrPaid.find(r=>r.id===id);if(!m)return;
@@ -6943,6 +6947,22 @@ function ensureTxnRefs(){
   });
   return changed;
 }
+// The MYR bank ledger is built per day-entry date (buildLedger is only called for dates that
+// have a dayEntry). Deferred bank movements — a "Receive payment" (settlement), a "Pay MYR" leg,
+// or a "Buy USD" — can be dated on a day with no other entry, so their date would be skipped and
+// the amount would vanish from reconciliation. Guarantee an (empty) day-entry exists for every
+// such date so the ledger always processes it. Runs on load and whenever a leg is added/moved.
+function ensureLedgerDayEntries(){
+  const have=new Set((S.dayEntries||[]).map(d=>d.date));
+  const need=new Set();
+  (S.exchSettlements||[]).forEach(s=>{if(s.date&&!s.toWallet)need.add(s.date);});
+  (S.usdBuys||[]).forEach(b=>{if(b.date)need.add(b.date);});
+  (S.dayEntries||[]).forEach(d=>(d.exchanges||[]).forEach(x=>(x.myrPaid||[]).forEach(m=>{if(m.date)need.add(m.date);})));
+  let changed=false;
+  need.forEach(dt=>{if(!have.has(dt)){S.dayEntries.push({date:dt,exchanges:[],myrBanks:[],funderTxns:[],expenses:[],totalExp:0});have.add(dt);changed=true;}});
+  if(changed)S.dayEntries.sort((a,b)=>a.date.localeCompare(b.date));
+  return changed;
+}
 function runSelfChecks(){
   const issues=[];
   const okNum=v=>typeof v==='number'&&isFinite(v);
@@ -7007,7 +7027,7 @@ function showSelfCheckDetails(){
 
 // ── INIT ──
 loadData();
-const _refsAssigned=ensureTxnRefs();if(_refsAssigned)persist();
+const _refsAssigned=ensureTxnRefs();let _ledFixed=ensureLedgerDayEntries();if(_refsAssigned||_ledFixed)persist();
 setTimeout(applyLang, 50);
 if(_refsAssigned)setTimeout(()=>showToast(tr('sc_refs_assigned')),900);
 setTimeout(renderSelfCheckBanner, 600);
