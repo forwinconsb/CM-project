@@ -1109,7 +1109,7 @@ const LANG = {
     exp_platform:'Platform (optional)', exp_no_platform:'— (no platform)',
     pl_view_statement:'📊 Statement', pl_view_compare:'📈 Monthly comparison',
     pl_plat_filtered:'Showing only', pl_plat_note:'untagged expenses and PGK write-offs are excluded from a single-platform view.',
-    cmp_title:'Monthly comparison', cmp_metric:'Metric', cmp_total:'Total', cmp_wl:'Win/Lose (PGK)',
+    cmp_title:'Monthly comparison', cmp_metric:'Metric', cmp_total:'Total', cmp_subtotal:'Subtotal', cmp_wl:'Win/Lose (PGK)',
     cmp_note:'Total = all months shown added together. Showing up to the last 12 months.',
     pl_net:'Net Profit / (Loss)', pl_margin:'Margin', pl_myr_out:'MYR sent to top up PGK',
     pl_fxgl:'FX gain/loss', pl_fxgl_pgk:'FX gain/loss — PGK conversions', pl_fxgl_usd:'FX gain/loss — USD wallet', pl_rev_wl:'Revenue (net win/lose @ monthly rate)', pl_rates:'Rates',
@@ -1394,7 +1394,7 @@ const LANG = {
     exp_platform:'平台（可选）', exp_no_platform:'—（无平台）',
     pl_view_statement:'📊 损益表', pl_view_compare:'📈 月度对比',
     pl_plat_filtered:'仅显示', pl_plat_note:'未标记平台的支出及PGK冲销不计入单一平台视图。',
-    cmp_title:'月度对比', cmp_metric:'指标', cmp_total:'合计', cmp_wl:'输赢 (PGK)',
+    cmp_title:'月度对比', cmp_metric:'指标', cmp_total:'合计', cmp_subtotal:'小计', cmp_wl:'输赢 (PGK)',
     cmp_note:'合计 = 所示各月份相加。最多显示最近12个月。',
     pl_net:'净利润 / （亏损）', pl_margin:'利润率', pl_myr_out:'MYR转出用于PGK充值',
     pl_fxgl:'FX汇兑盈亏', pl_fxgl_pgk:'汇兑盈亏 — PGK 兑换', pl_fxgl_usd:'汇兑盈亏 — USD 钱包', pl_rev_wl:'收入（净输赢 @ 月度汇率）', pl_rates:'汇率',
@@ -4371,9 +4371,11 @@ function renderPLCompare(){
   html+=`<div class="tw"><table><thead><tr>${th}</tr></thead><tbody>`;
   html+=`<tr style="color:var(--txt2)"><td>${tr('cmp_wl')}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap">${fmt(c.wl)}</td>`).join('')}<td style="text-align:right;white-space:nowrap;font-weight:700">${fmt(tot(c=>c.wl))}</td></tr>`;
   html+=moneyRow(tr('pl_revenue'),c=>c.rev,{color:true,bold:true});
-  secs.forEach(s=>{html+=`<tr><td style="padding-left:14px;font-weight:600"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};display:inline-block;margin-right:5px"></span>${s.name}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap;color:var(--rd);font-weight:600">-RM ${fmt(c.bySec[s.id]||0)}</td>`).join('')}<td style="text-align:right;white-space:nowrap;color:var(--rd);font-weight:700">-RM ${fmt(tot(c=>c.bySec[s.id]||0))}</td></tr>`;
+  secs.forEach(s=>{
+    html+=`<tr><td colspan="${cols.length+2}" style="padding-left:14px;padding-top:9px;font-weight:700"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};display:inline-block;margin-right:5px"></span>${s.name}</td></tr>`;
     const cats=[...new Set(cols.flatMap(c=>Object.keys(c.byCat).filter(k=>k.startsWith(s.id+'||'))))].map(k=>({k,name:k.slice(s.id.length+2),t:tot(c=>c.byCat[k]||0)})).sort((a,b)=>b.t-a.t);
-    cats.forEach(ct=>{html+=`<tr style="font-size:11px"><td style="padding-left:32px;color:var(--txt2)">${ct.name}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap;color:var(--rd);opacity:.75">-RM ${fmt(c.byCat[ct.k]||0)}</td>`).join('')}<td style="text-align:right;white-space:nowrap;color:var(--rd)">-RM ${fmt(ct.t)}</td></tr>`;});});
+    cats.forEach(ct=>{html+=`<tr style="font-size:11px"><td style="padding-left:32px;color:var(--txt2)">${ct.name}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap;color:var(--rd);opacity:.75">-RM ${fmt(c.byCat[ct.k]||0)}</td>`).join('')}<td style="text-align:right;white-space:nowrap;color:var(--rd)">-RM ${fmt(ct.t)}</td></tr>`;});
+    html+=`<tr style="border-top:1px solid var(--bdr)"><td style="padding-left:32px;font-weight:700">${tr('cmp_subtotal')} — ${s.name}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap;color:var(--rd);font-weight:700;border-top:1px solid var(--bdr)">-RM ${fmt(c.bySec[s.id]||0)}</td>`).join('')}<td style="text-align:right;white-space:nowrap;color:var(--rd);font-weight:700;border-top:1px solid var(--bdr)">-RM ${fmt(tot(c=>c.bySec[s.id]||0))}</td></tr>`;});
   html+=moneyRow(tr('pl_pgk_costs'),c=>c.pgkCost,{neg:true});
   html+=`<tr><td>${tr('pl_fxgl')}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap;color:${c.fxGL>=0?'var(--gr)':'var(--rd)'}">${c.fxGL>=0?'+':'-'}RM ${fmt(Math.abs(c.fxGL))}</td>`).join('')}<td style="text-align:right;white-space:nowrap;font-weight:700;color:${tot(c=>c.fxGL)>=0?'var(--gr)':'var(--rd)'}">${tot(c=>c.fxGL)>=0?'+':'-'}RM ${fmt(Math.abs(tot(c=>c.fxGL)))}</td></tr>`;
   html+=moneyRow(tr('lbl_total_exp'),c=>c.totExp,{neg:true,bold:true});
