@@ -4342,13 +4342,13 @@ function plMonthStats(m,pf){
   const from=m+'-01',to=m+'-31';
   const st=plFixedStats(from,to,pf);
   const accrualExps=S.dayEntries.flatMap(d=>(d.expenses||[]).map(x=>({...x,date:d.date}))).filter(x=>{const am=x.accrualMonth||mk(x.date);return am===m&&(!pf||x.platform===pf);});
-  const bySec={};
-  accrualExps.forEach(x=>{if(isAssetExpense(x))return;const sec=x.plSection||'other';bySec[sec]=(bySec[sec]||0)+x.amt;});
+  const bySec={},byCat={};
+  accrualExps.forEach(x=>{if(isAssetExpense(x))return;const sec=x.plSection||'other';bySec[sec]=(bySec[sec]||0)+x.amt;const ck=sec+'||'+(x.cat||'-');byCat[ck]=(byCat[ck]||0)+x.amt;});
   const opCost=Object.values(bySec).reduce((s,v)=>s+v,0);
   const rev=st.revMYR,fxGL=st.fxGL,pgkCost=st.pgkCostMYR;
   const totExp=opCost+pgkCost;
   const net=rev-totExp+fxGL;
-  return{m,rev,fxGL,pgkCost,opCost,bySec,totExp,net,margin:rev?net/rev:0,wl:st.revPGK};
+  return{m,rev,fxGL,pgkCost,opCost,bySec,byCat,totExp,net,margin:rev?net/rev:0,wl:st.revPGK};
 }
 function renderPLCompare(){
   const pf=document.getElementById('pl-plat')?.value||'';
@@ -4371,7 +4371,9 @@ function renderPLCompare(){
   html+=`<div class="tw"><table><thead><tr>${th}</tr></thead><tbody>`;
   html+=`<tr style="color:var(--txt2)"><td>${tr('cmp_wl')}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap">${fmt(c.wl)}</td>`).join('')}<td style="text-align:right;white-space:nowrap;font-weight:700">${fmt(tot(c=>c.wl))}</td></tr>`;
   html+=moneyRow(tr('pl_revenue'),c=>c.rev,{color:true,bold:true});
-  secs.forEach(s=>{html+=`<tr><td style="padding-left:14px"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};display:inline-block;margin-right:5px"></span>${s.name}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap;color:var(--rd)">-RM ${fmt(c.bySec[s.id]||0)}</td>`).join('')}<td style="text-align:right;white-space:nowrap;color:var(--rd);font-weight:700">-RM ${fmt(tot(c=>c.bySec[s.id]||0))}</td></tr>`;});
+  secs.forEach(s=>{html+=`<tr><td style="padding-left:14px;font-weight:600"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};display:inline-block;margin-right:5px"></span>${s.name}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap;color:var(--rd);font-weight:600">-RM ${fmt(c.bySec[s.id]||0)}</td>`).join('')}<td style="text-align:right;white-space:nowrap;color:var(--rd);font-weight:700">-RM ${fmt(tot(c=>c.bySec[s.id]||0))}</td></tr>`;
+    const cats=[...new Set(cols.flatMap(c=>Object.keys(c.byCat).filter(k=>k.startsWith(s.id+'||'))))].map(k=>({k,name:k.slice(s.id.length+2),t:tot(c=>c.byCat[k]||0)})).sort((a,b)=>b.t-a.t);
+    cats.forEach(ct=>{html+=`<tr style="font-size:11px"><td style="padding-left:32px;color:var(--txt2)">${ct.name}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap;color:var(--rd);opacity:.75">-RM ${fmt(c.byCat[ct.k]||0)}</td>`).join('')}<td style="text-align:right;white-space:nowrap;color:var(--rd)">-RM ${fmt(ct.t)}</td></tr>`;});});
   html+=moneyRow(tr('pl_pgk_costs'),c=>c.pgkCost,{neg:true});
   html+=`<tr><td>${tr('pl_fxgl')}</td>${cols.map(c=>`<td style="text-align:right;white-space:nowrap;color:${c.fxGL>=0?'var(--gr)':'var(--rd)'}">${c.fxGL>=0?'+':'-'}RM ${fmt(Math.abs(c.fxGL))}</td>`).join('')}<td style="text-align:right;white-space:nowrap;font-weight:700;color:${tot(c=>c.fxGL)>=0?'var(--gr)':'var(--rd)'}">${tot(c=>c.fxGL)>=0?'+':'-'}RM ${fmt(Math.abs(tot(c=>c.fxGL)))}</td></tr>`;
   html+=moneyRow(tr('lbl_total_exp'),c=>c.totExp,{neg:true,bold:true});
